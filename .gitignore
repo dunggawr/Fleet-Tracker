@@ -43,3 +43,6 @@ android/
 # Misc
 *.log
 .turbo/
+
+# AI Brain
+.brain/
