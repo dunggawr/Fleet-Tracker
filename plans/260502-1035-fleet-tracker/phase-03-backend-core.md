@@ -21,18 +21,18 @@ Implement đầy đủ CRUD APIs cho Vehicles, Drivers, Orders với validation,
   - [x] `PATCH /vehicles/:id` — Update (admin only)
   - [x] `DELETE /vehicles/:id` — Soft delete (admin only, block nếu đang delivering)
   - [x] `GET /vehicles/available` — Xe rảnh + đủ tải trọng
-  - [ ] `POST /vehicles/:id/image` — Upload ảnh xe
+  - [x] `POST /vehicles/:id/image` — Upload ảnh xe
 - [x] `VehiclesService` — business logic
 - [x] DTOs:
   - [x] `CreateVehicleDto` — plate_number, type, max_capacity_kg
   - [x] `UpdateVehicleDto` — partial update
   - [x] `VehicleQueryDto` — filter, pagination, sort
-  - [ ] `VehicleResponseDto` — response shape
-- [ ] Validation rules:
-  - plate_number: unique, format check
-  - max_capacity_kg: > 0
-  - Không xóa xe đang `delivering`
-  - Không gán driver đang `on_trip`
+  - [x] `VehicleResponseDto` — response shape
+- [x] Validation rules:
+  - [x] plate_number: unique, format check
+  - [x] max_capacity_kg: > 0
+  - [x] Không xóa xe đang `delivering`
+  - [x] Không gán driver đang `on_trip`
 
 ### 2. Drivers Module
 - [x] `DriversModule` — module setup
@@ -42,21 +42,21 @@ Implement đầy đủ CRUD APIs cho Vehicles, Drivers, Orders với validation,
   - [x] `POST /drivers` — Create (admin only, tự tạo user account)
   - [x] `PATCH /drivers/:id` — Update (admin only)
   - [x] `DELETE /drivers/:id` — Soft delete (admin only, block nếu đang on_trip)
-  - [ ] `GET /drivers/:id/kpi` — KPI chi tiết
-  - [ ] `GET /drivers/:id/trips` — Lịch sử chuyến
-  - [ ] `GET /drivers/:id/violations` — Lịch sử vi phạm
+  - [x] `GET /drivers/:id/kpi` — KPI chi tiết
+  - [x] `GET /drivers/:id/trips` — Lịch sử chuyến
+  - [x] `GET /drivers/:id/violations` — Lịch sử vi phạm
 - [x] `DriversService` — business logic
 - [x] DTOs:
   - [x] `CreateDriverDto` — full_name, phone, email, password, license_class, license_expiry
   - [x] `UpdateDriverDto` — partial update (không đổi email)
   - [x] `DriverQueryDto` — filter, pagination
-  - [ ] `DriverResponseDto` — response (hide password)
-  - `DriverKpiResponseDto` — KPI data
-- [ ] Validation rules:
-  - phone: format VN (10 số)
-  - email: unique
-  - license_expiry: cảnh báo nếu < 30 ngày
-  - Không xóa driver đang `on_trip`
+  - [x] `DriverResponseDto` — response (hide password)
+  - [x] `DriverKpiResponseDto` — KPI data
+- [x] Validation rules:
+  - [x] phone: format VN (10 số)
+  - [x] email: unique
+  - [x] license_expiry: cảnh báo nếu < 30 ngày
+  - [x] Không xóa driver đang `on_trip`
 
 ### 3. Orders Module
 - [x] `OrdersModule` — module setup
@@ -74,17 +74,13 @@ Implement đầy đủ CRUD APIs cho Vehicles, Drivers, Orders với validation,
   - [x] `UpdateOrderDto` — partial (chỉ khi pending)
   - [x] `UpdateOrderStatusDto` — status transition validation
   - [x] `OrderQueryDto` — filter, pagination
-- [ ] Validation rules:
-  - weight_kg: > 0
-  - pickup ≠ delivery location
-  - Status transitions: pending → assigned → picked_up → delivering → delivered/failed
-  - Không sửa/xóa đơn đã assigned trở đi
+- [x] Validation rules:
+  - [x] weight_kg: > 0
+  - [x] pickup ≠ delivery location
+  - [x] Status transitions: pending → assigned → picked_up → delivering → delivered/failed
+  - [x] Không sửa/xóa đơn đã assigned trở đi
 
 ### 4. File Upload (Ảnh xe, Ảnh xác nhận)
-- [ ] Implement file upload service (Supabase Storage)
-- [ ] Endpoint: `POST /upload` — generic upload
-- [ ] Max file size: 5MB
-- [ ] Accepted types: jpg, png, webp
 - [x] Implement file upload service (Supabase Storage)
 - [x] Endpoint: `POST /upload` — generic upload
 - [x] Max file size: 5MB

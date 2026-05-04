@@ -121,7 +121,23 @@ export class OrdersService {
   async updateStatus(id: string, status: OrderStatus): Promise<Order> {
     const order = await this.findOne(id);
     
-    // Basic validation for status transitions could be added here
+    // Status transition validation
+    const allowedTransitions: Record<OrderStatus, OrderStatus[]> = {
+      [OrderStatus.PENDING]: [OrderStatus.ASSIGNED, OrderStatus.CANCELLED],
+      [OrderStatus.ASSIGNED]: [OrderStatus.PICKED_UP, OrderStatus.CANCELLED],
+      [OrderStatus.PICKED_UP]: [OrderStatus.DELIVERING],
+      [OrderStatus.DELIVERING]: [OrderStatus.DELIVERED, OrderStatus.FAILED],
+      [OrderStatus.DELIVERED]: [],
+      [OrderStatus.FAILED]: [OrderStatus.PENDING], // Allow retry
+      [OrderStatus.CANCELLED]: [OrderStatus.PENDING], // Allow reactivation
+    };
+
+    if (!allowedTransitions[order.status].includes(status)) {
+      throw new BadRequestException(
+        `Invalid status transition from ${order.status} to ${status}`,
+      );
+    }
+
     order.status = status;
     return this.ordersRepository.save(order);
   }

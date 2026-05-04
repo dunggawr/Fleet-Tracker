@@ -54,6 +54,27 @@ export class DriversController {
     return this.driversService.update(id, updateDriverDto);
   }
 
+  @Get(':id/kpi')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Get driver KPI (Admin only)' })
+  getKpi(@Param('id') id: string) {
+    return this.driversService.getKpi(id);
+  }
+
+  @Get(':id/trips')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Get driver trips history (Admin only)' })
+  getTrips(@Param('id') id: string) {
+    return this.driversService.getTrips(id);
+  }
+
+  @Get(':id/violations')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Get driver violations history (Admin only)' })
+  getViolations(@Param('id') id: string) {
+    return this.driversService.getViolations(id);
+  }
+
   @Delete(':id')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Delete a driver and their user account (Admin only)' })

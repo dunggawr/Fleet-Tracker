@@ -122,4 +122,27 @@ export class DriversService {
     await this.driversRepository.remove(driver);
     await this.usersRepository.delete(driver.userId);
   }
+
+  async getKpi(id: string) {
+    await this.findOne(id);
+    // Placeholder logic for Phase 03
+    return {
+      tripsCompleted: 0,
+      totalDistanceKm: 0,
+      averageRating: 5.0,
+      onTimeRate: 100,
+    };
+  }
+
+  async getTrips(id: string) {
+    await this.findOne(id);
+    // Placeholder logic for Phase 03
+    return [];
+  }
+
+  async getViolations(id: string) {
+    await this.findOne(id);
+    // Placeholder logic for Phase 03
+    return [];
+  }
 }

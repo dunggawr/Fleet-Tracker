@@ -6,12 +6,14 @@ import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { VehicleQueryDto } from './dto/vehicle-query.dto';
 import { PaginatedResponse } from '../common/dto/pagination.dto';
+import { UploadService } from '../upload/upload.service';
 
 @Injectable()
 export class VehiclesService {
   constructor(
     @InjectRepository(Vehicle)
     private vehicleRepository: Repository<Vehicle>,
+    private uploadService: UploadService,
   ) {}
 
   async create(createVehicleDto: CreateVehicleDto): Promise<Vehicle> {
@@ -75,6 +77,13 @@ export class VehiclesService {
     }
 
     Object.assign(vehicle, updateVehicleDto);
+    return await this.vehicleRepository.save(vehicle);
+  }
+
+  async updateImage(id: string, file: Express.Multer.File): Promise<Vehicle> {
+    const vehicle = await this.findOne(id);
+    const imageUrl = await this.uploadService.uploadFile(file, 'vehicles');
+    vehicle.imageUrl = imageUrl;
     return await this.vehicleRepository.save(vehicle);
   }
 
