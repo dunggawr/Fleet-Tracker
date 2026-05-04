@@ -15,6 +15,7 @@ import { GpsLocation } from './entities/gps-location.entity';
 import { Alert } from './entities/alert.entity';
 import { DriverKpi } from './entities/driver-kpi.entity';
 import { AuthModule } from './auth/auth.module';
+import { VehiclesModule } from './vehicles/vehicles.module';
 
 @Module({
   imports: [
@@ -49,8 +50,10 @@ import { AuthModule } from './auth/auth.module';
     // AuthModule added in Phase 02
     AuthModule,
 
+    // VehiclesModule added in Phase 03
+    VehiclesModule,
+
     // Modules to be added in future phases
-    // VehiclesModule will be added in Phase 03
     // DriversModule will be added in Phase 03
     // OrdersModule will be added in Phase 03
     // TripsModule will be added in Phase 04
