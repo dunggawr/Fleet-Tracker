@@ -3,6 +3,19 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigService } from '@nestjs/config';
+import { User } from './entities/user.entity';
+import { Driver } from './entities/driver.entity';
+import { Vehicle } from './entities/vehicle.entity';
+import { Order } from './entities/order.entity';
+import { Trip } from './entities/trip.entity';
+import { TripOrder } from './entities/trip-order.entity';
+import { GpsLocation } from './entities/gps-location.entity';
+import { Alert } from './entities/alert.entity';
+import { DriverKpi } from './entities/driver-kpi.entity';
+import { AuthModule } from './auth/auth.module';
+
 @Module({
   imports: [
     // Environment variables
@@ -11,8 +24,32 @@ import { AppService } from './app.service';
       envFilePath: '.env',
     }),
 
-    // TypeORM + Database will be added in Phase 02
-    // AuthModule will be added in Phase 02
+    // Database connection
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        url: configService.get<string>('DATABASE_URL'),
+        entities: [
+          User,
+          Driver,
+          Vehicle,
+          Order,
+          Trip,
+          TripOrder,
+          GpsLocation,
+          Alert,
+          DriverKpi,
+        ],
+        synchronize: configService.get<string>('NODE_ENV') !== 'production',
+      }),
+    }),
+
+    // AuthModule added in Phase 02
+    AuthModule,
+
+    // Modules to be added in future phases
     // VehiclesModule will be added in Phase 03
     // DriversModule will be added in Phase 03
     // OrdersModule will be added in Phase 03
