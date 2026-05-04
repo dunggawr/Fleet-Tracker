@@ -28,6 +28,9 @@ export class User {
     default: UserRole.DRIVER,
   })
   role: UserRole;
+  
+  @Column({ name: 'refresh_token_hash', nullable: true, select: false })
+  refreshTokenHash?: string;
 
   @Column({ name: 'is_active', default: true })
   isActive: boolean;

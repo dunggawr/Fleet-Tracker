@@ -47,6 +47,9 @@ import { UploadModule } from './upload/upload.module';
           DriverKpi,
         ],
         synchronize: configService.get<string>('NODE_ENV') !== 'production',
+        ssl: {
+          rejectUnauthorized: false,
+        },
       }),
     }),
 

@@ -1,4 +1,5 @@
 import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -13,6 +14,7 @@ export class AuthService {
     @InjectRepository(User)
     private userRepository: Repository<User>,
     private jwtService: JwtService,
+    private configService: ConfigService,
   ) {}
 
   async register(registerDto: RegisterDto): Promise<User> {
@@ -45,9 +47,10 @@ export class AuthService {
     });
 
     if (user && user.passwordHash && (await bcrypt.compare(password, user.passwordHash))) {
-      const payload = { sub: user.id, email: user.email, role: user.role };
+      const tokens = await this.getTokens(user.id, user.email, user.role);
+      await this.updateRefreshToken(user.id, tokens.refreshToken);
       return {
-        accessToken: this.jwtService.sign(payload),
+        ...tokens,
         user: {
           id: user.id,
           email: user.email,
@@ -57,6 +60,61 @@ export class AuthService {
     }
 
     throw new UnauthorizedException('Invalid credentials');
+  }
+
+  async refreshTokens(userId: string, refreshToken: string) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId, isActive: true },
+      select: ['id', 'email', 'role', 'refreshTokenHash'],
+    });
+
+    if (!user || !user.refreshTokenHash) {
+      throw new UnauthorizedException('Access Denied');
+    }
+
+    const refreshTokenMatches = await bcrypt.compare(
+      refreshToken,
+      user.refreshTokenHash,
+    );
+    if (!refreshTokenMatches) throw new UnauthorizedException('Access Denied');
+
+    const tokens = await this.getTokens(user.id, user.email, user.role);
+    await this.updateRefreshToken(user.id, tokens.refreshToken);
+    return {
+      ...tokens,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      },
+    };
+  }
+
+  async updateRefreshToken(userId: string, refreshToken: string) {
+    const salt = await bcrypt.genSalt();
+    const hash = await bcrypt.hash(refreshToken, salt);
+    await this.userRepository.update(userId, {
+      refreshTokenHash: hash,
+    });
+  }
+
+  async getTokens(userId: string, email: string, role: string) {
+    const payload = { sub: userId, email, role };
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(payload, {
+        secret: this.configService.get<string>('JWT_SECRET'),
+        expiresIn: this.configService.get<string>('JWT_ACCESS_EXPIRY') || '1h',
+      }),
+      this.jwtService.signAsync(payload, {
+        secret: this.configService.get<string>('JWT_SECRET'), // Can use a separate secret if desired
+        expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRY') || '7d',
+      }),
+    ]);
+
+    return {
+      accessToken,
+      refreshToken,
+    };
   }
 
   async validateUser(payload: any): Promise<User | null> {
