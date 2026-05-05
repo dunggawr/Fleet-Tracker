@@ -13,16 +13,16 @@ Khởi tạo 3 projects (backend, admin web, driver mobile), cài đặt depende
 ## Implementation Steps
 
 ### 1. Backend (fleet-api)
-- [ ] Tạo NestJS project: `npx -y @nestjs/cli new fleet-api`
-- [ ] Cấu hình TypeScript strict mode
-- [ ] Install core dependencies:
+- [x] Tạo NestJS project: `npx -y @nestjs/cli new fleet-api`
+- [x] Cấu hình TypeScript strict mode
+- [x] Install core dependencies:
   - `@nestjs/typeorm`, `typeorm`, `pg` (PostgreSQL)
   - `@nestjs/websockets`, `@nestjs/platform-socket.io` (WebSocket)
   - `@nestjs/passport`, `passport-jwt`, `@nestjs/jwt` (Auth)
   - `@nestjs/config` (Environment variables)
   - `class-validator`, `class-transformer` (DTO validation)
   - `@nestjs/swagger` (API docs)
-- [ ] Tạo folder structure theo module:
+- [x] Tạo folder structure theo module:
   ```
   src/
   ├── auth/
@@ -42,12 +42,12 @@ Khởi tạo 3 projects (backend, admin web, driver mobile), cài đặt depende
       ├── interceptors/
       └── decorators/
   ```
-- [ ] Tạo `.env.example` với các biến cần thiết
-- [ ] Setup Swagger API documentation
+- [x] Tạo `.env.example` với các biến cần thiết
+- [x] Setup Swagger API documentation
 
 ### 2. Admin Dashboard (fleet-admin)
-- [ ] Tạo Next.js project: `npx -y create-next-app@latest fleet-admin --typescript --app --eslint --src-dir`
-- [ ] Install UI dependencies:
+- [x] Tạo Next.js project: `npx -y create-next-app@latest fleet-admin --typescript --app --eslint --src-dir`
+- [x] Install UI dependencies:
   - `lucide-react` (icons)
   - `recharts` (charts)
   - `mapbox-gl`, `react-map-gl` (maps)
@@ -55,7 +55,7 @@ Khởi tạo 3 projects (backend, admin web, driver mobile), cài đặt depende
   - `@tanstack/react-query` (data fetching)
   - `react-hook-form`, `zod` (forms + validation)
   - `date-fns` (date formatting)
-- [ ] Setup folder structure:
+- [x] Setup folder structure:
   ```
   src/
   ├── app/
@@ -82,11 +82,11 @@ Khởi tạo 3 projects (backend, admin web, driver mobile), cài đặt depende
   ├── types/
   └── styles/
   ```
-- [ ] Tạo design system cơ bản (CSS variables, dark theme)
+- [x] Tạo design system cơ bản (CSS variables, dark theme)
 
 ### 3. Driver Mobile App (fleet-driver)
-- [ ] Tạo Expo project: `npx -y create-expo-app fleet-driver --template tabs`
-- [ ] Install dependencies:
+- [x] Tạo Expo project: `npx -y create-expo-app fleet-driver --template tabs`
+- [x] Install dependencies:
   - `expo-location` (GPS)
   - `expo-camera` (chụp ảnh xác nhận)
   - `expo-image-picker`
@@ -94,22 +94,22 @@ Khởi tạo 3 projects (backend, admin web, driver mobile), cài đặt depende
   - `socket.io-client` (WebSocket)
   - `@tanstack/react-query`
   - `expo-secure-store` (JWT storage)
-- [ ] Setup Expo Router navigation structure
+- [x] Setup Expo Router navigation structure
 
 ### 4. Infrastructure
-- [ ] Setup Supabase project (PostgreSQL + PostGIS)
-- [ ] Enable PostGIS extension
-- [ ] Tạo `.env` files cho cả 3 projects
-- [ ] Setup Git repo + `.gitignore`
-- [ ] Initial commit
+- [x] Setup Supabase project (PostgreSQL + PostGIS)
+- [x] Enable PostGIS extension
+- [x] Tạo `.env` files cho cả 3 projects
+- [x] Setup Git repo + `.gitignore`
+- [x] Initial commit
 
 ## Output Criteria
-- [ ] `fleet-api` chạy được: `npm run start:dev` → http://localhost:3001
-- [ ] `fleet-admin` chạy được: `npm run dev` → http://localhost:3000
-- [ ] `fleet-driver` chạy được: `npx expo start`
-- [ ] Swagger UI accessible tại http://localhost:3001/api
-- [ ] Supabase project ready với PostGIS enabled
-- [ ] Git repo với initial commit
+- [x] `fleet-api` chạy được: `npm run start:dev` → http://localhost:3001
+- [x] `fleet-admin` chạy được: `npm run dev` → http://localhost:3000
+- [x] `fleet-driver` chạy được: `npx expo start`
+- [x] Swagger UI accessible tại http://localhost:3001/api
+- [x] Supabase project ready với PostGIS enabled
+- [x] Git repo với initial commit
 
 ---
 
