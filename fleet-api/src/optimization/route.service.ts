@@ -16,6 +16,9 @@ export class RouteService {
    * @param waypoints Array of { lat, lng }
    */
   async getOptimalRoute(waypoints: { lat: number; lng: number }[]) {
+    if (!this.mapboxToken) {
+      throw new Error('MAPBOX_ACCESS_TOKEN is not configured');
+    }
     if (waypoints.length < 2) {
       throw new Error('At least 2 waypoints are required');
     }

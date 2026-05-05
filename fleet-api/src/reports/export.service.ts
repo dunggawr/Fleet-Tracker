@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import * as ExcelJS from 'exceljs';
-import * as PDFDocument from 'pdfkit';
-// @ts-ignore
-const PDFDocumentClass = PDFDocument.default || PDFDocument;
-import { Stream } from 'stream';
+import { PassThrough } from 'stream';
+
+const PDFDocument = require('pdfkit');
 
 @Injectable()
 export class ExportService {
@@ -54,7 +53,7 @@ export class ExportService {
 
   async exportPdf(data: any, reportTitle: string): Promise<Buffer> {
     return new Promise((resolve, reject) => {
-      const doc = new PDFDocumentClass();
+      const doc = new PDFDocument();
       const chunks: any[] = [];
 
       doc.on('data', (chunk) => chunks.push(chunk));

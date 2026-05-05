@@ -14,7 +14,6 @@ export const KPI_PENALTIES = {
 
 @Injectable()
 export class KpiService {
-  private readonly logger = new Logger(KpiService.name);
 
   constructor(
     @InjectRepository(DriverKpi)
@@ -42,9 +41,9 @@ export class KpiService {
   }
 
   @OnEvent('trip.status_changed')
-  async handleTripStatusChange(payload: { tripId: string; status: TripStatus }) {
+  async handleTripStatusChange(payload: { id: string; status: TripStatus }) {
     const trip = await this.tripRepository.findOne({
-      where: { id: payload.tripId },
+      where: { id: payload.id },
       relations: ['driver'],
     });
 
@@ -52,15 +51,14 @@ export class KpiService {
 
     const kpi = await this.getOrCreateKpi(trip.driver.id);
 
-    if (payload.status === TripStatus.ACCEPTED || payload.status === TripStatus.IN_PROGRESS) {
-        // We might want to increment total trips only once
-        // For simplicity, let's check if it's already counted or count on creation
+    if (payload.status === TripStatus.ACCEPTED) {
+      kpi.totalTrips += 1;
+      this.updateCompletionRate(kpi);
+      await this.kpiRepository.save(kpi);
     }
 
     if (payload.status === TripStatus.COMPLETED) {
       kpi.completedTrips += 1;
-      // Recalculate total trips if needed or keep tracked
-      // completion_rate = completed_trips / total_trips * 100
       this.updateCompletionRate(kpi);
       await this.kpiRepository.save(kpi);
     }

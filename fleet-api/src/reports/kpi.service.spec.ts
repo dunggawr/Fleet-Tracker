@@ -41,21 +41,34 @@ describe('KpiService Logic', () => {
     expect(mockKpi.kpiScore).toBe(0); // 5 - 10 = -5 -> 0
   });
 
-  it('should update completion rate correctly', async () => {
-    const mockKpi = { 
-        driverId: 'd1', 
-        totalTrips: 10, 
-        completedTrips: 4, 
-        completionRate: 40 
-    };
-    mockKpiRepository.findOne.mockResolvedValue(mockKpi);
-    mockTripRepository.findOne.mockResolvedValue({ id: 't1', driver: { id: 'd1' } });
+    it('should increment completedTrips on COMPLETED status', async () => {
+      const mockDriver = { id: 'driver-1' };
+      const mockTrip = { id: 'trip-1', driver: mockDriver };
+      const mockKpi = { driverId: 'driver-1', totalTrips: 1, completedTrips: 0, completionRate: 0 };
 
-    await kpiService.handleTripStatusChange({ tripId: 't1', status: TripStatus.COMPLETED });
+      mockTripRepository.findOne.mockResolvedValue(mockTrip);
+      mockKpiRepository.findOne.mockResolvedValue(mockKpi);
 
-    expect(mockKpi.completedTrips).toBe(5);
-    expect(mockKpi.completionRate).toBe(50); // (5/10) * 100
-  });
+      await kpiService.handleTripStatusChange({ id: 'trip-1', status: TripStatus.COMPLETED });
+
+      expect(mockKpi.completedTrips).toBe(1);
+      expect(mockKpi.completionRate).toBe(100);
+      expect(mockKpiRepository.save).toHaveBeenCalled();
+    });
+
+    it('should increment totalTrips on ACCEPTED status', async () => {
+      const mockDriver = { id: 'driver-1' };
+      const mockTrip = { id: 'trip-1', driver: mockDriver };
+      const mockKpi = { driverId: 'driver-1', totalTrips: 0, completedTrips: 0, completionRate: 0 };
+
+      mockTripRepository.findOne.mockResolvedValue(mockTrip);
+      mockKpiRepository.findOne.mockResolvedValue(mockKpi);
+
+      await kpiService.handleTripStatusChange({ id: 'trip-1', status: TripStatus.ACCEPTED });
+
+      expect(mockKpi.totalTrips).toBe(1);
+      expect(mockKpiRepository.save).toHaveBeenCalled();
+    });
 
   it('should return leaderboard sorted by kpiScore DESC', async () => {
     const mockLeaderboard = [

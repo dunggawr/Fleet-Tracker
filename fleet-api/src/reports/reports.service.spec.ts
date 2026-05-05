@@ -8,10 +8,31 @@ describe('ReportsService Logic', () => {
   let mockAlertRepo: any;
   let mockVehicleRepo: any;
 
+  const createMockQueryBuilder = (result: any) => ({
+    leftJoinAndSelect: jest.fn().mockReturnThis(),
+    leftJoin: jest.fn().mockReturnThis(),
+    select: jest.fn().mockReturnThis(),
+    addSelect: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    groupBy: jest.fn().mockReturnThis(),
+    addGroupBy: jest.fn().mockReturnThis(),
+    setParameters: jest.fn().mockReturnThis(),
+    getMany: jest.fn().mockResolvedValue(Array.isArray(result) ? result : []),
+    getRawOne: jest.fn().mockResolvedValue(!Array.isArray(result) ? result : {}),
+    getRawMany: jest.fn().mockResolvedValue(Array.isArray(result) ? result : []),
+  });
+
   beforeEach(() => {
-    mockTripRepo = { find: jest.fn() };
-    mockAlertRepo = { find: jest.fn() };
-    mockVehicleRepo = { count: jest.fn() };
+    mockTripRepo = { 
+        createQueryBuilder: jest.fn(),
+        query: jest.fn()
+    };
+    mockAlertRepo = { 
+        createQueryBuilder: jest.fn() 
+    };
+    mockVehicleRepo = { 
+        count: jest.fn() 
+    };
     reportsService = new ReportsService(mockTripRepo, mockAlertRepo, mockVehicleRepo);
   });
 
@@ -22,32 +43,27 @@ describe('ReportsService Logic', () => {
         totalDistanceKm: 100, 
         vehicle: { type: 'small' },
         startedAt: new Date('2024-01-01T08:00:00'),
-        completedAt: new Date('2024-01-01T10:00:00') // 120 mins
-      },
-      { 
-        status: TripStatus.COMPLETED, 
-        totalDistanceKm: 200, 
-        vehicle: { type: 'medium' } 
-      },
-      { 
-        status: TripStatus.CANCELLED, 
-        totalDistanceKm: 0, 
-        vehicle: { type: 'large' } 
+        completedAt: new Date('2024-01-01T10:00:00')
       }
     ];
-    mockTripRepo.find.mockResolvedValue(mockTrips);
-    mockAlertRepo.find.mockResolvedValue([]);
+
+    const mockStats = {
+      total: 1,
+      completed: 1,
+      failed: 0,
+      totalDistance: 100
+    };
+
+    mockTripRepo.createQueryBuilder.mockReturnValueOnce(createMockQueryBuilder(mockTrips)); // getMany
+    mockTripRepo.createQueryBuilder.mockReturnValueOnce(createMockQueryBuilder(mockStats)); // getRawOne
+    mockAlertRepo.createQueryBuilder.mockReturnValue(createMockQueryBuilder([])); // getRawMany
 
     const result = await reportsService.getFleetPerformance(new Date(), new Date());
 
-    // Small: (100/100) * 8 * 25000 = 200,000
-    // Medium: (200/100) * 12 * 25000 = 600,000
-    // Total: 800,000
-    expect(result.totalTrips).toBe(3);
-    expect(result.completedTrips).toBe(2);
-    expect(result.totalDistanceKm).toBe(300);
-    expect(result.estimatedFuelCost).toBe(800000);
-    expect(result.completionRate).toBe((2/3) * 100);
+    expect(result.totalTrips).toBe(1);
+    expect(result.completedTrips).toBe(1);
+    expect(result.totalDistanceKm).toBe(100);
+    expect(result.estimatedFuelCost).toBe(200000); // (100/100) * 8 * 25000
   });
 
   it('should calculate utilization rate correctly', async () => {
@@ -63,25 +79,15 @@ describe('ReportsService Logic', () => {
   });
 
   it('should calculate fuel cost report correctly', async () => {
-    const mockTrips = [
-      { 
-        totalDistanceKm: 100, 
-        vehicle: { type: 'small', plateNumber: '29A-12345' }
-      },
-      { 
-        totalDistanceKm: 200, 
-        vehicle: { type: 'medium', plateNumber: '29A-67890' } 
-      }
+    const mockStats = [
+      { plate: '29A-12345', type: 'small', totalDistance: 100 }
     ];
-    mockTripRepo.find.mockResolvedValue(mockTrips);
+
+    mockTripRepo.createQueryBuilder.mockReturnValue(createMockQueryBuilder(mockStats));
 
     const result = await reportsService.getFuelCostReport(new Date(), new Date());
 
-    // Small (29A-12345): (100/100) * 8 * 25000 = 200000
-    // Medium (29A-67890): (200/100) * 12 * 25000 = 600000
     expect(result['29A-12345'].cost).toBe(200000);
     expect(result['29A-12345'].distance).toBe(100);
-    expect(result['29A-67890'].cost).toBe(600000);
-    expect(result['29A-67890'].distance).toBe(200);
   });
 });

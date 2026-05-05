@@ -6,9 +6,10 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { ReportsService } from './reports.service';
 import { KpiService } from './kpi.service';
 import { ExportService } from './export.service';
-import type { Response } from 'express';
 import { Res } from '@nestjs/common';
 import { UserRole } from '../entities/user.entity';
+import { DateRangeDto } from './dto/date-range.dto';
+import { ExportReportDto, ExportType, ReportName } from './dto/export-report.dto';
 
 @ApiTags('Reports')
 @ApiBearerAuth()
@@ -24,11 +25,8 @@ export class ReportsController {
   @Get('fleet-performance')
   @Roles(UserRole.ADMIN, UserRole.DISPATCHER)
   @ApiOperation({ summary: 'Get overall fleet performance metrics' })
-  async getFleetPerformance(
-    @Query('from') from: string,
-    @Query('to') to: string,
-  ) {
-    return this.reportsService.getFleetPerformance(new Date(from), new Date(to));
+  async getFleetPerformance(@Query() query: DateRangeDto) {
+    return this.reportsService.getFleetPerformance(new Date(query.from), new Date(query.to));
   }
 
   @Get('driver-kpi/:driverId')
@@ -48,8 +46,8 @@ export class ReportsController {
   @Get('fuel-cost')
   @Roles(UserRole.ADMIN, UserRole.DISPATCHER)
   @ApiOperation({ summary: 'Get fuel cost report' })
-  async getFuelCost(@Query('from') from: string, @Query('to') to: string) {
-    return this.reportsService.getFuelCostReport(new Date(from), new Date(to));
+  async getFuelCost(@Query() query: DateRangeDto) {
+    return this.reportsService.getFuelCostReport(new Date(query.from), new Date(query.to));
   }
 
   @Get('vehicle-utilization')
@@ -63,30 +61,30 @@ export class ReportsController {
   @Roles(UserRole.ADMIN, UserRole.DISPATCHER)
   @ApiOperation({ summary: 'Export report to PDF or Excel' })
   async exportReport(
-    @Query('type') type: 'pdf' | 'excel',
-    @Query('report_name') reportName: string,
-    @Query('from') from: string,
-    @Query('to') to: string,
-    @Res() res: Response,
+    @Query() query: ExportReportDto,
+    @Res() res: any,
   ) {
     let data: any;
-    if (reportName === 'fleet-performance') {
-      data = await this.reportsService.getFleetPerformance(new Date(from), new Date(to));
-    } else if (reportName === 'fuel-cost') {
-      data = await this.reportsService.getFuelCostReport(new Date(from), new Date(to));
-    } else if (reportName === 'kpi-leaderboard') {
+    const from = query.from ? new Date(query.from) : new Date();
+    const to = query.to ? new Date(query.to) : new Date();
+
+    if (query.report_name === ReportName.FLEET_PERFORMANCE) {
+      data = await this.reportsService.getFleetPerformance(from, to);
+    } else if (query.report_name === ReportName.FUEL_COST) {
+      data = await this.reportsService.getFuelCostReport(from, to);
+    } else if (query.report_name === ReportName.KPI_LEADERBOARD) {
       data = await this.kpiService.getKpiLeaderboard();
     }
 
-    if (type === 'excel') {
-      const buffer = await this.exportService.exportExcel(data, reportName);
+    if (query.type === ExportType.EXCEL) {
+      const buffer = await this.exportService.exportExcel(data, query.report_name);
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      res.setHeader('Content-Disposition', `attachment; filename=${reportName}.xlsx`);
+      res.setHeader('Content-Disposition', `attachment; filename=${query.report_name}.xlsx`);
       return res.send(buffer);
     } else {
-      const buffer = await this.exportService.exportPdf(data, reportName);
+      const buffer = await this.exportService.exportPdf(data, query.report_name);
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename=${reportName}.pdf`);
+      res.setHeader('Content-Disposition', `attachment; filename=${query.report_name}.pdf`);
       return res.send(buffer);
     }
   }

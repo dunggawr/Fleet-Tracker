@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Trip } from '../entities/trip.entity';
 import { RouteService } from './route.service';
-import { Order } from '../entities/order.entity';
+import { Order, OrderStatus } from '../entities/order.entity';
 
 @Injectable()
 export class OptimizationService {
@@ -28,8 +28,9 @@ export class OptimizationService {
 
     // Find the next destination (first undelivered order)
     const nextOrder = trip.tripOrders
+      .sort((a, b) => a.sequence - b.sequence)
       .map((to) => to.order)
-      .find((o) => o.status !== 'delivered');
+      .find((o) => o.status !== OrderStatus.DELIVERED);
 
     if (!nextOrder) return null;
 
@@ -77,20 +78,20 @@ export class OptimizationService {
 
     if (!trip || trip.tripOrders.length === 0) return;
 
-    // Collect waypoints: Start (pickup of first order) -> ... -> End (delivery of last order)
-    // Simple version: sequential pickup and delivery
+    // Collect waypoints sorted by sequence
     const waypoints: { lat: number; lng: number }[] = [];
+    const sortedTripOrders = [...trip.tripOrders].sort((a, b) => a.sequence - b.sequence);
     
-    // Add pickups
-    for (const to of trip.tripOrders) {
+    // Add pickups first
+    for (const to of sortedTripOrders) {
       waypoints.push({
         lat: to.order.pickupLocation.coordinates[1],
         lng: to.order.pickupLocation.coordinates[0],
       });
     }
 
-    // Add deliveries
-    for (const to of trip.tripOrders) {
+    // Add deliveries in sequence
+    for (const to of sortedTripOrders) {
       waypoints.push({
         lat: to.order.deliveryLocation.coordinates[1],
         lng: to.order.deliveryLocation.coordinates[0],
