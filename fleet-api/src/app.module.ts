@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigService } from '@nestjs/config';
 import { User } from './entities/user.entity';
 import { Driver } from './entities/driver.entity';
 import { Vehicle } from './entities/vehicle.entity';
@@ -21,6 +21,8 @@ import { OrdersModule } from './orders/orders.module';
 import { UploadModule } from './upload/upload.module';
 import { DispatchModule } from './dispatch/dispatch.module';
 import { TripsModule } from './trips/trips.module';
+import { TrackingModule } from './tracking/tracking.module';
+import { AlertsModule } from './alerts/alerts.module';
 
 @Module({
   imports: [
@@ -29,6 +31,9 @@ import { TripsModule } from './trips/trips.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
+
+    // Event Emitter
+    EventEmitterModule.forRoot(),
 
     // Database connection
     TypeOrmModule.forRootAsync({
@@ -66,6 +71,8 @@ import { TripsModule } from './trips/trips.module';
     UploadModule,
     DispatchModule,
     TripsModule,
+    TrackingModule,
+    AlertsModule,
 
     // Modules to be added in future phases
     // TripsModule will be added in Phase 04
