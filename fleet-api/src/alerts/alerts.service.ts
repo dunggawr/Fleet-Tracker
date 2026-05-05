@@ -51,7 +51,13 @@ export class AlertsService {
       isResolved: true,
       resolvedAt: new Date(),
     });
-    return this.alertRepository.findOne({ where: { id } });
+
+    const resolvedAlert = await this.alertRepository.findOne({ where: { id } });
+    
+    // Emit resolved event
+    this.eventEmitter.emit('alert.resolved', resolvedAlert);
+
+    return resolvedAlert;
   }
 
   async getActiveAlerts() {

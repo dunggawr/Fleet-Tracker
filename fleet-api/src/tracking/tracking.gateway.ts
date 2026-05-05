@@ -43,6 +43,19 @@ export class TrackingGateway
     }
   }
 
+  @OnEvent('trip.status_changed')
+  handleTripStatusChange(payload: any) {
+    this.logger.log(`Broadcasting trip status change: ${payload.id} -> ${payload.status}`);
+    this.server.to('admin').emit('trip:status', payload);
+    this.server.to(`trip:${payload.id}`).emit('trip:status', payload);
+  }
+
+  @OnEvent('alert.resolved')
+  handleAlertResolved(payload: any) {
+    this.logger.log(`Broadcasting alert resolution: ${payload.id}`);
+    this.server.to('admin').emit('alert:resolved', payload);
+  }
+
   afterInit(server: Server) {
     this.logger.log('WebSocket Gateway Initialized');
   }

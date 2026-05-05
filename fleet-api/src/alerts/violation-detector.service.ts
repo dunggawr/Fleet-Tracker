@@ -10,7 +10,9 @@ import { AlertsService } from './alerts.service';
 export class ViolationDetectorService {
   private readonly logger = new Logger(ViolationDetectorService.name);
   private readonly MAX_SPEED = 80; // km/h
+  private readonly IDLE_THRESHOLD = 10 * 60 * 1000; // 10 minutes in ms
   private readonly ROUTE_DEVIATION_THRESHOLD = 500; // meters
+  private stopStartTimeMap = new Map<string, number>(); // vehicleId -> timestamp
 
   constructor(
     @InjectRepository(Trip)
@@ -21,7 +23,31 @@ export class ViolationDetectorService {
   async checkViolations(gpsData: GpsUpdateDto) {
     const { speed, tripId, vehicleId, latitude, longitude } = gpsData;
 
-    // 1. Speed Violation Check
+    // 1. Abnormal Stop Check
+    if (speed === 0) {
+      if (!this.stopStartTimeMap.has(vehicleId)) {
+        this.stopStartTimeMap.set(vehicleId, Date.now());
+      } else {
+        const stopDuration = Date.now() - (this.stopStartTimeMap.get(vehicleId) || Date.now());
+        if (stopDuration > this.IDLE_THRESHOLD) {
+          // Trigger alert if not already alerted (simple debounce)
+          if (stopDuration < this.IDLE_THRESHOLD + 30000) { // Alert once when threshold passed
+            await this.alertsService.createAlert({
+              tripId,
+              vehicleId,
+              type: AlertType.ABNORMAL_STOP,
+              severity: AlertSeverity.LOW,
+              message: `Xe dừng bất thường hơn 10 phút`,
+              location: { type: 'Point', coordinates: [longitude, latitude] },
+            });
+          }
+        }
+      }
+    } else {
+      this.stopStartTimeMap.delete(vehicleId);
+    }
+
+    // 2. Speed Violation Check
     if (speed > this.MAX_SPEED) {
       await this.alertsService.createAlert({
         tripId,
@@ -33,7 +59,7 @@ export class ViolationDetectorService {
       });
     }
 
-    // 2. Route Deviation Check
+    // 3. Route Deviation Check
     const trip = await this.tripRepository.findOne({ where: { id: tripId } });
     if (trip && trip.plannedRoute) {
       const distance = await this.calculateDistanceFromRoute(latitude, longitude, trip.id);

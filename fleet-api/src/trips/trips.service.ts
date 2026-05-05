@@ -7,6 +7,7 @@ import { Order, OrderStatus } from '../entities/order.entity';
 import { Vehicle, VehicleStatus } from '../entities/vehicle.entity';
 import { Driver, DriverStatus } from '../entities/driver.entity';
 import { DriverKpi } from '../entities/driver-kpi.entity';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class TripsService {
@@ -14,6 +15,7 @@ export class TripsService {
     @InjectRepository(Trip)
     private tripRepository: Repository<Trip>,
     private dataSource: DataSource,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   async findAll() {
@@ -182,6 +184,15 @@ export class TripsService {
 
       const savedTrip = await queryRunner.manager.save(Trip, trip);
       await queryRunner.commitTransaction();
+
+      // Emit status change event
+      this.eventEmitter.emit('trip.status_changed', {
+        id: savedTrip.id,
+        status: savedTrip.status,
+        vehicleId: savedTrip.vehicleId,
+        driverId: savedTrip.driverId,
+      });
+
       return savedTrip;
     } catch (err) {
       await queryRunner.rollbackTransaction();

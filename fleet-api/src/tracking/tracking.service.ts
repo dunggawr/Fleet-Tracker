@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { GpsLocation } from '../entities/gps-location.entity';
@@ -8,8 +8,11 @@ import { GpsUpdateDto } from './dto/gps-update.dto';
 import { ViolationDetectorService } from '../alerts/violation-detector.service';
 
 @Injectable()
-export class TrackingService {
+export class TrackingService implements OnModuleDestroy {
   private readonly logger = new Logger(TrackingService.name);
+  private gpsBuffer: any[] = [];
+  private readonly BATCH_INTERVAL = 5000; // 5 seconds
+  private flushInterval: NodeJS.Timeout;
 
   constructor(
     @InjectRepository(GpsLocation)
@@ -19,7 +22,31 @@ export class TrackingService {
     @InjectRepository(Trip)
     private readonly tripRepository: Repository<Trip>,
     private readonly violationDetector: ViolationDetectorService,
-  ) {}
+  ) {
+    // Start batch processing
+    this.flushInterval = setInterval(() => this.flushBuffer(), this.BATCH_INTERVAL);
+  }
+
+  onModuleDestroy() {
+    if (this.flushInterval) {
+      clearInterval(this.flushInterval);
+    }
+  }
+
+  private async flushBuffer() {
+    if (this.gpsBuffer.length === 0) return;
+
+    const batch = [...this.gpsBuffer];
+    this.gpsBuffer = [];
+
+    try {
+      await this.gpsRepository.save(batch);
+      this.logger.debug(`Flushed ${batch.length} GPS points to DB`);
+    } catch (error) {
+      this.logger.error(`Failed to flush GPS buffer: ${error.message}`);
+      // In production, might want to retry or put back in buffer
+    }
+  }
 
   async processGpsUpdate(data: GpsUpdateDto) {
     const { vehicleId, tripId, latitude, longitude, speed, heading, timestamp } = data;
@@ -30,7 +57,7 @@ export class TrackingService {
       coordinates: [longitude, latitude],
     };
 
-    // 2. Save GPS Location history
+    // 2. Add to buffer for batch insert
     const gpsLocation = this.gpsRepository.create({
       vehicleId,
       tripId,
@@ -39,7 +66,7 @@ export class TrackingService {
       heading,
       recordedAt: new Date(timestamp),
     });
-    await this.gpsRepository.save(gpsLocation);
+    this.gpsBuffer.push(gpsLocation);
 
     // 3. Update Vehicle's last known location
     await this.vehicleRepository.update(vehicleId, {
