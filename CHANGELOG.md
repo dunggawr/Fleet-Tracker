@@ -18,3 +18,12 @@ Tất cả các thay đổi quan trọng đối với dự án FleetTracker sẽ
 - Backend: Triển khai tính năng gán đơn hàng hàng loạt (`bulk-assign`).
 - Backend: Tích hợp tự động cập nhật KPI tài xế khi hoàn thành chuyến đi.
 - Backend: Thắt chặt logic validation trạng thái xe và tài xế trong quá trình gán đơn.
+
+## [2026-05-05] - Phase 06
+### Added
+- Backend: Triển khai **KPI Engine** tự động cập nhật điểm thưởng/phạt dựa trên sự kiện (Speed, Route, Stop, Incident).
+- Backend: Thêm **ReportsModule** hỗ trợ báo cáo hiệu suất đội xe, chi phí nhiên liệu và tỷ lệ sử dụng xe.
+- Backend: Tích hợp **ExportService** xuất báo cáo định dạng Excel (XLSX) và PDF.
+- Backend: Triển khai **OptimizationModule** tích hợp Mapbox Directions API để tối ưu tuyến đường.
+- Backend: Sử dụng PostGIS để tính quãng đường di chuyển thực tế từ lịch sử GPS.
+- Backend: Thêm bộ test suite tự động cho các logic tính toán quan trọng (KPI, Fuel, Optimization).
