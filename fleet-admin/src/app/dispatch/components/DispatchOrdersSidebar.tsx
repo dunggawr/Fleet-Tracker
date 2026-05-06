@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import type { Order } from '@/hooks/use-orders';
+import type { Order } from '@/types';
 
 export interface DispatchOrderGroup {
   key: string;
@@ -73,7 +73,7 @@ export function DispatchOrdersSidebar({
                   >
                     <div className="card-header">
                       <span className="order-id">{order.id.split('-')[0]}</span>
-                      <span className="order-weight">{order.weight}kg</span>
+                      <span className="order-weight">{order.weightKg}kg</span>
                     </div>
                     <div className="order-route">
                       <div className="point">
@@ -87,7 +87,6 @@ export function DispatchOrdersSidebar({
                       </div>
                     </div>
                     <div className="card-footer">
-                      <span className="customer-name">{order.customerName}</span>
                       <Button variant="ghost" size="sm">Details</Button>
                     </div>
                   </div>

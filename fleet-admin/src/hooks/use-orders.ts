@@ -1,15 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-
-export interface Order {
-  id: string;
-  customerName: string;
-  pickupAddress: string;
-  deliveryAddress: string;
-  weight: number;
-  status: 'Pending' | 'Assigned' | 'Picked_up' | 'Delivering' | 'Delivered' | 'Failed';
-  createdAt: string;
-}
+import { Order } from '@/types';
 
 export function useOrders() {
   const queryClient = useQueryClient();

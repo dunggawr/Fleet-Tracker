@@ -33,7 +33,7 @@ export default function DashboardPage() {
 
   const todayRevenue = orders.reduce((sum, order) => {
     const isToday = new Date(order.createdAt).toDateString() === new Date().toDateString();
-    return isToday && order.status === 'Delivered' ? sum + 1250000 : sum;
+    return isToday && order.status === 'delivered' ? sum + 1250000 : sum;
   }, 0);
 
   // Real statistics based on fetched data
@@ -47,14 +47,14 @@ export default function DashboardPage() {
     },
     { 
       label: 'Active Drivers', 
-      value: drivers.filter(d => d.status === 'Online').length, 
+      value: drivers.filter(d => d.status === 'available').length, 
       icon: Users, 
       trend: { value: 5, isUp: true }, 
       color: '#0ea5e9' 
     },
     { 
       label: 'Pending Orders', 
-      value: orders.filter(o => o.status === 'Pending').length, 
+      value: orders.filter(o => o.status === 'pending').length, 
       icon: ClipboardList, 
       trend: { value: 2, isUp: false }, 
       color: '#f59e0b' 
@@ -115,12 +115,12 @@ export default function DashboardPage() {
                 <div className="activity-info">
                   <div className="activity-title">
                     <span className="order-id">ORD-{order.id.substring(0, 4)}</span>
-                    <span className="text-dim">for</span>
-                    <span className="customer-name">{order.customerName}</span>
+                    <span className="text-dim">to</span>
+                    <span className="customer-name">{order.deliveryAddress}</span>
                   </div>
                   <span className="activity-time">{formatDistanceToNow(new Date(order.createdAt))} ago</span>
                 </div>
-                <Badge variant={order.status === 'Delivering' ? 'primary' : order.status === 'Assigned' ? 'success' : 'warning'}>
+                <Badge variant={order.status === 'delivering' ? 'primary' : order.status === 'assigned' ? 'success' : 'warning'}>
                   {order.status}
                 </Badge>
               </div>

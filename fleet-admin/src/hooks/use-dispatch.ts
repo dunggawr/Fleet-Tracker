@@ -7,12 +7,12 @@ export function useDispatch() {
   const { vehicles, isLoading: vehiclesLoading } = useVehicles();
 
   const pendingOrders = useMemo(
-    () => orders.filter((order) => order.status === 'Pending'),
+    () => orders.filter((order) => order.status === 'pending'),
     [orders],
   );
 
   const availableVehicles = useMemo(
-    () => vehicles.filter((vehicle) => vehicle.status === 'Active'),
+    () => vehicles.filter((vehicle) => vehicle.status === 'available'),
     [vehicles],
   );
 

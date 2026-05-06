@@ -14,7 +14,7 @@ export default function DispatchPage() {
 
   const filteredPendingOrders = React.useMemo(() => {
     return pendingOrders.filter((order) =>
-      [order.id, order.customerName, order.pickupAddress, order.deliveryAddress]
+      [order.id, order.pickupAddress, order.deliveryAddress]
         .join(' ')
         .toLowerCase()
         .includes(searchQuery.toLowerCase()),
@@ -25,7 +25,7 @@ export default function DispatchPage() {
     if (!clusterView) {
       return filteredPendingOrders.map((order) => ({
         key: order.id,
-        label: order.customerName,
+        label: `Order ${order.id.split('-')[0]}`,
         orders: [order],
       }));
     }

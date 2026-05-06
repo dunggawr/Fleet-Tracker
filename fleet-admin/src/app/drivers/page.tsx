@@ -4,7 +4,7 @@ import React from 'react';
 import { 
   Plus, 
   Filter, 
-  User, 
+  User as UserIcon, 
   Edit2, 
   Trash2, 
   Phone,
@@ -16,61 +16,63 @@ import { Button } from '@/components/ui/Button';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Modal } from '@/components/ui/Modal';
+import { Input } from '@/components/ui/Input';
 
-import { useDrivers, Driver } from '@/hooks/use-drivers';
+import { useDrivers } from '@/hooks/use-drivers';
+import { Driver } from '@/types';
+
+// For typing the backend response which includes the joined user
+interface DriverWithUser extends Driver {
+  user?: { email: string };
+}
 
 export default function DriversPage() {
-  const { drivers, isLoading } = useDrivers();
+  const { drivers, isLoading, registerDriver, isRegistering } = useDrivers();
   const [searchQuery, setSearchQuery] = React.useState('');
-  const [selectedDriver, setSelectedDriver] = React.useState<Driver | null>(null);
+  const [selectedDriver, setSelectedDriver] = React.useState<DriverWithUser | null>(null);
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
 
-  const filteredDrivers = drivers.filter(d => 
-    d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    d.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  const filteredDrivers = (drivers as DriverWithUser[]).filter(d => 
+    d.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (d.user?.email || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
     d.phone.includes(searchQuery)
   );
 
   const columns = [
     { 
       header: 'Driver', 
-      accessor: (d: Driver) => (
+      accessor: (d: DriverWithUser) => (
         <div className="driver-info">
           <div className="driver-avatar">
-            <User size={16} />
+            <UserIcon size={16} />
           </div>
           <div className="driver-details">
-            <span className="driver-name">{d.name}</span>
-            <span className="driver-email">{d.email}</span>
+            <span className="driver-name">{d.fullName}</span>
+            <span className="driver-email">{d.user?.email || 'N/A'}</span>
           </div>
         </div>
       )
     },
-    { header: 'Phone', accessor: 'phone' as keyof Driver },
+    { header: 'Phone', accessor: 'phone' as keyof DriverWithUser },
+    { 
+      header: 'License Class', 
+      accessor: 'licenseClass' as keyof DriverWithUser 
+    },
     { 
       header: 'Status', 
-      accessor: (d: Driver) => (
-        <Badge variant={d.status === 'Online' ? 'success' : d.status === 'Busy' ? 'primary' : 'neutral'}>
-          {d.status}
+      accessor: (d: DriverWithUser) => (
+        <Badge variant={d.status === 'available' ? 'success' : d.status === 'on_trip' ? 'primary' : 'neutral'}>
+          {d.status.replace('_', ' ')}
         </Badge>
       )
     },
-    { 
-      header: 'Rating', 
-      accessor: (d: Driver) => (
-        <div className="rating">
-          <Star size={14} className="star-icon" />
-          <span>{d.rating}</span>
-        </div>
-      )
-    },
-    { header: 'Trips', accessor: 'completedTrips' as keyof Driver },
     {
       header: 'Actions',
-      accessor: (d: Driver) => (
+      accessor: (d: DriverWithUser) => (
         <div className="action-buttons">
-          <Button variant="ghost" size="sm" icon={<Phone size={16} />} aria-label={`Call ${d.name}`} />
-          <Button variant="ghost" size="sm" icon={<Edit2 size={16} />} aria-label={`Edit ${d.name}`} />
-          <Button variant="ghost" size="sm" icon={<Trash2 size={16} />} className="text-danger" aria-label={`Delete ${d.name}`} />
+          <Button variant="ghost" size="sm" icon={<Phone size={16} />} aria-label={`Call ${d.fullName}`} />
+          <Button variant="ghost" size="sm" icon={<Edit2 size={16} />} aria-label={`Edit ${d.fullName}`} />
+          <Button variant="ghost" size="sm" icon={<Trash2 size={16} />} className="text-danger" aria-label={`Delete ${d.fullName}`} />
         </div>
       )
     }
@@ -83,7 +85,7 @@ export default function DriversPage() {
           <h1>Driver Management</h1>
           <p className="text-dim">Monitor driver performance, status, and contact information.</p>
         </div>
-        <Button variant="primary" icon={<Plus size={18} />}>
+        <Button variant="primary" icon={<Plus size={18} />} onClick={() => setIsModalOpen(true)}>
           Register New Driver
         </Button>
       </header>
@@ -97,11 +99,11 @@ export default function DriversPage() {
           <div className="driver-detail">
             <div className="driver-detail-header">
               <div className="driver-avatar large">
-                <User size={24} />
+                <UserIcon size={24} />
               </div>
               <div>
-                <h3>{selectedDriver.name}</h3>
-                <p className="text-dim">{selectedDriver.email}</p>
+                <h3>{selectedDriver.fullName}</h3>
+                <p className="text-dim">{selectedDriver.user?.email}</p>
               </div>
             </div>
             <div className="detail-grid">
@@ -111,17 +113,17 @@ export default function DriversPage() {
               </div>
               <div className="detail-item">
                 <span className="detail-label">Status</span>
-                <Badge variant={selectedDriver.status === 'Online' ? 'success' : selectedDriver.status === 'Busy' ? 'primary' : 'neutral'}>
-                  {selectedDriver.status}
+                <Badge variant={selectedDriver.status === 'available' ? 'success' : selectedDriver.status === 'on_trip' ? 'primary' : 'neutral'}>
+                  {selectedDriver.status.replace('_', ' ')}
                 </Badge>
               </div>
               <div className="detail-item">
-                <span className="detail-label">Rating</span>
-                <span>{selectedDriver.rating}</span>
+                <span className="detail-label">License Class</span>
+                <span>{selectedDriver.licenseClass}</span>
               </div>
               <div className="detail-item">
-                <span className="detail-label">Completed Trips</span>
-                <span>{selectedDriver.completedTrips}</span>
+                <span className="detail-label">Expiry</span>
+                <span>{selectedDriver.licenseExpiry ? new Date(selectedDriver.licenseExpiry).toLocaleDateString() : 'N/A'}</span>
               </div>
             </div>
           </div>
@@ -147,7 +149,7 @@ export default function DriversPage() {
             <LoadingSpinner size={32} />
           </div>
         ) : (
-          <DataTable data={filteredDrivers} columns={columns} onRowClick={(driver) => setSelectedDriver(driver)} />
+          <DataTable data={filteredDrivers} columns={columns} onRowClick={(driver) => setSelectedDriver(driver as DriverWithUser)} />
         )}
       </section>
 

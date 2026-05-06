@@ -16,18 +16,19 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Button } from '@/components/ui/Button';
 
-import { Loader2 } from 'lucide-react';
-
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { useVehicles } from '@/hooks/use-vehicles';
+import { Vehicle } from '@/types';
 
 const vehicleSchema = z.object({
   plateNumber: z.string().min(1, 'Plate number is required'),
-  type: z.string().min(1, 'Vehicle type is required'),
-  status: z.enum(['Active', 'Maintenance', 'Inactive']),
+  type: z.enum(['small', 'medium', 'large']),
+  status: z.enum(['available', 'delivering', 'maintenance']),
+  maxCapacityKg: z.number().min(100, 'Minimum capacity is 100kg'),
 });
 
 type VehicleFormValues = z.infer<typeof vehicleSchema>;
@@ -43,13 +44,15 @@ export default function VehiclesPage() {
   const { register, handleSubmit, reset, formState: { errors } } = useForm<VehicleFormValues>({
     resolver: zodResolver(vehicleSchema),
     defaultValues: {
-      status: 'Active'
+      status: 'available',
+      type: 'medium',
+      maxCapacityKg: 1000,
     }
   });
 
   const openCreateModal = () => {
     setSelectedVehicle(null);
-    reset({ plateNumber: '', type: '', status: 'Active' });
+    reset({ plateNumber: '', type: 'medium', status: 'available', maxCapacityKg: 1000 });
     setIsModalOpen(true);
   };
 
@@ -59,6 +62,7 @@ export default function VehiclesPage() {
       plateNumber: vehicle.plateNumber,
       type: vehicle.type,
       status: vehicle.status,
+      maxCapacityKg: vehicle.maxCapacityKg || 1000,
     });
     setIsModalOpen(true);
   };
@@ -66,7 +70,7 @@ export default function VehiclesPage() {
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedVehicle(null);
-    reset({ plateNumber: '', type: '', status: 'Active' });
+    reset();
   };
 
   const onSubmit = async (data: VehicleFormValues) => {
@@ -84,22 +88,25 @@ export default function VehiclesPage() {
 
   const filteredVehicles = vehicles.filter(v => 
     v.plateNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    v.driver?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+    v.driver?.fullName?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const columns = [
     { header: 'Plate Number', accessor: 'plateNumber' as keyof Vehicle },
-    { header: 'Type', accessor: 'type' as keyof Vehicle },
+    { 
+      header: 'Type', 
+      accessor: (v: Vehicle) => <span className="capitalize">{v.type}</span> 
+    },
     { 
       header: 'Status', 
       accessor: (v: Vehicle) => (
-        <Badge variant={v.status === 'Active' ? 'success' : v.status === 'Maintenance' ? 'warning' : 'neutral'}>
+        <Badge variant={v.status === 'available' ? 'success' : v.status === 'delivering' ? 'primary' : 'warning'}>
           {v.status}
         </Badge>
       )
     },
-    { header: 'Driver', accessor: (v: Vehicle) => v.driver?.name || 'Unassigned' },
-    { header: 'Last Service', accessor: 'lastService' as keyof Vehicle },
+    { header: 'Driver', accessor: (v: Vehicle) => v.driver?.fullName || 'Unassigned' },
+    { header: 'Capacity (kg)', accessor: 'maxCapacityKg' as keyof Vehicle },
     {
       header: 'Actions',
       accessor: (v: Vehicle) => (
@@ -144,17 +151,26 @@ export default function VehiclesPage() {
               error={errors.plateNumber?.message}
             />
             <Input 
-              label="Vehicle Type" 
-              placeholder="e.g. Truck, Van, Reefer" 
-              {...register('type')}
-              error={errors.type?.message}
+              label="Max Capacity (kg)" 
+              type="number"
+              {...register('maxCapacityKg', { valueAsNumber: true })}
+              error={errors.maxCapacityKg?.message}
             />
+            <div className="form-group">
+              <label className="label">Vehicle Type</label>
+              <select className="select" {...register('type')}>
+                <option value="small">Small</option>
+                <option value="medium">Medium</option>
+                <option value="large">Large</option>
+              </select>
+              {errors.type && <p className="error-text">{errors.type.message}</p>}
+            </div>
             <div className="form-group">
               <label className="label">Status</label>
               <select className="select" {...register('status')}>
-                <option value="Active">Active</option>
-                <option value="Maintenance">Maintenance</option>
-                <option value="Inactive">Inactive</option>
+                <option value="available">Available</option>
+                <option value="delivering">Delivering</option>
+                <option value="maintenance">Maintenance</option>
               </select>
               {errors.status && <p className="error-text">{errors.status.message}</p>}
             </div>
@@ -283,6 +299,9 @@ export default function VehiclesPage() {
           color: var(--color-danger);
           font-size: 12px;
           margin-top: 4px;
+        }
+        .capitalize {
+          text-transform: capitalize;
         }
       `}</style>
     </div>

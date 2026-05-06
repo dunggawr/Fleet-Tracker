@@ -1,16 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-
-export interface Driver {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  status: 'Online' | 'Offline' | 'Busy';
-  rating: number;
-  completedTrips: number;
-  currentVehicleId?: string;
-}
+import { Driver } from '@/types';
 
 export function useDrivers() {
   const queryClient = useQueryClient();
@@ -21,7 +11,7 @@ export function useDrivers() {
   });
 
   const registerDriverMutation = useMutation({
-    mutationFn: (data: Partial<Driver>) => api.post<Driver>('/drivers/register', data),
+    mutationFn: (data: Partial<Driver> & { email?: string; password?: string }) => api.post<Driver>('/drivers', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['drivers'] });
     },

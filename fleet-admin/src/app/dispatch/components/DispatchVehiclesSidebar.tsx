@@ -5,7 +5,7 @@ import { Truck, Users, MapPin, CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import type { Vehicle } from '@/hooks/use-vehicles';
+import type { Vehicle } from '@/types';
 
 interface DispatchVehiclesSidebarProps {
   availableVehicles: Vehicle[];
@@ -47,7 +47,7 @@ export function DispatchVehiclesSidebar({
               </div>
               <div className="driver-info">
                 <Users size={14} className="text-dim" />
-                <span>{vehicle.driver?.name || 'No driver assigned'}</span>
+                <span>{vehicle.driver?.fullName || 'No driver assigned'}</span>
               </div>
               <div className="location-info">
                 <MapPin size={14} className="text-dim" />

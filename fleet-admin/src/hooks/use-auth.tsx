@@ -7,8 +7,8 @@ import { api } from '@/lib/api';
 interface User {
   id: string;
   email: string;
-  fullName: string;
-  role: 'ADMIN' | 'DISPATCHER' | 'DRIVER';
+  fullName?: string;
+  role: 'admin' | 'dispatcher' | 'driver' | 'ADMIN' | 'DISPATCHER' | 'DRIVER';
 }
 
 interface AuthContextType {

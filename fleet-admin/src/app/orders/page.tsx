@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/Button';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
-import { useOrders, Order } from '@/hooks/use-orders';
+import { useOrders } from '@/hooks/use-orders';
 import { format } from 'date-fns';
 
 import { Modal } from '@/components/ui/Modal';
@@ -24,12 +24,13 @@ import { Input } from '@/components/ui/Input';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { Order } from '@/types';
 
 const orderSchema = z.object({
-  customerName: z.string().min(1, 'Customer name is required'),
   pickupAddress: z.string().min(1, 'Pickup address is required'),
   deliveryAddress: z.string().min(1, 'Delivery address is required'),
-  weight: z.number().min(0.1, 'Weight must be greater than 0'),
+  weightKg: z.number().min(0.1, 'Weight must be greater than 0'),
+  description: z.string().optional(),
 });
 
 type OrderFormValues = z.infer<typeof orderSchema>;
@@ -42,13 +43,19 @@ export default function OrdersPage() {
   const { register, handleSubmit, reset, formState: { errors } } = useForm<OrderFormValues>({
     resolver: zodResolver(orderSchema),
     defaultValues: {
-      weight: 1
+      weightKg: 1
     }
   });
 
   const onSubmit = async (data: OrderFormValues) => {
     try {
-      await createOrder(data);
+      await createOrder({
+        ...data,
+        pickupLat: 10.762622,
+        pickupLng: 106.660172,
+        deliveryLat: 10.772622,
+        deliveryLng: 106.670172,
+      } as any);
       setIsModalOpen(false);
       reset();
     } catch (err) {
@@ -58,18 +65,18 @@ export default function OrdersPage() {
 
   const filteredOrders = orders.filter(o => 
     o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    o.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     o.pickupAddress.toLowerCase().includes(searchQuery.toLowerCase()) ||
     o.deliveryAddress.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const getStatusVariant = (status: Order['status']) => {
     switch (status) {
-      case 'Delivered': return 'success';
-      case 'Delivering': return 'primary';
-      case 'Assigned': return 'success';
-      case 'Pending': return 'warning';
-      case 'Failed': return 'danger';
+      case 'delivered': return 'success';
+      case 'delivering': return 'primary';
+      case 'assigned': return 'success';
+      case 'pending': return 'warning';
+      case 'failed': return 'danger';
+      case 'cancelled': return 'neutral';
       default: return 'neutral';
     }
   };
@@ -84,7 +91,6 @@ export default function OrdersPage() {
         </div>
       )
     },
-    { header: 'Customer', accessor: 'customerName' as keyof Order },
     { 
       header: 'Route', 
       accessor: (o: Order) => (
@@ -101,12 +107,12 @@ export default function OrdersPage() {
         </div>
       )
     },
-    { header: 'Weight (kg)', accessor: 'weight' as keyof Order },
+    { header: 'Weight (kg)', accessor: 'weightKg' as keyof Order },
     { 
       header: 'Status', 
       accessor: (o: Order) => (
         <Badge variant={getStatusVariant(o.status)}>
-          {o.status.replace('_', ' ')}
+          {o.status?.replace('_', ' ')}
         </Badge>
       )
     },
@@ -153,17 +159,17 @@ export default function OrdersPage() {
         <form className="order-form" onSubmit={handleSubmit(onSubmit)}>
           <div className="form-grid">
             <Input 
-              label="Customer" 
-              placeholder="Customer Name" 
-              {...register('customerName')}
-              error={errors.customerName?.message}
-            />
-            <Input 
               label="Weight (kg)" 
               type="number"
               step="0.1"
-              {...register('weight', { valueAsNumber: true })}
-              error={errors.weight?.message}
+              {...register('weightKg', { valueAsNumber: true })}
+              error={errors.weightKg?.message}
+            />
+            <Input 
+              label="Description (Optional)" 
+              placeholder="E.g. Fragile items" 
+              {...register('description')}
+              error={errors.description?.message}
             />
             <Input 
               label="Pickup Address" 
@@ -183,7 +189,7 @@ export default function OrdersPage() {
 
       <section className="filters-bar card">
         <SearchInput
-          placeholder="Search by ID, customer or address..."
+          placeholder="Search by ID or address..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />

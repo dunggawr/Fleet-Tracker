@@ -1,18 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-
-export interface Vehicle {
-  id: string;
-  plateNumber: string;
-  type: string;
-  status: 'Active' | 'Maintenance' | 'Inactive';
-  lastService: string;
-  driverId?: string;
-  driver?: {
-    id: string;
-    name: string;
-  };
-}
+import { Vehicle } from '@/types';
 
 export function useVehicles() {
   const queryClient = useQueryClient();
