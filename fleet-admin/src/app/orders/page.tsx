@@ -3,7 +3,6 @@
 import React from 'react';
 import { 
   Plus, 
-  Search, 
   Filter, 
   MapPin, 
   Package, 
@@ -14,24 +13,55 @@ import {
 import { DataTable } from '@/components/ui/DataTable';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { SearchInput } from '@/components/ui/SearchInput';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
-interface Order {
-  id: string;
-  customer: string;
-  pickup: string;
-  delivery: string;
-  weight: number;
-  status: 'Pending' | 'Assigned' | 'Picked_up' | 'Delivering' | 'Delivered' | 'Failed';
-  createdAt: string;
-}
+import { useOrders, Order } from '@/hooks/use-orders';
+import { format } from 'date-fns';
+
+import { Modal } from '@/components/ui/Modal';
+import { Input } from '@/components/ui/Input';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+
+const orderSchema = z.object({
+  customerName: z.string().min(1, 'Customer name is required'),
+  pickupAddress: z.string().min(1, 'Pickup address is required'),
+  deliveryAddress: z.string().min(1, 'Delivery address is required'),
+  weight: z.number().min(0.1, 'Weight must be greater than 0'),
+});
+
+type OrderFormValues = z.infer<typeof orderSchema>;
 
 export default function OrdersPage() {
-  const orders: Order[] = [
-    { id: 'ORD-8291', customer: 'Global Logistics', pickup: '123 Harbor St, City A', delivery: '456 Business Park, City B', weight: 1500, status: 'Delivering', createdAt: '2024-05-06 08:30' },
-    { id: 'ORD-8290', customer: 'Fast Delivery Co', pickup: '789 Industrial Rd, City C', delivery: '101 Retail Mall, City A', weight: 450, status: 'Assigned', createdAt: '2024-05-06 09:15' },
-    { id: 'ORD-8289', customer: 'Eco Systems', pickup: '222 Green Way, City B', delivery: '333 Solar Ave, City C', weight: 800, status: 'Pending', createdAt: '2024-05-06 10:00' },
-    { id: 'ORD-8288', customer: 'Tech Parts Inc', pickup: '555 Silicon Blvd, City A', delivery: '666 Cloud Dr, City B', weight: 200, status: 'Delivered', createdAt: '2024-05-05 16:45' },
-  ];
+  const { orders, isLoading, createOrder, isCreating } = useOrders();
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<OrderFormValues>({
+    resolver: zodResolver(orderSchema),
+    defaultValues: {
+      weight: 1
+    }
+  });
+
+  const onSubmit = async (data: OrderFormValues) => {
+    try {
+      await createOrder(data);
+      setIsModalOpen(false);
+      reset();
+    } catch (err) {
+      console.error('Failed to create order:', err);
+    }
+  };
+
+  const filteredOrders = orders.filter(o => 
+    o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    o.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    o.pickupAddress.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    o.deliveryAddress.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const getStatusVariant = (status: Order['status']) => {
     switch (status) {
@@ -50,23 +80,23 @@ export default function OrdersPage() {
       accessor: (o: Order) => (
         <div className="order-id-cell">
           <Package size={16} />
-          <span>{o.id}</span>
+          <span>{o.id.split('-')[0]}</span>
         </div>
       )
     },
-    { header: 'Customer', accessor: 'customer' as keyof Order },
+    { header: 'Customer', accessor: 'customerName' as keyof Order },
     { 
       header: 'Route', 
       accessor: (o: Order) => (
         <div className="route-cell">
           <div className="route-point">
             <MapPin size={12} className="text-primary" />
-            <span>{o.pickup}</span>
+            <span>{o.pickupAddress}</span>
           </div>
           <ChevronRight size={14} className="text-dim" />
           <div className="route-point">
             <MapPin size={12} className="text-success" />
-            <span>{o.delivery}</span>
+            <span>{o.deliveryAddress}</span>
           </div>
         </div>
       )
@@ -85,7 +115,7 @@ export default function OrdersPage() {
       accessor: (o: Order) => (
         <div className="time-cell">
           <Clock size={14} />
-          <span>{o.createdAt}</span>
+          <span>{format(new Date(o.createdAt), 'yyyy-MM-dd HH:mm')}</span>
         </div>
       )
     },
@@ -104,25 +134,74 @@ export default function OrdersPage() {
           <h1>Order Management</h1>
           <p className="text-dim">Create, track and manage delivery orders for your fleet.</p>
         </div>
-        <Button variant="primary" icon={<Plus size={18} />}>
+        <Button variant="primary" icon={<Plus size={18} />} onClick={() => setIsModalOpen(true)}>
           Create New Order
         </Button>
       </header>
 
+      <Modal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        title="Create New Order"
+        footer={(
+          <>
+            <Button variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
+            <Button variant="primary" onClick={handleSubmit(onSubmit)} isLoading={isCreating}>Create Order</Button>
+          </>
+        )}
+      >
+        <form className="order-form" onSubmit={handleSubmit(onSubmit)}>
+          <div className="form-grid">
+            <Input 
+              label="Customer" 
+              placeholder="Customer Name" 
+              {...register('customerName')}
+              error={errors.customerName?.message}
+            />
+            <Input 
+              label="Weight (kg)" 
+              type="number"
+              step="0.1"
+              {...register('weight', { valueAsNumber: true })}
+              error={errors.weight?.message}
+            />
+            <Input 
+              label="Pickup Address" 
+              placeholder="Address or coordinates" 
+              {...register('pickupAddress')}
+              error={errors.pickupAddress?.message}
+            />
+            <Input 
+              label="Delivery Address" 
+              placeholder="Address or coordinates" 
+              {...register('deliveryAddress')}
+              error={errors.deliveryAddress?.message}
+            />
+          </div>
+        </form>
+      </Modal>
+
       <section className="filters-bar card">
-        <div className="search-box">
-          <Search size={18} className="search-icon" />
-          <input type="text" placeholder="Search by ID, customer or address..." />
-        </div>
+        <SearchInput
+          placeholder="Search by ID, customer or address..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
         <div className="filter-actions">
           <Button variant="secondary" size="md" icon={<Filter size={18} />}>Filters</Button>
           <div className="divider" />
-          <span className="results-count">Total <b>{orders.length}</b> orders</span>
+          <span className="results-count">Total <b>{filteredOrders.length}</b> orders</span>
         </div>
       </section>
 
       <section className="table-section">
-        <DataTable data={orders} columns={columns} />
+        {isLoading ? (
+          <div className="flex items-center justify-center h-64">
+            <LoadingSpinner size={32} />
+          </div>
+        ) : (
+          <DataTable data={filteredOrders} columns={columns} />
+        )}
       </section>
 
       <style jsx>{`
@@ -178,27 +257,27 @@ export default function OrdersPage() {
           padding: var(--space-md) var(--space-lg);
         }
 
-        .search-box {
-          display: flex;
-          align-items: center;
-          gap: var(--space-sm);
+        .filters-bar :global(.search-input-group) {
           flex: 1;
           max-width: 400px;
-        }
-
-        .search-box input {
-          background: transparent;
-          border: none;
-          color: var(--color-text);
-          font: var(--font-body-md);
-          outline: none;
-          width: 100%;
         }
 
         .divider {
           width: 1px;
           height: 24px;
           background: var(--color-border);
+        }
+
+        .form-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: var(--space-lg);
+        }
+
+        @media (max-width: 600px) {
+          .form-grid {
+            grid-template-columns: 1fr;
+          }
         }
       `}</style>
     </div>

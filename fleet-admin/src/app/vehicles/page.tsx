@@ -11,26 +11,81 @@ import {
 } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
 import { Badge } from '@/components/ui/Badge';
+import { SearchInput } from '@/components/ui/SearchInput';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Button } from '@/components/ui/Button';
 
-interface Vehicle {
-  id: string;
-  plateNumber: string;
-  type: string;
-  status: 'Active' | 'Maintenance' | 'Inactive';
-  lastService: string;
-  driver?: string;
-}
+import { Loader2 } from 'lucide-react';
+
+import { Modal } from '@/components/ui/Modal';
+import { Input } from '@/components/ui/Input';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+
+const vehicleSchema = z.object({
+  plateNumber: z.string().min(1, 'Plate number is required'),
+  type: z.string().min(1, 'Vehicle type is required'),
+  status: z.enum(['Active', 'Maintenance', 'Inactive']),
+});
+
+type VehicleFormValues = z.infer<typeof vehicleSchema>;
 
 export default function VehiclesPage() {
+  const { vehicles, isLoading, createVehicle, updateVehicle, deleteVehicle, isCreating, isUpdating, isDeleting } = useVehicles();
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [selectedVehicle, setSelectedVehicle] = React.useState<Vehicle | null>(null);
+  const [vehicleToDelete, setVehicleToDelete] = React.useState<Vehicle | null>(null);
+  const isEditing = Boolean(selectedVehicle);
 
-  const vehicles: Vehicle[] = [
-    { id: '1', plateNumber: 'VN-10292', type: 'Truck (Long Haul)', status: 'Active', lastService: '2024-03-15', driver: 'Nguyen Van A' },
-    { id: '2', plateNumber: 'VN-88210', type: 'Van (City)', status: 'Active', lastService: '2024-04-02', driver: 'Tran Thi B' },
-    { id: '3', plateNumber: 'VN-55612', type: 'Truck (Refrigerated)', status: 'Maintenance', lastService: '2024-04-20' },
-    { id: '4', plateNumber: 'VN-33901', type: 'Van (Electric)', status: 'Inactive', lastService: '2024-02-10' },
-  ];
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<VehicleFormValues>({
+    resolver: zodResolver(vehicleSchema),
+    defaultValues: {
+      status: 'Active'
+    }
+  });
+
+  const openCreateModal = () => {
+    setSelectedVehicle(null);
+    reset({ plateNumber: '', type: '', status: 'Active' });
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (vehicle: Vehicle) => {
+    setSelectedVehicle(vehicle);
+    reset({
+      plateNumber: vehicle.plateNumber,
+      type: vehicle.type,
+      status: vehicle.status,
+    });
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedVehicle(null);
+    reset({ plateNumber: '', type: '', status: 'Active' });
+  };
+
+  const onSubmit = async (data: VehicleFormValues) => {
+    try {
+      if (selectedVehicle) {
+        await updateVehicle({ id: selectedVehicle.id, ...data });
+      } else {
+        await createVehicle(data);
+      }
+      closeModal();
+    } catch (err) {
+      console.error('Failed to save vehicle:', err);
+    }
+  };
+
+  const filteredVehicles = vehicles.filter(v => 
+    v.plateNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    v.driver?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const columns = [
     { header: 'Plate Number', accessor: 'plateNumber' as keyof Vehicle },
@@ -43,15 +98,15 @@ export default function VehiclesPage() {
         </Badge>
       )
     },
-    { header: 'Driver', accessor: (v: Vehicle) => v.driver || 'Unassigned' },
+    { header: 'Driver', accessor: (v: Vehicle) => v.driver?.name || 'Unassigned' },
     { header: 'Last Service', accessor: 'lastService' as keyof Vehicle },
     {
       header: 'Actions',
-      accessor: () => (
+      accessor: (v: Vehicle) => (
         <div className="action-buttons">
-          <Button variant="ghost" size="sm" icon={<Eye size={16} />} />
-          <Button variant="ghost" size="sm" icon={<Edit2 size={16} />} />
-          <Button variant="ghost" size="sm" icon={<Trash2 size={16} />} className="text-danger" />
+          <Button variant="ghost" size="sm" icon={<Eye size={16} />} aria-label={`View ${v.plateNumber}`} />
+          <Button variant="ghost" size="sm" icon={<Edit2 size={16} />} aria-label={`Edit ${v.plateNumber}`} onClick={() => openEditModal(v)} />
+          <Button variant="ghost" size="sm" icon={<Trash2 size={16} />} className="text-danger" aria-label={`Delete ${v.plateNumber}`} onClick={() => setVehicleToDelete(v)} />
         </div>
       )
     }
@@ -64,30 +119,85 @@ export default function VehiclesPage() {
           <h1>Vehicle Management</h1>
           <p className="text-dim">Manage your fleet vehicles, maintenance schedules, and assignments.</p>
         </div>
-        <Button variant="primary" icon={<Plus size={18} />}>
+        <Button variant="primary" icon={<Plus size={18} />} onClick={openCreateModal}>
           Add New Vehicle
         </Button>
       </header>
 
+      <Modal 
+        isOpen={isModalOpen} 
+        onClose={closeModal} 
+        title={isEditing ? 'Edit Vehicle' : 'Add New Vehicle'}
+        footer={(
+          <>
+            <Button variant="secondary" onClick={closeModal}>Cancel</Button>
+            <Button variant="primary" onClick={handleSubmit(onSubmit)} isLoading={isCreating || isUpdating}>{isEditing ? 'Save Changes' : 'Create Vehicle'}</Button>
+          </>
+        )}
+      >
+        <form className="vehicle-form" onSubmit={handleSubmit(onSubmit)}>
+          <div className="form-grid">
+            <Input 
+              label="Plate Number" 
+              placeholder="e.g. 29A-12345" 
+              {...register('plateNumber')}
+              error={errors.plateNumber?.message}
+            />
+            <Input 
+              label="Vehicle Type" 
+              placeholder="e.g. Truck, Van, Reefer" 
+              {...register('type')}
+              error={errors.type?.message}
+            />
+            <div className="form-group">
+              <label className="label">Status</label>
+              <select className="select" {...register('status')}>
+                <option value="Active">Active</option>
+                <option value="Maintenance">Maintenance</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+              {errors.status && <p className="error-text">{errors.status.message}</p>}
+            </div>
+          </div>
+        </form>
+      </Modal>
+
+      <ConfirmDialog
+        open={Boolean(vehicleToDelete)}
+        title="Delete vehicle"
+        description={`Delete ${vehicleToDelete?.plateNumber || 'this vehicle'}? This action cannot be undone.`}
+        confirmLabel="Delete"
+        confirmVariant="danger"
+        isLoading={isDeleting}
+        onClose={() => setVehicleToDelete(null)}
+        onConfirm={async () => {
+          if (!vehicleToDelete) return;
+          await deleteVehicle(vehicleToDelete.id);
+          setVehicleToDelete(null);
+        }}
+      />
+
       <section className="filters-bar card">
-        <div className="search-box">
-          <Search size={18} className="search-icon" />
-          <input 
-            type="text" 
-            placeholder="Search by plate number or driver..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
+        <SearchInput
+          placeholder="Search by plate number or driver..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
         <div className="filter-actions">
           <Button variant="secondary" size="md" icon={<Filter size={18} />}>Filters</Button>
           <div className="divider" />
-          <span className="results-count">Showing <b>{vehicles.length}</b> vehicles</span>
+          <span className="results-count">Showing <b>{filteredVehicles.length}</b> vehicles</span>
         </div>
       </section>
 
       <section className="table-section">
-        <DataTable data={vehicles} columns={columns} />
+        {isLoading ? (
+          <div className="flex items-center justify-center h-64">
+            <LoadingSpinner size={32} />
+          </div>
+        ) : (
+          <DataTable data={filteredVehicles} columns={columns} />
+        )}
       </section>
 
       <style jsx>{`
@@ -110,25 +220,9 @@ export default function VehiclesPage() {
           padding: var(--space-md) var(--space-lg);
         }
 
-        .search-box {
-          display: flex;
-          align-items: center;
-          gap: var(--space-sm);
+        .filters-bar :global(.search-input-group) {
           flex: 1;
           max-width: 400px;
-        }
-
-        .search-box input {
-          background: transparent;
-          border: none;
-          color: var(--color-text);
-          font: var(--font-body-md);
-          outline: none;
-          width: 100%;
-        }
-
-        .search-icon {
-          color: var(--color-text-dim);
         }
 
         .filter-actions {
@@ -151,6 +245,44 @@ export default function VehiclesPage() {
         .action-buttons {
           display: flex;
           gap: 4px;
+        }
+
+        .form-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: var(--space-lg);
+        }
+
+        .form-group {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .label {
+          font: var(--font-label-md);
+          color: var(--color-text-dim);
+        }
+
+        .select {
+          background: var(--color-surface-low);
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-default);
+          color: var(--color-text);
+          padding: 10px 12px;
+          font: var(--font-body-md);
+          outline: none;
+          transition: border-color 0.2s;
+        }
+
+        .select:focus {
+          border-color: var(--color-primary);
+        }
+
+        .error-text {
+          color: var(--color-danger);
+          font-size: 12px;
+          margin-top: 4px;
         }
       `}</style>
     </div>

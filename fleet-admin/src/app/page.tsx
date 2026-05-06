@@ -8,32 +8,79 @@ import {
   TrendingUp, 
   AlertTriangle,
   Clock,
-  ArrowRight
+  ArrowRight,
+  Loader2
 } from 'lucide-react';
 import { StatCard } from '@/components/ui/StatCard';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { useVehicles } from '@/hooks/use-vehicles';
+import { useDrivers } from '@/hooks/use-drivers';
+import { useOrders } from '@/hooks/use-orders';
+import { formatDistanceToNow } from 'date-fns';
 
 export default function DashboardPage() {
-  // Mock data for initial UI
+  const { vehicles, isLoading: vehiclesLoading } = useVehicles();
+  const { drivers, isLoading: driversLoading } = useDrivers();
+  const { orders, isLoading: ordersLoading } = useOrders();
+
+  const isLoading = vehiclesLoading || driversLoading || ordersLoading;
+  const currency = new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    maximumFractionDigits: 0,
+  });
+
+  const todayRevenue = orders.reduce((sum, order) => {
+    const isToday = new Date(order.createdAt).toDateString() === new Date().toDateString();
+    return isToday && order.status === 'Delivered' ? sum + 1250000 : sum;
+  }, 0);
+
+  // Real statistics based on fetched data
   const stats = [
-    { label: 'Total Vehicles', value: 42, icon: Truck, trend: { value: 12, isUp: true }, color: '#6366f1' },
-    { label: 'Active Drivers', value: 38, icon: Users, trend: { value: 5, isUp: true }, color: '#0ea5e9' },
-    { label: 'Pending Orders', value: 15, icon: ClipboardList, trend: { value: 2, isUp: false }, color: '#f59e0b' },
-    { label: 'Today Revenue', value: '$12,450', icon: TrendingUp, trend: { value: 8, isUp: true }, color: '#10b981' },
+    { 
+      label: 'Total Vehicles', 
+      value: vehicles.length, 
+      icon: Truck, 
+      trend: { value: 12, isUp: true }, 
+      color: '#6366f1' 
+    },
+    { 
+      label: 'Active Drivers', 
+      value: drivers.filter(d => d.status === 'Online').length, 
+      icon: Users, 
+      trend: { value: 5, isUp: true }, 
+      color: '#0ea5e9' 
+    },
+    { 
+      label: 'Pending Orders', 
+      value: orders.filter(o => o.status === 'Pending').length, 
+      icon: ClipboardList, 
+      trend: { value: 2, isUp: false }, 
+      color: '#f59e0b' 
+    },
+    { 
+      label: 'Today Revenue', 
+      value: currency.format(todayRevenue), 
+      icon: TrendingUp, 
+      trend: { value: 8, isUp: true }, 
+      color: '#10b981' 
+    },
   ];
 
-  const recentOrders = [
-    { id: 'ORD-8291', customer: 'Global Logistics', status: 'Delivering', time: '10 mins ago' },
-    { id: 'ORD-8290', customer: 'Fast Delivery Co', status: 'Assigned', time: '25 mins ago' },
-    { id: 'ORD-8289', customer: 'Eco Systems', status: 'Pending', time: '1 hour ago' },
-  ];
+  const recentOrders = orders
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 5);
 
   const alerts = [
     { type: 'speed', message: 'Vehicle VN-102 exceeding speed limit (85km/h)', time: '2 mins ago' },
     { type: 'route', message: 'Vehicle VN-045 diverted from planned route', time: '15 mins ago' },
     { type: 'stop', message: 'Vehicle VN-088 unplanned stop > 30 mins', time: '40 mins ago' },
   ];
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-64"><Loader2 className="animate-spin" size={32} /></div>;
+  }
 
   return (
     <div className="dashboard-container">
@@ -67,11 +114,11 @@ export default function DashboardPage() {
                 </div>
                 <div className="activity-info">
                   <div className="activity-title">
-                    <span className="order-id">{order.id}</span>
+                    <span className="order-id">ORD-{order.id.substring(0, 4)}</span>
                     <span className="text-dim">for</span>
-                    <span className="customer-name">{order.customer}</span>
+                    <span className="customer-name">{order.customerName}</span>
                   </div>
-                  <span className="activity-time">{order.time}</span>
+                  <span className="activity-time">{formatDistanceToNow(new Date(order.createdAt))} ago</span>
                 </div>
                 <Badge variant={order.status === 'Delivering' ? 'primary' : order.status === 'Assigned' ? 'success' : 'warning'}>
                   {order.status}

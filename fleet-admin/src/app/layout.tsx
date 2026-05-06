@@ -18,6 +18,7 @@ export const metadata: Metadata = {
 };
 
 import { AppLayout } from "@/components/layout/AppLayout";
+import { Providers } from "@/components/providers/Providers";
 
 export default function RootLayout({
   children,
@@ -27,7 +28,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>
-        <AppLayout>{children}</AppLayout>
+        <Providers>
+          <AppLayout>{children}</AppLayout>
+        </Providers>
       </body>
     </html>
   );

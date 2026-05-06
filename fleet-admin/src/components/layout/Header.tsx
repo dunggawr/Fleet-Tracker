@@ -4,12 +4,16 @@ import React from 'react';
 import { 
   Bell, 
   Search, 
-  User,
+  User as UserIcon,
   ChevronDown,
-  Globe
+  Globe,
+  LogOut
 } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
 
 export function Header() {
+  const { user, logout } = useAuth();
+
   return (
     <header className="header glass">
       <div className="search-container">
@@ -32,15 +36,21 @@ export function Header() {
           <span className="notification-badge">3</span>
         </button>
 
-        <div className="user-profile">
-          <div className="avatar">
-            <User size={20} />
+        <div className="user-profile-group">
+          <div className="user-profile">
+            <div className="avatar">
+              <UserIcon size={20} />
+            </div>
+            <div className="user-info">
+              <span className="user-name">{user?.fullName || 'Admin User'}</span>
+              <span className="user-role">{user?.role || 'Fleet Manager'}</span>
+            </div>
+            <ChevronDown size={16} className="dropdown-icon" />
           </div>
-          <div className="user-info">
-            <span className="user-name">Admin User</span>
-            <span className="user-role">Fleet Manager</span>
-          </div>
-          <ChevronDown size={16} className="dropdown-icon" />
+          
+          <button className="logout-btn" onClick={logout} title="Logout">
+            <LogOut size={18} />
+          </button>
         </div>
       </div>
 
@@ -134,18 +144,47 @@ export function Header() {
           border: 2px solid var(--color-surface);
         }
 
+        .user-profile-group {
+          display: flex;
+          align-items: center;
+          gap: var(--space-sm);
+          background: var(--color-surface-low);
+          padding: 4px;
+          border-radius: var(--radius-default);
+          border: 1px solid var(--color-border);
+        }
+
         .user-profile {
           display: flex;
           align-items: center;
           gap: var(--space-md);
           padding: 4px 8px;
-          border-radius: var(--radius-default);
+          border-radius: var(--radius-sm);
           cursor: pointer;
           transition: background var(--transition-fast);
         }
 
         .user-profile:hover {
           background: var(--color-surface-high);
+        }
+
+        .logout-btn {
+          background: transparent;
+          border: none;
+          color: var(--color-text-dim);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 36px;
+          height: 36px;
+          border-radius: var(--radius-sm);
+          cursor: pointer;
+          transition: all var(--transition-fast);
+        }
+
+        .logout-btn:hover {
+          background: rgba(239, 68, 68, 0.1);
+          color: var(--color-danger);
         }
 
         .avatar {

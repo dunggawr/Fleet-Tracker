@@ -27,3 +27,8 @@ Tất cả các thay đổi quan trọng đối với dự án FleetTracker sẽ
 - Backend: Triển khai **OptimizationModule** tích hợp Mapbox Directions API để tối ưu tuyến đường.
 - Backend: Sử dụng PostGIS để tính quãng đường di chuyển thực tế từ lịch sử GPS.
 - Backend: Thêm bộ test suite tự động cho các logic tính toán quan trọng (KPI, Fuel, Optimization).
+
+## [2026-05-06]
+### Updated
+- Đồng bộ trạng thái tài liệu: Phase 05 (Real-time GPS & Alerts) và Phase 06 (Reports & Optimization) đã hoàn tất trong backend.
+- Cập nhật kế hoạch phát triển để phản ánh đúng tiến độ hiện tại của dự án.
