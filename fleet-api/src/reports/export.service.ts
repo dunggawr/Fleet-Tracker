@@ -37,12 +37,12 @@ export class ExportService {
         { header: 'Metric', key: 'metric', width: 30 },
         { header: 'Value', key: 'value', width: 20 },
       ];
-      
+
       Object.entries(data).forEach(([key, value]) => {
         if (typeof value === 'object') {
-           worksheet.addRow({ metric: key, value: JSON.stringify(value) });
+          worksheet.addRow({ metric: key, value: JSON.stringify(value) });
         } else {
-           worksheet.addRow({ metric: key, value });
+          worksheet.addRow({ metric: key, value });
         }
       });
     }

@@ -38,4 +38,12 @@ Tất cả các thay đổi quan trọng đối với dự án FleetTracker sẽ
     - Cập nhật script `comprehensive-seed.ts` để khởi tạo dữ liệu mẫu cho toàn bộ hệ thống.
 ### Fixed
 - Lỗi mismatch kiểu dữ liệu giữa Frontend và Backend (Status ENUMs, field names như `customerName` vs `deliveryAddress`).
-- Lỗi compile TypeScript trong dự án `fleet-admin`.
+## [2026-05-07]
+### Added
+- Backend: Thêm biến môi trường cho mật khẩu seeding (`ADMIN_PASSWORD`, `DRIVER_PASSWORD`, `DISPATCHER_PASSWORD`).
+- Backend: Bổ sung kiểm tra địa chỉ nhận/giao không trùng nhau trong `OrdersService`.
+### Fixed
+- Backend: Chuyển `synchronize: true` sang chỉ áp dụng cho môi trường development.
+- Backend: Cấu hình hardened cho `UploadService` (config validation, robust extension extraction).
+- Backend: Sửa lỗi TypeScript compile trong `AuthService` và `CreateOrderDto`.
+- Backend: Sử dụng Enum `DriverStatus` thay vì hardcoded string trong `seed.ts`.

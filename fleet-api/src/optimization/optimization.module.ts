@@ -7,10 +7,7 @@ import { OptimizationService } from './optimization.service';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Trip, Order]),
-    ConfigModule,
-  ],
+  imports: [TypeOrmModule.forFeature([Trip, Order]), ConfigModule],
   providers: [RouteService, OptimizationService],
   exports: [RouteService, OptimizationService],
 })

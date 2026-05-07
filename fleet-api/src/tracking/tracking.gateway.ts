@@ -38,7 +38,7 @@ export class TrackingGateway
   handleNewAlert(payload: any) {
     this.logger.log(`Broadcasting alert: ${payload.type}`);
     this.server.to('admin').emit('alert:new', payload);
-    
+
     // Also notify the driver if relevant
     if (payload.driverId) {
       this.server.to(`driver:${payload.driverId}`).emit('alert:yours', payload);
@@ -47,7 +47,9 @@ export class TrackingGateway
 
   @OnEvent('trip.status_changed')
   handleTripStatusChange(payload: any) {
-    this.logger.log(`Broadcasting trip status change: ${payload.id} -> ${payload.status}`);
+    this.logger.log(
+      `Broadcasting trip status change: ${payload.id} -> ${payload.status}`,
+    );
     this.server.to('admin').emit('trip:status', payload);
     this.server.to(`trip:${payload.id}`).emit('trip:status', payload);
   }
@@ -67,7 +69,9 @@ export class TrackingGateway
       const token = this.extractToken(client);
 
       if (!token) {
-        this.logger.warn(`Client connection rejected: No token provided. ID: ${client.id}, Handshake: ${JSON.stringify(client.handshake.headers)}`);
+        this.logger.warn(
+          `Client connection rejected: No token provided. ID: ${client.id}, Handshake: ${JSON.stringify(client.handshake.headers)}`,
+        );
         client.disconnect();
         return;
       }
@@ -81,12 +85,16 @@ export class TrackingGateway
         this.logger.log(`Admin/Dispatcher connected: ${client.id}`);
       } else if (payload.role === 'driver') {
         client.join(`driver:${payload.id}`);
-        this.logger.log(`Driver connected: ${client.id} (Driver ID: ${payload.id})`);
+        this.logger.log(
+          `Driver connected: ${client.id} (Driver ID: ${payload.id})`,
+        );
       }
 
       this.logger.log(`Client connected: ${client.id}`);
     } catch (error) {
-      this.logger.error(`Connection error for client ${client.id}: ${error.message}`);
+      this.logger.error(
+        `Connection error for client ${client.id}: ${error.message}`,
+      );
       client.disconnect();
     }
   }
@@ -101,7 +109,7 @@ export class TrackingGateway
     @MessageBody() data: GpsUpdateDto,
   ) {
     const user = client.data.user;
-    
+
     // Authorization: Only drivers can update GPS (or admin for testing)
     if (user.role !== 'driver' && user.role !== 'admin') {
       return { event: 'error', data: 'Unauthorized to send GPS updates' };
@@ -109,14 +117,17 @@ export class TrackingGateway
 
     try {
       const result = await this.trackingService.processGpsUpdate(data);
-      
+
       // Broadcast to all admins
       this.server.to('admin').emit('vehicle:location', result);
 
       // Also broadcast to the specific trip room if implemented
       this.server.to(`trip:${data.tripId}`).emit('trip:location', result);
 
-      return { event: 'gps:received', data: { timestamp: new Date().toISOString() } };
+      return {
+        event: 'gps:received',
+        data: { timestamp: new Date().toISOString() },
+      };
     } catch (error) {
       this.logger.error(`Error processing GPS update: ${error.message}`);
       return { event: 'error', data: error.message };
@@ -155,7 +166,9 @@ export class TrackingGateway
         const cookies = cookie.parse(client.handshake.headers.cookie);
         return cookies['access_token'];
       } catch (e) {
-        this.logger.error(`Error parsing cookies for client ${client.id}: ${e.message}`);
+        this.logger.error(
+          `Error parsing cookies for client ${client.id}: ${e.message}`,
+        );
       }
     }
 

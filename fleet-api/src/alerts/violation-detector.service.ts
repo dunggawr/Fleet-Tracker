@@ -28,10 +28,12 @@ export class ViolationDetectorService {
       if (!this.stopStartTimeMap.has(vehicleId)) {
         this.stopStartTimeMap.set(vehicleId, Date.now());
       } else {
-        const stopDuration = Date.now() - (this.stopStartTimeMap.get(vehicleId) || Date.now());
+        const stopDuration =
+          Date.now() - (this.stopStartTimeMap.get(vehicleId) || Date.now());
         if (stopDuration > this.IDLE_THRESHOLD) {
           // Trigger alert if not already alerted (simple debounce)
-          if (stopDuration < this.IDLE_THRESHOLD + 30000) { // Alert once when threshold passed
+          if (stopDuration < this.IDLE_THRESHOLD + 30000) {
+            // Alert once when threshold passed
             await this.alertsService.createAlert({
               tripId,
               vehicleId,
@@ -62,7 +64,11 @@ export class ViolationDetectorService {
     // 3. Route Deviation Check
     const trip = await this.tripRepository.findOne({ where: { id: tripId } });
     if (trip && trip.plannedRoute) {
-      const distance = await this.calculateDistanceFromRoute(latitude, longitude, trip.id);
+      const distance = await this.calculateDistanceFromRoute(
+        latitude,
+        longitude,
+        trip.id,
+      );
       if (distance > this.ROUTE_DEVIATION_THRESHOLD) {
         await this.alertsService.createAlert({
           tripId,
@@ -76,7 +82,11 @@ export class ViolationDetectorService {
     }
   }
 
-  private async calculateDistanceFromRoute(lat: number, lng: number, tripId: string): Promise<number> {
+  private async calculateDistanceFromRoute(
+    lat: number,
+    lng: number,
+    tripId: string,
+  ): Promise<number> {
     const result = await this.tripRepository.query(
       `SELECT ST_Distance(
         ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography,

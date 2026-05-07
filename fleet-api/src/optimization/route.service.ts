@@ -8,7 +8,8 @@ export class RouteService {
   private readonly mapboxToken: string;
 
   constructor(private configService: ConfigService) {
-    this.mapboxToken = this.configService.get<string>('MAPBOX_ACCESS_TOKEN') || '';
+    this.mapboxToken =
+      this.configService.get<string>('MAPBOX_ACCESS_TOKEN') || '';
   }
 
   /**
@@ -23,12 +24,10 @@ export class RouteService {
       throw new Error('At least 2 waypoints are required');
     }
 
-    const coordinates = waypoints
-      .map((wp) => `${wp.lng},${wp.lat}`)
-      .join(';');
+    const coordinates = waypoints.map((wp) => `${wp.lng},${wp.lat}`).join(';');
 
     const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coordinates}`;
-    
+
     try {
       const response = await axios.get(url, {
         params: {
@@ -59,7 +58,10 @@ export class RouteService {
   /**
    * Re-calculate route from current location to destination
    */
-  async reRoute(currentLocation: { lat: number; lng: number }, destination: { lat: number; lng: number }) {
+  async reRoute(
+    currentLocation: { lat: number; lng: number },
+    destination: { lat: number; lng: number },
+  ) {
     return this.getOptimalRoute([currentLocation, destination]);
   }
 }

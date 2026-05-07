@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsString,
   MinLength,
+  Matches,
 } from 'class-validator';
 import { DriverStatus } from '../../entities/driver.entity';
 
@@ -29,6 +30,9 @@ export class CreateDriverDto {
   @ApiProperty({ example: '0912345678' })
   @IsString()
   @IsNotEmpty()
+  @Matches(/(03|05|07|08|09|01[2|6|8|9])+([0-9]{8})\b/, {
+    message: 'Invalid Vietnam phone number format',
+  })
   phone: string;
 
   @ApiProperty({ example: 'B2', required: false })

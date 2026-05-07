@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Param, Put, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
 import { AlertsService } from './alerts.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -30,7 +38,15 @@ export class AlertsController {
 
   @Post('report-incident')
   @Roles(UserRole.DRIVER)
-  async reportIncident(@Body() data: { tripId: string; vehicleId: string; message: string; location: any }) {
+  async reportIncident(
+    @Body()
+    data: {
+      tripId: string;
+      vehicleId: string;
+      message: string;
+      location: any;
+    },
+  ) {
     return this.alertsService.createAlert({
       ...data,
       type: 'MANUAL_REPORT',

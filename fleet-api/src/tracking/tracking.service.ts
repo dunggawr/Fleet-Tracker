@@ -24,7 +24,10 @@ export class TrackingService implements OnModuleDestroy {
     private readonly violationDetector: ViolationDetectorService,
   ) {
     // Start batch processing
-    this.flushInterval = setInterval(() => this.flushBuffer(), this.BATCH_INTERVAL);
+    this.flushInterval = setInterval(
+      () => this.flushBuffer(),
+      this.BATCH_INTERVAL,
+    );
   }
 
   onModuleDestroy() {
@@ -49,7 +52,15 @@ export class TrackingService implements OnModuleDestroy {
   }
 
   async processGpsUpdate(data: GpsUpdateDto) {
-    const { vehicleId, tripId, latitude, longitude, speed, heading, timestamp } = data;
+    const {
+      vehicleId,
+      tripId,
+      latitude,
+      longitude,
+      speed,
+      heading,
+      timestamp,
+    } = data;
 
     // 1. Create PostGIS Point
     const point = {
@@ -70,13 +81,17 @@ export class TrackingService implements OnModuleDestroy {
 
     // 3. Update Vehicle's last known location
     await this.vehicleRepository.update(vehicleId, {
-      lastKnownLocation: () => `ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)`,
-    } as any);
+      lastKnownLocation: () =>
+        `ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)`,
+    });
 
     // 4. Trigger Violation Detection (Async)
     if (tripId) {
-      this.violationDetector.checkViolations(data)
-        .catch(err => this.logger.error(`Violation check failed: ${err.message}`));
+      this.violationDetector
+        .checkViolations(data)
+        .catch((err) =>
+          this.logger.error(`Violation check failed: ${err.message}`),
+        );
     }
 
     // 5. Return processed data for broadcasting
@@ -92,7 +107,8 @@ export class TrackingService implements OnModuleDestroy {
   }
 
   async getVehicleHistory(vehicleId: string, from?: Date, to?: Date) {
-    const query = this.gpsRepository.createQueryBuilder('gps')
+    const query = this.gpsRepository
+      .createQueryBuilder('gps')
       .where('gps.vehicleId = :vehicleId', { vehicleId });
 
     if (from) {

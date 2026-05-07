@@ -9,7 +9,11 @@ import { ExportService } from './export.service';
 import { Res } from '@nestjs/common';
 import { UserRole } from '../entities/user.entity';
 import { DateRangeDto } from './dto/date-range.dto';
-import { ExportReportDto, ExportType, ReportName } from './dto/export-report.dto';
+import {
+  ExportReportDto,
+  ExportType,
+  ReportName,
+} from './dto/export-report.dto';
 
 @ApiTags('Reports')
 @ApiBearerAuth()
@@ -26,7 +30,10 @@ export class ReportsController {
   @Roles(UserRole.ADMIN, UserRole.DISPATCHER)
   @ApiOperation({ summary: 'Get overall fleet performance metrics' })
   async getFleetPerformance(@Query() query: DateRangeDto) {
-    return this.reportsService.getFleetPerformance(new Date(query.from), new Date(query.to));
+    return this.reportsService.getFleetPerformance(
+      new Date(query.from),
+      new Date(query.to),
+    );
   }
 
   @Get('driver-kpi/:driverId')
@@ -47,7 +54,10 @@ export class ReportsController {
   @Roles(UserRole.ADMIN, UserRole.DISPATCHER)
   @ApiOperation({ summary: 'Get fuel cost report' })
   async getFuelCost(@Query() query: DateRangeDto) {
-    return this.reportsService.getFuelCostReport(new Date(query.from), new Date(query.to));
+    return this.reportsService.getFuelCostReport(
+      new Date(query.from),
+      new Date(query.to),
+    );
   }
 
   @Get('vehicle-utilization')
@@ -60,10 +70,7 @@ export class ReportsController {
   @Get('export')
   @Roles(UserRole.ADMIN, UserRole.DISPATCHER)
   @ApiOperation({ summary: 'Export report to PDF or Excel' })
-  async exportReport(
-    @Query() query: ExportReportDto,
-    @Res() res: any,
-  ) {
+  async exportReport(@Query() query: ExportReportDto, @Res() res: any) {
     let data: any;
     const from = query.from ? new Date(query.from) : new Date();
     const to = query.to ? new Date(query.to) : new Date();
@@ -77,14 +84,29 @@ export class ReportsController {
     }
 
     if (query.type === ExportType.EXCEL) {
-      const buffer = await this.exportService.exportExcel(data, query.report_name);
-      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      res.setHeader('Content-Disposition', `attachment; filename=${query.report_name}.xlsx`);
+      const buffer = await this.exportService.exportExcel(
+        data,
+        query.report_name,
+      );
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename=${query.report_name}.xlsx`,
+      );
       return res.send(buffer);
     } else {
-      const buffer = await this.exportService.exportPdf(data, query.report_name);
+      const buffer = await this.exportService.exportPdf(
+        data,
+        query.report_name,
+      );
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename=${query.report_name}.pdf`);
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename=${query.report_name}.pdf`,
+      );
       return res.send(buffer);
     }
   }

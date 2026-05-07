@@ -18,7 +18,10 @@ export class OptimizationService {
   /**
    * Estimate ETA for a trip based on current status and destination
    */
-  async estimateETA(tripId: string, currentLocation: { lat: number; lng: number }) {
+  async estimateETA(
+    tripId: string,
+    currentLocation: { lat: number; lng: number },
+  ) {
     const trip = await this.tripRepository.findOne({
       where: { id: tripId },
       relations: ['tripOrders', 'tripOrders.order'],
@@ -40,7 +43,7 @@ export class OptimizationService {
     };
 
     const routeInfo = await this.routeService.reRoute(currentLocation, dest);
-    
+
     return {
       estimatedArrival: new Date(Date.now() + routeInfo.duration * 1000),
       remainingDistanceKm: routeInfo.distance / 1000,
@@ -80,8 +83,10 @@ export class OptimizationService {
 
     // Collect waypoints sorted by sequence
     const waypoints: { lat: number; lng: number }[] = [];
-    const sortedTripOrders = [...trip.tripOrders].sort((a, b) => a.sequence - b.sequence);
-    
+    const sortedTripOrders = [...trip.tripOrders].sort(
+      (a, b) => a.sequence - b.sequence,
+    );
+
     // Add pickups first
     for (const to of sortedTripOrders) {
       waypoints.push({
@@ -103,7 +108,7 @@ export class OptimizationService {
     // Update trip with planned route
     trip.plannedRoute = routeInfo.geometry;
     trip.totalDistanceKm = routeInfo.distance / 1000;
-    
+
     await this.tripRepository.save(trip);
 
     return routeInfo;
