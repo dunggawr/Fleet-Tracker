@@ -69,11 +69,11 @@ import { OptimizationModule } from './optimization/optimization.module';
         ],
         synchronize: false,
         logging: true,
-        ssl: true,
+        ssl: configService.get<string>('DB_SSL') === 'true',
         extra: {
-          ssl: {
-            rejectUnauthorized: false,
-          },
+          ssl: configService.get<string>('DB_SSL') === 'true' ? {
+            rejectUnauthorized: configService.get<string>('DB_SSL_REJECT_UNAUTHORIZED') === 'true',
+          } : null,
         },
       }),
     }),

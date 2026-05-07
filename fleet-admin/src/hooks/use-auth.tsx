@@ -46,12 +46,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await api.post<{ accessToken: string; user: User }>('/auth/login', {
+      const response = await api.post<{ user: User }>('/auth/login', {
         email,
         password,
       });
       
-      api.setToken(response.accessToken);
       setUser(response.user);
       router.push('/');
     } catch (error) {
@@ -65,7 +64,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Logout request failed', error);
     }
-    api.clearToken();
     setUser(null);
     router.push('/login');
   };

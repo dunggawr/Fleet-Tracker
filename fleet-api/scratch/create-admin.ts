@@ -16,8 +16,8 @@ const dataSource = new DataSource({
 });
 
 async function createAdmin() {
-  const email = 'admin2@fleettracker.com';
-  const password = 'Admin@456';
+  const email = process.env.SEED_ADMIN_EMAIL || 'admin@fleettracker.com';
+  const password = process.env.SEED_ADMIN_PASSWORD || 'Admin@123';
 
   try {
     await dataSource.initialize();

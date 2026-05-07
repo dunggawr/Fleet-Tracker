@@ -23,6 +23,11 @@ export default function DashboardPage() {
   const { vehicles, isLoading: vehiclesLoading } = useVehicles();
   const { drivers, isLoading: driversLoading } = useDrivers();
   const { orders, isLoading: ordersLoading } = useOrders();
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const isLoading = vehiclesLoading || driversLoading || ordersLoading;
   const currency = new Intl.NumberFormat('vi-VN', {
@@ -118,7 +123,9 @@ export default function DashboardPage() {
                     <span className="text-dim">to</span>
                     <span className="customer-name">{order.deliveryAddress}</span>
                   </div>
-                  <span className="activity-time">{formatDistanceToNow(new Date(order.createdAt))} ago</span>
+                  <span className="activity-time">
+                    {mounted ? `${formatDistanceToNow(new Date(order.createdAt))} ago` : '...'}
+                  </span>
                 </div>
                 <Badge variant={order.status === 'delivering' ? 'primary' : order.status === 'assigned' ? 'success' : 'warning'}>
                   {order.status}

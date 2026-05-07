@@ -12,11 +12,11 @@ class UserResponseDto {
 }
 
 export class TokenResponseDto {
-  @ApiProperty()
-  accessToken: string;
+  @ApiProperty({ required: false })
+  accessToken?: string;
 
-  @ApiProperty()
-  refreshToken: string;
+  @ApiProperty({ required: false })
+  refreshToken?: string;
 
   @ApiProperty()
   user: UserResponseDto;

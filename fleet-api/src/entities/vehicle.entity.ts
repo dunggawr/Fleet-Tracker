@@ -49,7 +49,6 @@ export class Vehicle {
   @Column({ name: 'driver_id', nullable: true })
   driverId: string;
 
-  @Index()
   @Column({
     type: 'enum',
     enum: VehicleStatus,

@@ -31,6 +31,11 @@ export default function DriversPage() {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [selectedDriver, setSelectedDriver] = React.useState<DriverWithUser | null>(null);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const filteredDrivers = (drivers as DriverWithUser[]).filter(d => 
     d.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -123,7 +128,7 @@ export default function DriversPage() {
               </div>
               <div className="detail-item">
                 <span className="detail-label">Expiry</span>
-                <span>{selectedDriver.licenseExpiry ? new Date(selectedDriver.licenseExpiry).toLocaleDateString() : 'N/A'}</span>
+                <span>{selectedDriver.licenseExpiry && mounted ? new Date(selectedDriver.licenseExpiry).toLocaleDateString() : 'N/A'}</span>
               </div>
             </div>
           </div>

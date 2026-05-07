@@ -36,14 +36,21 @@ export class AuthController {
   async login(
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) response: Response,
+    @Req() request: Request,
   ) {
-    const tokens = await this.authService.login(loginDto);
+    const { accessToken, refreshToken, user } = await this.authService.login(loginDto);
     
     // Set cookies
-    this.setCookies(response, tokens.accessToken, tokens.refreshToken);
+    this.setCookies(response, accessToken, refreshToken);
     
-    // Return tokens for backward compatibility (Mobile App / Existing clients)
-    return tokens;
+    // For web clients (identified by x-client-type: web), return only user info
+    // to prevent token exposure via XSS. For others (mobile, legacy), return full DTO.
+    const clientType = request.headers['x-client-type'];
+    if (clientType === 'web') {
+      return { user };
+    }
+    
+    return { accessToken, refreshToken, user };
   }
 
   @Post('refresh')
@@ -63,13 +70,18 @@ export class AuthController {
       throw new UnauthorizedException('Refresh token missing');
     }
 
-    const tokens = await this.authService.refreshTokens(refreshToken);
+    const { accessToken, refreshToken: newRefreshToken, user } = await this.authService.refreshTokens(refreshToken);
     
     // Update cookies
-    this.setCookies(response, tokens.accessToken, tokens.refreshToken);
+    this.setCookies(response, accessToken, newRefreshToken);
     
-    // Return tokens for backward compatibility
-    return tokens;
+    // For web clients (identified by x-client-type: web), return only user info
+    const clientType = request.headers['x-client-type'];
+    if (clientType === 'web') {
+      return { user };
+    }
+    
+    return { accessToken, refreshToken: newRefreshToken, user };
   }
 
   @Post('logout')
