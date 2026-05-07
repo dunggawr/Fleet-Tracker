@@ -49,32 +49,21 @@ describe('ReportsService Logic', () => {
   });
 
   it('should calculate fleet performance correctly', async () => {
-    const mockTrips = [
-      {
-        status: TripStatus.COMPLETED,
-        totalDistanceKm: 100,
-        vehicle: { type: 'small' },
-        startedAt: new Date('2024-01-01T08:00:00'),
-        completedAt: new Date('2024-01-01T10:00:00'),
-      },
-    ];
-
     const mockStats = {
-      total: 1,
-      completed: 1,
-      failed: 0,
-      totalDistance: 100,
+      total: '1',
+      completed: '1',
+      failed: '0',
+      totalDistance: '100',
+      estimatedFuelCost: '200000',
+      avgDurationMinutes: '120',
     };
 
-    mockTripRepo.createQueryBuilder.mockReturnValueOnce(
-      createMockQueryBuilder(mockTrips),
-    ); // getMany
-    mockTripRepo.createQueryBuilder.mockReturnValueOnce(
+    mockTripRepo.createQueryBuilder.mockReturnValue(
       createMockQueryBuilder(mockStats),
-    ); // getRawOne
+    );
     mockAlertRepo.createQueryBuilder.mockReturnValue(
       createMockQueryBuilder([]),
-    ); // getRawMany
+    );
 
     const result = await reportsService.getFleetPerformance(
       new Date(),
@@ -85,6 +74,7 @@ describe('ReportsService Logic', () => {
     expect(result.completedTrips).toBe(1);
     expect(result.totalDistanceKm).toBe(100);
     expect(result.estimatedFuelCost).toBe(200000); // (100/100) * 8 * 25000
+    expect(result.averageTripDuration).toBe(120);
   });
 
   it('should calculate utilization rate correctly', async () => {

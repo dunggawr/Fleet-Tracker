@@ -1,13 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Trip } from '../entities/trip.entity';
 import { RouteService } from './route.service';
-import { Order, OrderStatus } from '../entities/order.entity';
+import { OrderStatus } from '../entities/order.entity';
 
 @Injectable()
 export class OptimizationService {
-  private readonly logger = new Logger(OptimizationService.name);
 
   constructor(
     @InjectRepository(Trip)
@@ -27,7 +26,9 @@ export class OptimizationService {
       relations: ['tripOrders', 'tripOrders.order'],
     });
 
-    if (!trip) throw new Error('Trip not found');
+    if (!trip) {
+      throw new NotFoundException(`Trip with ID ${tripId} not found`);
+    }
 
     // Find the next destination (first undelivered order)
     const nextOrder = trip.tripOrders

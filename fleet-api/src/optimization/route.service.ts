@@ -18,10 +18,10 @@ export class RouteService {
    */
   async getOptimalRoute(waypoints: { lat: number; lng: number }[]) {
     if (!this.mapboxToken) {
-      throw new Error('MAPBOX_ACCESS_TOKEN is not configured');
+      throw new Error('MAPBOX_ACCESS_TOKEN is not configured in .env');
     }
     if (waypoints.length < 2) {
-      throw new Error('At least 2 waypoints are required');
+      throw new Error('At least 2 waypoints are required for routing');
     }
 
     const coordinates = waypoints.map((wp) => `${wp.lng},${wp.lat}`).join(';');
@@ -36,6 +36,7 @@ export class RouteService {
           overview: 'full',
           steps: true,
         },
+        timeout: 5000, // 5 seconds timeout
       });
 
       if (response.data.code !== 'Ok') {

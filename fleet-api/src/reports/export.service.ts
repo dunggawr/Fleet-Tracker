@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import * as ExcelJS from 'exceljs';
-import { PassThrough } from 'stream';
 
-const PDFDocument = require('pdfkit');
+import PDFDocument from 'pdfkit';
 
 @Injectable()
 export class ExportService {

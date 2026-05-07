@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Param, UseGuards, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -30,10 +30,14 @@ export class ReportsController {
   @Roles(UserRole.ADMIN, UserRole.DISPATCHER)
   @ApiOperation({ summary: 'Get overall fleet performance metrics' })
   async getFleetPerformance(@Query() query: DateRangeDto) {
-    return this.reportsService.getFleetPerformance(
-      new Date(query.from),
-      new Date(query.to),
-    );
+    const from = new Date(query.from);
+    const to = new Date(query.to);
+
+    if (from > to) {
+      throw new BadRequestException('From date must be before or equal to To date');
+    }
+
+    return this.reportsService.getFleetPerformance(from, to);
   }
 
   @Get('driver-kpi/:driverId')
@@ -54,10 +58,14 @@ export class ReportsController {
   @Roles(UserRole.ADMIN, UserRole.DISPATCHER)
   @ApiOperation({ summary: 'Get fuel cost report' })
   async getFuelCost(@Query() query: DateRangeDto) {
-    return this.reportsService.getFuelCostReport(
-      new Date(query.from),
-      new Date(query.to),
-    );
+    const from = new Date(query.from);
+    const to = new Date(query.to);
+
+    if (from > to) {
+      throw new BadRequestException('From date must be before or equal to To date');
+    }
+
+    return this.reportsService.getFuelCostReport(from, to);
   }
 
   @Get('vehicle-utilization')
@@ -75,12 +83,22 @@ export class ReportsController {
     const from = query.from ? new Date(query.from) : new Date();
     const to = query.to ? new Date(query.to) : new Date();
 
+    if (from > to) {
+      throw new BadRequestException('From date must be before or equal to To date');
+    }
+
     if (query.report_name === ReportName.FLEET_PERFORMANCE) {
       data = await this.reportsService.getFleetPerformance(from, to);
     } else if (query.report_name === ReportName.FUEL_COST) {
       data = await this.reportsService.getFuelCostReport(from, to);
     } else if (query.report_name === ReportName.KPI_LEADERBOARD) {
       data = await this.kpiService.getKpiLeaderboard();
+    } else {
+      throw new BadRequestException(`Unknown report name: ${query.report_name}`);
+    }
+
+    if (!data) {
+      throw new BadRequestException('No data found for the selected report');
     }
 
     if (query.type === ExportType.EXCEL) {
