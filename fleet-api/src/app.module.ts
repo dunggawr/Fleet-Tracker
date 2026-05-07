@@ -40,10 +40,14 @@ import { OptimizationModule } from './optimization/optimization.module';
     EventEmitterModule.forRoot(),
 
     // Rate Limiting (Phase 08 - Security fix)
-    ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 100,
-    }]),
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => [{
+        ttl: config.get<number>('THROTTLE_TTL', 60000),
+        limit: config.get<number>('THROTTLE_LIMIT', 100),
+      }],
+    }),
 
     // Database connection
     TypeOrmModule.forRootAsync({

@@ -68,8 +68,8 @@ export class TrackingGateway
       // Try to get token from cookies (for Web Admin)
       if (!token && client.handshake.headers.cookie) {
         const cookies = client.handshake.headers.cookie.split(';').reduce((acc: any, curr) => {
-          const [key, value] = curr.trim().split('=');
-          acc[key] = value;
+          const [key, ...valParts] = curr.trim().split('=');
+          if (key) acc[key] = valParts.join('=');
           return acc;
         }, {});
         token = cookies['access_token'];

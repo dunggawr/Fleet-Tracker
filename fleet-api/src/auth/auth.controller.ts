@@ -42,7 +42,7 @@ export class AuthController {
     // Set cookies
     this.setCookies(response, tokens.accessToken, tokens.refreshToken);
     
-    return tokens;
+    return { message: 'Logged in successfully' };
   }
 
   @Post('refresh')
@@ -67,16 +67,26 @@ export class AuthController {
     // Update cookies
     this.setCookies(response, tokens.accessToken, tokens.refreshToken);
     
-    return tokens;
+    return { message: 'Token refreshed successfully' };
   }
 
   @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'User logout' })
   @ApiResponse({ status: 200, description: 'Successfully logged out' })
-  logout(@Res({ passthrough: true }) response: Response) {
+  async logout(
+    @GetUser() user: User,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    // Invalidate refresh token in DB
+    await this.authService.updateRefreshToken(user.id, null);
+    
+    // Clear cookies
     response.clearCookie('access_token');
     response.clearCookie('refresh_token');
+    
     return { message: 'Logged out successfully' };
   }
 
