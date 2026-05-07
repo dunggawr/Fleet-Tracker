@@ -65,3 +65,23 @@ Tất cả các thay đổi quan trọng đối với dự án FleetTracker sẽ
 
 ### Fixed
 - Backend: Sửa lỗi khai báo trùng lặp biến `authHeader` trong `TrackingGateway`.
+## [2026-05-07] - Dispatch Optimization & Reports (PR #4)
+### Added
+- **Optimization Module**:
+    - Tôn trọng thứ tự tuyến đường (`sequence`) trước khi gửi đến Mapbox Directions API.
+    - Thêm timeout 5s cho các gọi API ngoại vi (axios) để tăng tính ổn định.
+- **KPI Module**:
+    - Chuyển đổi logic cập nhật `completionRate` sang SQL atomic updates để tránh race condition.
+- **Reports Module**:
+    - Sử dụng triệt để Database Aggregation cho báo cáo hiệu suất đội xe.
+    - Cập nhật bộ test suite cho `KpiService` và `ReportsService`.
+
+### Changed
+- **Reports Module**: 
+    - Loại bỏ validation thủ công trong `ReportsController`, sử dụng `ValidationPipe` và `DateRangeDto`.
+    - Hiện đại hóa cách import `PDFKit` trong `ExportService`.
+
+### Fixed
+- **Driver App**: Fix lỗi TypeScript compile (`unused @ts-expect-error`) trong `ExternalLink.tsx`.
+- **KPI Module**: Sửa lỗi kiểu dữ liệu trả về `null` trong `getOrCreateKpi`.
+- **Optimization Module**: Đồng bộ hóa chính xác tọa độ trạm dừng (`waypoints`) với Mapbox API.
