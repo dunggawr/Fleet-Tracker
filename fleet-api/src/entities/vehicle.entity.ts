@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { Driver } from './driver.entity';
 
@@ -26,6 +27,7 @@ export class Vehicle {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index()
   @Column({ name: 'plate_number', unique: true })
   plateNumber: string;
 
@@ -48,6 +50,7 @@ export class Vehicle {
   @Column({ name: 'driver_id', nullable: true })
   driverId: string;
 
+  @Index()
   @Column({
     type: 'enum',
     enum: VehicleStatus,

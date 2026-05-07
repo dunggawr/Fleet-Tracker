@@ -7,25 +7,14 @@ class HttpClient {
 
   setToken(token: string) {
     this.accessToken = token;
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('access_token', token);
-    }
   }
 
   getToken(): string | null {
-    if (this.accessToken) return this.accessToken;
-    if (typeof window !== 'undefined') {
-      this.accessToken = localStorage.getItem('access_token');
-    }
     return this.accessToken;
   }
 
   clearToken() {
     this.accessToken = null;
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-    }
   }
 
   private async request<T>(
@@ -44,6 +33,7 @@ class HttpClient {
     const response = await fetch(url, {
       ...options,
       headers,
+      credentials: 'include', // Important for cookies
     });
 
     if (response.status === 401) {
@@ -100,6 +90,7 @@ class HttpClient {
       method: 'POST',
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: formData,
+      credentials: 'include',
     });
 
     if (!response.ok) {

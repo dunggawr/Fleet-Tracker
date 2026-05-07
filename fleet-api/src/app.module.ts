@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -37,6 +38,12 @@ import { OptimizationModule } from './optimization/optimization.module';
 
     // Event Emitter
     EventEmitterModule.forRoot(),
+
+    // Rate Limiting (Phase 08 - Security fix)
+    ThrottlerModule.forRoot([{
+      ttl: 60000,
+      limit: 100,
+    }]),
 
     // Database connection
     TypeOrmModule.forRootAsync({

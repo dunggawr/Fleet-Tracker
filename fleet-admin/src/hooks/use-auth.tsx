@@ -29,17 +29,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const initAuth = async () => {
-      const token = api.getToken();
-      if (token) {
-        try {
-          const userData = await api.get<User>('/auth/me');
-          setUser(userData);
-        } catch (error) {
-          console.error('Failed to fetch user profile', error);
-          api.clearToken();
-        }
+      try {
+        // Just try to get profile - cookies will be sent automatically
+        const userData = await api.get<User>('/auth/me');
+        setUser(userData);
+      } catch (error) {
+        // Not logged in or session expired - quiet fail
+        console.log('Not logged in or session expired');
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     initAuth();
@@ -60,7 +59,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (error) {
+      console.error('Logout request failed', error);
+    }
     api.clearToken();
     setUser(null);
     router.push('/login');

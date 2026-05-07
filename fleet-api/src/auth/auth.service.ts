@@ -62,32 +62,41 @@ export class AuthService {
     throw new UnauthorizedException('Invalid credentials');
   }
 
-  async refreshTokens(userId: string, refreshToken: string) {
-    const user = await this.userRepository.findOne({
-      where: { id: userId, isActive: true },
-      select: ['id', 'email', 'role', 'refreshTokenHash'],
-    });
+  async refreshTokens(refreshToken: string) {
+    try {
+      const payload = await this.jwtService.verifyAsync(refreshToken, {
+        secret: this.configService.get<string>('JWT_SECRET'),
+      });
+      
+      const userId = payload.sub;
+      const user = await this.userRepository.findOne({
+        where: { id: userId, isActive: true },
+        select: ['id', 'email', 'role', 'refreshTokenHash'],
+      });
 
-    if (!user || !user.refreshTokenHash) {
-      throw new UnauthorizedException('Access Denied');
+      if (!user || !user.refreshTokenHash) {
+        throw new UnauthorizedException('Access Denied');
+      }
+
+      const refreshTokenMatches = await bcrypt.compare(
+        refreshToken,
+        user.refreshTokenHash,
+      );
+      if (!refreshTokenMatches) throw new UnauthorizedException('Access Denied');
+
+      const tokens = await this.getTokens(user.id, user.email, user.role);
+      await this.updateRefreshToken(user.id, tokens.refreshToken);
+      return {
+        ...tokens,
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+        },
+      };
+    } catch (e) {
+      throw new UnauthorizedException('Invalid refresh token');
     }
-
-    const refreshTokenMatches = await bcrypt.compare(
-      refreshToken,
-      user.refreshTokenHash,
-    );
-    if (!refreshTokenMatches) throw new UnauthorizedException('Access Denied');
-
-    const tokens = await this.getTokens(user.id, user.email, user.role);
-    await this.updateRefreshToken(user.id, tokens.refreshToken);
-    return {
-      ...tokens,
-      user: {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-      },
-    };
   }
 
   async updateRefreshToken(userId: string, refreshToken: string) {

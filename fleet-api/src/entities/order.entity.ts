@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 
 export enum OrderStatus {
@@ -49,6 +50,7 @@ export class Order {
   @Column({ type: 'text', nullable: true })
   description: string;
 
+  @Index()
   @Column({
     type: 'enum',
     enum: OrderStatus,
