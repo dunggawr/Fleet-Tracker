@@ -38,7 +38,20 @@ Tất cả các thay đổi quan trọng đối với dự án FleetTracker sẽ
     - Cập nhật script `comprehensive-seed.ts` để khởi tạo dữ liệu mẫu cho toàn bộ hệ thống.
 ### Fixed
 - Lỗi mismatch kiểu dữ liệu giữa Frontend và Backend (Status ENUMs, field names như `customerName` vs `deliveryAddress`).
-## [2026-05-07]
+## [2026-05-07] - Testing & API Docs
+### Added
+- Backend: Triển khai bộ Unit Test toàn diện cho `AuthService` (13/13 tests pass).
+- Backend: Triển khai bộ E2E Test cho Module **Authentication** (Bearer & Cookie Auth, Logout flow).
+- Backend: Triển khai bộ E2E Test cho Module **Orders** (CRUD, Status Transitions, RBAC Protection).
+- Documentation: Cập nhật `docs/api/endpoints.md` với chi tiết về GPS updates và Alert reporting.
+- Testing: Tự động hóa việc tạo test users động (Admin/Driver) để đảm bảo tính cô lập của bài test.
+
+### Fixed
+- Backend: Sửa lỗi duplicate `bcrypt` imports trong các file spec.
+- Backend: Đồng bộ hóa kiểu dữ liệu response (Decimal/String mismatch) trong bài test E2E.
+- Backend: Khắc phục lỗi linting liên quan đến `UserRole` enum.
+
+## [2026-05-07] - Initial Fixes
 ### Added
 - Backend: Thêm biến môi trường cho mật khẩu seeding (`ADMIN_PASSWORD`, `DRIVER_PASSWORD`, `DISPATCHER_PASSWORD`).
 - Backend: Bổ sung kiểm tra địa chỉ nhận/giao không trùng nhau trong `OrdersService`.
