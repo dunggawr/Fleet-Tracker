@@ -44,7 +44,7 @@ import { OptimizationModule } from './optimization/optimization.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => [{
-        ttl: config.get<number>('THROTTLE_TTL', 60000),
+        ttl: config.get<number>('THROTTLE_TTL', 60000), // TTL is in milliseconds for Throttler v6
         limit: config.get<number>('THROTTLE_LIMIT', 100),
       }],
     }),

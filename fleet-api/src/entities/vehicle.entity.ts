@@ -27,7 +27,6 @@ export class Vehicle {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Index()
   @Column({ name: 'plate_number', unique: true })
   plateNumber: string;
 

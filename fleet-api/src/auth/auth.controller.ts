@@ -42,7 +42,8 @@ export class AuthController {
     // Set cookies
     this.setCookies(response, tokens.accessToken, tokens.refreshToken);
     
-    return { message: 'Logged in successfully' };
+    // Return tokens for backward compatibility (Mobile App / Existing clients)
+    return tokens;
   }
 
   @Post('refresh')
@@ -67,7 +68,8 @@ export class AuthController {
     // Update cookies
     this.setCookies(response, tokens.accessToken, tokens.refreshToken);
     
-    return { message: 'Token refreshed successfully' };
+    // Return tokens for backward compatibility
+    return tokens;
   }
 
   @Post('logout')

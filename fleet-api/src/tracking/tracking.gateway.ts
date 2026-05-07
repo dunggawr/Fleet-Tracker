@@ -9,11 +9,12 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger, UseGuards } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { TrackingService } from './tracking.service';
 import { GpsUpdateDto } from './dto/gps-update.dto';
 import { JwtService } from '@nestjs/jwt';
 import { OnEvent } from '@nestjs/event-emitter';
+import * as cookie from 'cookie';
 
 @WebSocketGateway({
   cors: {
@@ -67,11 +68,7 @@ export class TrackingGateway
 
       // Try to get token from cookies (for Web Admin)
       if (!token && client.handshake.headers.cookie) {
-        const cookies = client.handshake.headers.cookie.split(';').reduce((acc: any, curr) => {
-          const [key, ...valParts] = curr.trim().split('=');
-          if (key) acc[key] = valParts.join('=');
-          return acc;
-        }, {});
+        const cookies = cookie.parse(client.handshake.headers.cookie);
         token = cookies['access_token'];
       }
 
