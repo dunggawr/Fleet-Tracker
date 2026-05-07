@@ -3,53 +3,26 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 class HttpClient {
-  private accessToken: string | null = null;
-
-  setToken(token: string) {
-    this.accessToken = token;
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('access_token', token);
-    }
-  }
-
-  getToken(): string | null {
-    if (this.accessToken) return this.accessToken;
-    if (typeof window !== 'undefined') {
-      this.accessToken = localStorage.getItem('access_token');
-    }
-    return this.accessToken;
-  }
-
-  clearToken() {
-    this.accessToken = null;
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-    }
-  }
-
   private async request<T>(
     endpoint: string,
     options: RequestInit = {},
   ): Promise<T> {
     const url = `${API_BASE}${endpoint}`;
-    const token = this.getToken();
-
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      'x-client-type': 'web',
       ...options.headers,
     };
 
     const response = await fetch(url, {
       ...options,
       headers,
+      credentials: 'include', // Important for cookies
     });
 
     if (response.status === 401) {
-      // Token expired - try refresh or redirect to login
-      this.clearToken();
-      if (typeof window !== 'undefined') {
+      // Session expired or unauthorized
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
         window.location.href = '/login';
       }
       throw new Error('Unauthorized');
@@ -94,12 +67,13 @@ class HttpClient {
 
   async upload<T>(endpoint: string, formData: FormData): Promise<T> {
     const url = `${API_BASE}${endpoint}`;
-    const token = this.getToken();
-
     const response = await fetch(url, {
       method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: formData,
+      headers: {
+        'x-client-type': 'web',
+      },
+      credentials: 'include',
     });
 
     if (!response.ok) {

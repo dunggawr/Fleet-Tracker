@@ -29,17 +29,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const initAuth = async () => {
-      const token = api.getToken();
-      if (token) {
-        try {
-          const userData = await api.get<User>('/auth/me');
-          setUser(userData);
-        } catch (error) {
-          console.error('Failed to fetch user profile', error);
-          api.clearToken();
-        }
+      try {
+        // Just try to get profile - cookies will be sent automatically
+        const userData = await api.get<User>('/auth/me');
+        setUser(userData);
+      } catch (error) {
+        // Not logged in or session expired - quiet fail
+        console.log('Not logged in or session expired');
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     initAuth();
@@ -47,12 +46,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await api.post<{ accessToken: string; user: User }>('/auth/login', {
+      const response = await api.post<{ user: User }>('/auth/login', {
         email,
         password,
       });
       
-      api.setToken(response.accessToken);
       setUser(response.user);
       router.push('/');
     } catch (error) {
@@ -60,8 +58,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = () => {
-    api.clearToken();
+  const logout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (error) {
+      console.error('Logout request failed', error);
+    }
     setUser(null);
     router.push('/login');
   };

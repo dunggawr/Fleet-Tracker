@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -38,6 +39,16 @@ import { OptimizationModule } from './optimization/optimization.module';
     // Event Emitter
     EventEmitterModule.forRoot(),
 
+    // Rate Limiting (Phase 08 - Security fix)
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => [{
+        ttl: config.get<number>('THROTTLE_TTL', 60000), // TTL is in milliseconds for Throttler v6
+        limit: config.get<number>('THROTTLE_LIMIT', 100),
+      }],
+    }),
+
     // Database connection
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -58,11 +69,11 @@ import { OptimizationModule } from './optimization/optimization.module';
         ],
         synchronize: false,
         logging: true,
-        ssl: true,
+        ssl: configService.get<string>('DB_SSL') === 'true',
         extra: {
-          ssl: {
-            rejectUnauthorized: false,
-          },
+          ssl: configService.get<string>('DB_SSL') === 'true' ? {
+            rejectUnauthorized: configService.get<string>('DB_SSL_REJECT_UNAUTHORIZED') === 'true',
+          } : null,
         },
       }),
     }),

@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
 
 const navItems = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -24,8 +25,9 @@ const navItems = [
 ];
 
 export function Sidebar() {
-  const pathname = usePathname();
   const [collapsed, setCollapsed] = React.useState(false);
+  const pathname = usePathname();
+  const { logout } = useAuth();
 
   return (
     <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
@@ -68,7 +70,7 @@ export function Sidebar() {
           <Settings size={20} />
           {!collapsed && <span>Settings</span>}
         </Link>
-        <button className="nav-item logout-btn">
+        <button className="nav-item logout-btn" onClick={logout}>
           <LogOut size={20} />
           {!collapsed && <span>Logout</span>}
         </button>

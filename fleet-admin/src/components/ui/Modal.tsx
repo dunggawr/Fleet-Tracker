@@ -21,10 +21,13 @@ export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }:
       <div 
         className={`modal-content size-${size}`} 
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
       >
         <header className="modal-header">
-          <h3>{title}</h3>
-          <Button variant="ghost" size="sm" icon={<X size={20} />} onClick={onClose} />
+          <h3 id="modal-title">{title}</h3>
+          <Button variant="ghost" size="sm" icon={<X size={20} />} onClick={onClose} aria-label="Close modal" />
         </header>
         
         <div className="modal-body">

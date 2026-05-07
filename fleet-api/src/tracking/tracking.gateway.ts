@@ -9,15 +9,17 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger, UseGuards } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { TrackingService } from './tracking.service';
 import { GpsUpdateDto } from './dto/gps-update.dto';
 import { JwtService } from '@nestjs/jwt';
 import { OnEvent } from '@nestjs/event-emitter';
+import * as cookie from 'cookie';
 
 @WebSocketGateway({
   cors: {
-    origin: '*',
+    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    credentials: true,
   },
   namespace: 'tracking',
 })
@@ -60,11 +62,12 @@ export class TrackingGateway
     this.logger.log('WebSocket Gateway Initialized');
   }
 
-  async handleConnection(client: Socket, ...args: any[]) {
+  async handleConnection(client: Socket) {
     try {
-      const token = client.handshake.auth.token || client.handshake.query.token;
+      const token = this.extractToken(client);
+
       if (!token) {
-        this.logger.warn(`Client connection rejected: No token provided. ID: ${client.id}`);
+        this.logger.warn(`Client connection rejected: No token provided. ID: ${client.id}, Handshake: ${JSON.stringify(client.handshake.headers)}`);
         client.disconnect();
         return;
       }
@@ -127,5 +130,35 @@ export class TrackingGateway
   ) {
     client.join(`trip:${data.tripId}`);
     return { event: 'subscribed', data: { room: `trip:${data.tripId}` } };
+  }
+
+  private extractToken(client: Socket): string | undefined {
+    // 1. Try auth object (standard for Socket.io)
+    if (client.handshake.auth?.token) {
+      return client.handshake.auth.token;
+    }
+
+    // 2. Try query parameters
+    if (client.handshake.query?.token) {
+      return client.handshake.query.token as string;
+    }
+
+    // 3. Try Authorization header
+    const authHeader = client.handshake.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      return authHeader.split(' ')[1];
+    }
+
+    // 4. Try Cookies (for Web Admin with HttpOnly cookies)
+    if (client.handshake.headers.cookie) {
+      try {
+        const cookies = cookie.parse(client.handshake.headers.cookie);
+        return cookies['access_token'];
+      } catch (e) {
+        this.logger.error(`Error parsing cookies for client ${client.id}: ${e.message}`);
+      }
+    }
+
+    return undefined;
   }
 }
