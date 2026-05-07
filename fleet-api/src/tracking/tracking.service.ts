@@ -4,13 +4,14 @@ import { Repository } from 'typeorm';
 import { GpsLocation } from '../entities/gps-location.entity';
 import { Vehicle } from '../entities/vehicle.entity';
 import { Trip, TripStatus } from '../entities/trip.entity';
+import { Driver } from '../entities/driver.entity';
 import { GpsUpdateDto } from './dto/gps-update.dto';
 import { ViolationDetectorService } from '../alerts/violation-detector.service';
 
 @Injectable()
 export class TrackingService implements OnModuleDestroy {
   private readonly logger = new Logger(TrackingService.name);
-  private gpsBuffer: any[] = [];
+  private gpsBuffer: GpsLocation[] = [];
   private readonly BATCH_INTERVAL = 5000; // 5 seconds
   private flushInterval: NodeJS.Timeout;
 
@@ -21,8 +22,12 @@ export class TrackingService implements OnModuleDestroy {
     private readonly vehicleRepository: Repository<Vehicle>,
     @InjectRepository(Trip)
     private readonly tripRepository: Repository<Trip>,
+    @InjectRepository(Driver)
+    private readonly driverRepository: Repository<Driver>,
     private readonly violationDetector: ViolationDetectorService,
-  ) {
+  ) {}
+
+  onModuleInit() {
     // Start batch processing
     this.flushInterval = setInterval(
       () => this.flushBuffer(),
@@ -40,14 +45,19 @@ export class TrackingService implements OnModuleDestroy {
     if (this.gpsBuffer.length === 0) return;
 
     const batch = [...this.gpsBuffer];
-    this.gpsBuffer = [];
-
+    
     try {
       await this.gpsRepository.save(batch);
+      // Only clear buffer if save was successful
+      this.gpsBuffer = this.gpsBuffer.slice(batch.length);
       this.logger.debug(`Flushed ${batch.length} GPS points to DB`);
     } catch (error) {
       this.logger.error(`Failed to flush GPS buffer: ${error.message}`);
-      // In production, might want to retry or put back in buffer
+      // In production, might want to limit buffer size to prevent memory issues
+      if (this.gpsBuffer.length > 5000) {
+        this.logger.warn('GPS Buffer too large, dropping oldest points');
+        this.gpsBuffer = this.gpsBuffer.slice(1000);
+      }
     }
   }
 
@@ -79,11 +89,17 @@ export class TrackingService implements OnModuleDestroy {
     });
     this.gpsBuffer.push(gpsLocation);
 
-    // 3. Update Vehicle's last known location
-    await this.vehicleRepository.update(vehicleId, {
-      lastKnownLocation: () =>
-        `ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)`,
-    });
+    // 3. Update Vehicle's last known location (using Parameterized Query to prevent SQL Injection)
+    await this.vehicleRepository
+      .createQueryBuilder()
+      .update(Vehicle)
+      .set({
+        lastKnownLocation: () =>
+          `ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)`,
+      })
+      .where('id = :vehicleId', { vehicleId })
+      .setParameters({ lng: longitude, lat: latitude })
+      .execute();
 
     // 4. Trigger Violation Detection (Async)
     if (tripId) {
@@ -124,7 +140,30 @@ export class TrackingService implements OnModuleDestroy {
   async getAllLiveLocations() {
     return this.vehicleRepository.find({
       select: ['id', 'plateNumber', 'type', 'status', 'lastKnownLocation'],
-      // Only get active vehicles or those on trips
     });
+  }
+
+  async getDriverByUserId(userId: string): Promise<Driver | null> {
+    return this.driverRepository.findOne({ where: { userId } });
+  }
+
+  async getTripById(tripId: string): Promise<Trip | null> {
+    return this.tripRepository.findOne({ where: { id: tripId } });
+  }
+
+  async validateDriverTrip(userId: string, tripId: string, vehicleId: string): Promise<boolean> {
+    const driver = await this.driverRepository.findOne({ where: { userId } });
+    if (!driver) return false;
+
+    const trip = await this.tripRepository.findOne({ 
+      where: { 
+        id: tripId, 
+        driverId: driver.id,
+        vehicleId,
+        status: TripStatus.IN_PROGRESS 
+      } 
+    });
+
+    return !!trip;
   }
 }

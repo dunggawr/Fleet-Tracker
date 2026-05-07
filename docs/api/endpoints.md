@@ -1,6 +1,6 @@
 # API Documentation - Fleet Tracker
 
-Ngày cập nhật: 2026-05-06
+Ngày cập nhật: 2026-05-07
 Base URL: `http://localhost:3001`
 
 ---
@@ -147,4 +147,63 @@ Dự đoán thời gian đến (ETA) của một chuyến đi dựa trên vị t
   "remainingDistanceKm": 15.2,
   "remainingDurationMin": 45
 }
+```
+
+---
+
+## 📡 Tracking (WebSocket)
+**Endpoint:** `ws://localhost:3001/tracking`
+
+**Authentication:** 
+Yêu cầu gửi token qua:
+- `auth.token` trong handshake (Khuyên dùng)
+- `Authorization` header trong handshake.
+*(Lưu ý: Không hỗ trợ gửi token qua query string)*
+
+### Events Emitted (Client -> Server):
+
+#### `updateLocation`
+Gửi dữ liệu tọa độ GPS thực tế của tài xế. Dữ liệu sẽ được gom batch 5 giây/lần trước khi lưu DB.
+**Payload:**
+```json
+{
+  "vehicleId": "uuid",
+  "tripId": "uuid",
+  "latitude": 10.123,
+  "longitude": 106.456,
+  "speed": 50,
+  "heading": 90,
+  "timestamp": 1651854000000
+}
+```
+
+#### `subscribeTrip`
+Đăng ký nhận thông tin realtime của một chuyến đi (Chỉ tài xế được gán mới có quyền).
+**Payload:**
+```json
+{ "tripId": "uuid" }
+```
+
+---
+
+## 🔔 Alerts
+
+### POST `/alerts/report-incident`
+Tài xế báo cáo sự cố thủ công.
+**Request Body:**
+```json
+{
+  "vehicleId": "uuid",
+  "tripId": "uuid",
+  "message": "Sự cố lốp xe",
+  "latitude": 10.123,
+  "longitude": 106.456
+}
+```
+
+### POST `/alerts/:id/resolve`
+Đánh dấu cảnh báo đã được xử lý (Admin).
+**Response (200):**
+```json
+{ "id": "uuid", "isResolved": true, "resolvedAt": "..." }
 ```

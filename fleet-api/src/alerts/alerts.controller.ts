@@ -11,6 +11,7 @@ import { AlertsService } from './alerts.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { AlertType, AlertSeverity } from '../entities/alert.entity';
 import { UserRole } from '../entities/user.entity';
 
 @Controller('alerts')
@@ -49,8 +50,8 @@ export class AlertsController {
   ) {
     return this.alertsService.createAlert({
       ...data,
-      type: 'MANUAL_REPORT',
-      severity: 'HIGH',
+      type: AlertType.INCIDENT,
+      severity: AlertSeverity.HIGH,
     });
   }
 }

@@ -47,3 +47,21 @@ Tất cả các thay đổi quan trọng đối với dự án FleetTracker sẽ
 - Backend: Cấu hình hardened cho `UploadService` (config validation, robust extension extraction).
 - Backend: Sửa lỗi TypeScript compile trong `AuthService` và `CreateOrderDto`.
 - Backend: Sử dụng Enum `DriverStatus` thay vì hardcoded string trong `seed.ts`.
+
+## [2026-05-07] - Refactoring & Security (PR #3)
+### Added
+- Backend: Triển khai bộ unit test cho `ViolationDetectorService` kiểm tra debouncing và caching.
+- Backend: Cập nhật unit test cho `TrackingService` bao phủ cơ chế batching mới.
+
+### Changed
+- Backend: Tối ưu hóa **Tracking Module**:
+    - Chuyển sang lưu trữ batch GPS (Buffer) để giảm tải cho Database.
+    - Bảo mật hóa WebSocket: Cấm token trong query string, thêm ownership check cho tài xế.
+    - Fix SQL Injection bằng cách sử dụng Parameterized Query trong `vehicleRepository`.
+- Backend: Nâng cấp **Alerts Module**:
+    - Thêm cơ chế **Route Caching** và **Alert Debouncing** (5 phút cooldown) để tránh notification spam.
+    - Chuẩn hóa Enums cho `AlertsController`.
+    - `Alert` entity: `driverId` cho phép nullable để xử lý linh hoạt hơn.
+
+### Fixed
+- Backend: Sửa lỗi khai báo trùng lặp biến `authHeader` trong `TrackingGateway`.

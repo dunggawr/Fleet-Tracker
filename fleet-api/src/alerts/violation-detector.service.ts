@@ -12,7 +12,11 @@ export class ViolationDetectorService {
   private readonly MAX_SPEED = 80; // km/h
   private readonly IDLE_THRESHOLD = 10 * 60 * 1000; // 10 minutes in ms
   private readonly ROUTE_DEVIATION_THRESHOLD = 500; // meters
+  private readonly ALERT_COOLDOWN = 5 * 60 * 1000; // 5 minutes
+
   private stopStartTimeMap = new Map<string, number>(); // vehicleId -> timestamp
+  private routeCache = new Map<string, any>(); // tripId -> plannedRoute
+  private lastAlertMap = new Map<string, number>(); // tripId:type -> timestamp
 
   constructor(
     @InjectRepository(Trip)
@@ -28,12 +32,10 @@ export class ViolationDetectorService {
       if (!this.stopStartTimeMap.has(vehicleId)) {
         this.stopStartTimeMap.set(vehicleId, Date.now());
       } else {
-        const stopDuration =
-          Date.now() - (this.stopStartTimeMap.get(vehicleId) || Date.now());
+        const stopDuration = Date.now() - (this.stopStartTimeMap.get(vehicleId) || Date.now());
         if (stopDuration > this.IDLE_THRESHOLD) {
-          // Trigger alert if not already alerted (simple debounce)
-          if (stopDuration < this.IDLE_THRESHOLD + 30000) {
-            // Alert once when threshold passed
+          const alertKey = `${tripId || vehicleId}:${AlertType.ABNORMAL_STOP}`;
+          if (this.shouldAlert(alertKey)) {
             await this.alertsService.createAlert({
               tripId,
               vehicleId,
@@ -42,6 +44,7 @@ export class ViolationDetectorService {
               message: `Xe dừng bất thường hơn 10 phút`,
               location: { type: 'Point', coordinates: [longitude, latitude] },
             });
+            this.lastAlertMap.set(alertKey, Date.now());
           }
         }
       }
@@ -51,35 +54,52 @@ export class ViolationDetectorService {
 
     // 2. Speed Violation Check
     if (speed > this.MAX_SPEED) {
-      await this.alertsService.createAlert({
-        tripId,
-        vehicleId,
-        type: AlertType.SPEED_VIOLATION,
-        severity: AlertSeverity.MEDIUM,
-        message: `Vượt quá tốc độ cho phép: ${speed.toFixed(1)} km/h (Giới hạn: ${this.MAX_SPEED} km/h)`,
-        location: { type: 'Point', coordinates: [longitude, latitude] },
-      });
-    }
-
-    // 3. Route Deviation Check
-    const trip = await this.tripRepository.findOne({ where: { id: tripId } });
-    if (trip && trip.plannedRoute) {
-      const distance = await this.calculateDistanceFromRoute(
-        latitude,
-        longitude,
-        trip.id,
-      );
-      if (distance > this.ROUTE_DEVIATION_THRESHOLD) {
+      const alertKey = `${tripId || vehicleId}:${AlertType.SPEED_VIOLATION}`;
+      if (this.shouldAlert(alertKey)) {
         await this.alertsService.createAlert({
           tripId,
           vehicleId,
-          type: AlertType.ROUTE_DEVIATION,
-          severity: AlertSeverity.HIGH,
-          message: `Xe đi sai lộ trình: Cách tuyến đường chính ${distance.toFixed(0)}m`,
+          type: AlertType.SPEED_VIOLATION,
+          severity: AlertSeverity.MEDIUM,
+          message: `Vượt quá tốc độ cho phép: ${speed.toFixed(1)} km/h (Giới hạn: ${this.MAX_SPEED} km/h)`,
           location: { type: 'Point', coordinates: [longitude, latitude] },
         });
+        this.lastAlertMap.set(alertKey, Date.now());
       }
     }
+
+    // 3. Route Deviation Check
+    if (tripId) {
+      let plannedRoute = this.routeCache.get(tripId);
+      if (plannedRoute === undefined) {
+        const trip = await this.tripRepository.findOne({ where: { id: tripId }, select: ['id', 'plannedRoute'] });
+        plannedRoute = trip?.plannedRoute || null;
+        this.routeCache.set(tripId, plannedRoute);
+      }
+
+      if (plannedRoute) {
+        const distance = await this.calculateDistanceFromRoute(latitude, longitude, tripId);
+        if (distance > this.ROUTE_DEVIATION_THRESHOLD) {
+          const alertKey = `${tripId}:${AlertType.ROUTE_DEVIATION}`;
+          if (this.shouldAlert(alertKey)) {
+            await this.alertsService.createAlert({
+              tripId,
+              vehicleId,
+              type: AlertType.ROUTE_DEVIATION,
+              severity: AlertSeverity.HIGH,
+              message: `Xe đi sai lộ trình: Cách tuyến đường chính ${distance.toFixed(0)}m`,
+              location: { type: 'Point', coordinates: [longitude, latitude] },
+            });
+            this.lastAlertMap.set(alertKey, Date.now());
+          }
+        }
+      }
+    }
+  }
+
+  private shouldAlert(key: string): boolean {
+    const lastAlert = this.lastAlertMap.get(key);
+    return !lastAlert || (Date.now() - lastAlert > this.ALERT_COOLDOWN);
   }
 
   private async calculateDistanceFromRoute(

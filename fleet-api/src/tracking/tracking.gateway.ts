@@ -84,10 +84,16 @@ export class TrackingGateway
         client.join('admin');
         this.logger.log(`Admin/Dispatcher connected: ${client.id}`);
       } else if (payload.role === 'driver') {
-        client.join(`driver:${payload.id}`);
-        this.logger.log(
-          `Driver connected: ${client.id} (Driver ID: ${payload.id})`,
-        );
+        const driver = await this.trackingService.getDriverByUserId(payload.sub);
+        if (driver) {
+          client.join(`driver:${driver.id}`);
+          client.data.driverId = driver.id; // Store driverId for convenience
+          this.logger.log(
+            `Driver connected: ${client.id} (Driver ID: ${driver.id})`,
+          );
+        } else {
+          this.logger.warn(`User ${payload.sub} has driver role but no driver profile found`);
+        }
       }
 
       this.logger.log(`Client connected: ${client.id}`);
@@ -115,6 +121,19 @@ export class TrackingGateway
       return { event: 'error', data: 'Unauthorized to send GPS updates' };
     }
 
+    // Ownership check for drivers
+    if (user.role === 'driver') {
+      const isAuthorized = await this.trackingService.validateDriverTrip(
+        user.sub,
+        data.tripId,
+        data.vehicleId,
+      );
+      if (!isAuthorized) {
+        this.logger.warn(`Driver ${user.sub} attempted unauthorized GPS update for trip ${data.tripId}`);
+        return { event: 'error', data: 'Unauthorized for this trip/vehicle' };
+      }
+    }
+
     try {
       const result = await this.trackingService.processGpsUpdate(data);
 
@@ -135,12 +154,38 @@ export class TrackingGateway
   }
 
   @SubscribeMessage('subscribe:trip')
-  handleSubscribeTrip(
+  async handleSubscribeTrip(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { tripId: string },
   ) {
-    client.join(`trip:${data.tripId}`);
-    return { event: 'subscribed', data: { room: `trip:${data.tripId}` } };
+    if (!data.tripId) return { event: 'error', data: 'Trip ID required' };
+
+    const user = client.data.user;
+
+    // Admins/Dispatchers can subscribe to any trip
+    if (user.role === 'admin' || user.role === 'dispatcher') {
+      client.join(`trip:${data.tripId}`);
+      return { event: 'subscribed', data: { room: `trip:${data.tripId}` } };
+    }
+
+    // Drivers can only subscribe to their own trips
+    if (user.role === 'driver') {
+      const isAuthorized = await this.trackingService.validateDriverTrip(
+        user.sub,
+        data.tripId,
+        client.data.vehicleId || '', // We'd need vehicleId here too for strict check, or just check trip driver
+      );
+      // Fallback check: just check if driver is assigned to trip
+      const driverId = client.data.driverId;
+      const trip = await this.trackingService.getTripById(data.tripId);
+      
+      if (trip && trip.driverId === driverId) {
+        client.join(`trip:${data.tripId}`);
+        return { event: 'subscribed', data: { room: `trip:${data.tripId}` } };
+      }
+    }
+
+    return { event: 'error', data: 'Unauthorized to subscribe to this trip' };
   }
 
   private extractToken(client: Socket): string | undefined {
@@ -149,16 +194,12 @@ export class TrackingGateway
       return client.handshake.auth.token;
     }
 
-    // 2. Try query parameters
-    if (client.handshake.query?.token) {
-      return client.handshake.query.token as string;
-    }
-
-    // 3. Try Authorization header
+    // 2. Try Authorization header
     const authHeader = client.handshake.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       return authHeader.split(' ')[1];
     }
+
 
     // 4. Try Cookies (for Web Admin with HttpOnly cookies)
     if (client.handshake.headers.cookie) {

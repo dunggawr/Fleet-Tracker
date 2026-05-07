@@ -47,7 +47,7 @@ export class Alert {
   @JoinColumn({ name: 'driver_id' })
   driver: Driver;
 
-  @Column({ name: 'driver_id' })
+  @Column({ name: 'driver_id', nullable: true })
   driverId: string;
 
   @Column({
