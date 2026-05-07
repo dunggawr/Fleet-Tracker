@@ -139,7 +139,7 @@ Token phải được gửi qua `auth.token` trong handshake.
 
 ### Events Emitted (Client -> Server):
 
-#### `updateLocation`
+#### `gps:update`
 Cập nhật GPS. Server thực hiện debouncing (5s) và kiểm tra tính hợp lệ của trip/vehicle.
 **Payload:**
 ```json
@@ -154,12 +154,33 @@ Cập nhật GPS. Server thực hiện debouncing (5s) và kiểm tra tính hợ
 }
 ```
 
+#### `subscribe:trip`
+Đăng ký nhận cập nhật cho một chuyến đi cụ thể.
+**Payload:**
+```json
+{
+  "tripId": "uuid"
+}
+```
+
 ---
 
 ## 🔔 Alerts
 
 ### POST `/alerts/report-incident`
 Tài xế báo cáo sự cố. Cảnh báo sẽ được tự động debouncing nếu trùng vị trí/thời gian.
+**Request Body:**
+```json
+{
+  "tripId": "uuid",
+  "vehicleId": "uuid",
+  "message": "Chi tiết sự cố...",
+  "location": {
+    "latitude": 10.123,
+    "longitude": 106.456
+  }
+}
+```
 
 ### POST `/alerts/:id/resolve`
 Đánh dấu cảnh báo đã xử lý (Admin).
