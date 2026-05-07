@@ -90,7 +90,7 @@ describe('TrackingService', () => {
       longitude: 20,
       speed: 50,
       heading: 90,
-      timestamp: Date.now(),
+      timestamp: new Date().toISOString(),
     };
 
     await service.processGpsUpdate(data);
@@ -107,7 +107,7 @@ describe('TrackingService', () => {
       longitude: 20,
       speed: 50,
       heading: 90,
-      timestamp: Date.now(),
+      timestamp: new Date().toISOString(),
     };
 
     await service.processGpsUpdate(data);
@@ -129,7 +129,7 @@ describe('TrackingService', () => {
       longitude: 20,
       speed: 50,
       heading: 90,
-      timestamp: Date.now(),
+      timestamp: new Date().toISOString(),
     };
 
     await service.processGpsUpdate(data);
@@ -139,12 +139,17 @@ describe('TrackingService', () => {
   });
 
   it('should validate driver trip successfully', async () => {
-    driverRepo.findOne.mockResolvedValue({ id: 'd1' });
     tripRepo.findOne.mockResolvedValue({ id: 't1' });
 
-    const result = await service.validateDriverTrip('u1', 't1', 'v1');
+    const result = await service.validateDriverTrip('d1', 't1', 'v1');
     
     expect(result).toBe(true);
-    expect(driverRepo.findOne).toHaveBeenCalledWith({ where: { userId: 'u1' } });
+    expect(tripRepo.findOne).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        id: 't1',
+        driverId: 'd1',
+        vehicleId: 'v1',
+      }),
+    }));
   });
 });

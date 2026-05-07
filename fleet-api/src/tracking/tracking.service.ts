@@ -14,6 +14,7 @@ export class TrackingService implements OnModuleDestroy {
   private gpsBuffer: GpsLocation[] = [];
   private readonly BATCH_INTERVAL = 5000; // 5 seconds
   private flushInterval: NodeJS.Timeout;
+  private isFlushing = false;
 
   constructor(
     @InjectRepository(GpsLocation)
@@ -42,8 +43,9 @@ export class TrackingService implements OnModuleDestroy {
   }
 
   private async flushBuffer() {
-    if (this.gpsBuffer.length === 0) return;
+    if (this.gpsBuffer.length === 0 || this.isFlushing) return;
 
+    this.isFlushing = true;
     const batch = [...this.gpsBuffer];
     
     try {
@@ -58,6 +60,8 @@ export class TrackingService implements OnModuleDestroy {
         this.logger.warn('GPS Buffer too large, dropping oldest points');
         this.gpsBuffer = this.gpsBuffer.slice(1000);
       }
+    } finally {
+      this.isFlushing = false;
     }
   }
 
@@ -151,14 +155,11 @@ export class TrackingService implements OnModuleDestroy {
     return this.tripRepository.findOne({ where: { id: tripId } });
   }
 
-  async validateDriverTrip(userId: string, tripId: string, vehicleId: string): Promise<boolean> {
-    const driver = await this.driverRepository.findOne({ where: { userId } });
-    if (!driver) return false;
-
+  async validateDriverTrip(driverId: string, tripId: string, vehicleId: string): Promise<boolean> {
     const trip = await this.tripRepository.findOne({ 
       where: { 
         id: tripId, 
-        driverId: driver.id,
+        driverId,
         vehicleId,
         status: TripStatus.IN_PROGRESS 
       } 

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
+import { DataSource, In } from 'typeorm';
 import { DispatchService } from './dispatch.service';
 import { Order, OrderStatus } from '../entities/order.entity';
 import { Vehicle, VehicleStatus } from '../entities/vehicle.entity';
@@ -84,11 +84,10 @@ describe('DispatchService', () => {
       const result = await service.assignBulkOrders(orderIds, vehicleId);
 
       // Verify deduplication: uniqueOrderIds should be ['o1', 'o2']
-      expect(mockQueryRunner.manager.find).toHaveBeenCalled();
-      const findCall = mockQueryRunner.manager.find.mock.calls[0][1];
-      expect(findCall.where.id._value).toHaveLength(2);
-      expect(findCall.where.id._value).toContain('o1');
-      expect(findCall.where.id._value).toContain('o2');
+      expect(mockQueryRunner.manager.find).toHaveBeenCalledWith(Order, expect.objectContaining({
+        where: { id: In(['o1', 'o2']) },
+        lock: { mode: 'pessimistic_write' },
+      }));
 
       // Verify batch saves
       // 1. Save Trip

@@ -124,12 +124,12 @@ export class TrackingGateway
     // Ownership check for drivers
     if (user.role === 'driver') {
       const isAuthorized = await this.trackingService.validateDriverTrip(
-        user.sub,
+        client.data.driverId,
         data.tripId,
         data.vehicleId,
       );
       if (!isAuthorized) {
-        this.logger.warn(`Driver ${user.sub} attempted unauthorized GPS update for trip ${data.tripId}`);
+        this.logger.warn(`Driver ${client.data.driverId} attempted unauthorized GPS update for trip ${data.tripId}`);
         return { event: 'error', data: 'Unauthorized for this trip/vehicle' };
       }
     }
@@ -170,12 +170,6 @@ export class TrackingGateway
 
     // Drivers can only subscribe to their own trips
     if (user.role === 'driver') {
-      const isAuthorized = await this.trackingService.validateDriverTrip(
-        user.sub,
-        data.tripId,
-        client.data.vehicleId || '', // We'd need vehicleId here too for strict check, or just check trip driver
-      );
-      // Fallback check: just check if driver is assigned to trip
       const driverId = client.data.driverId;
       const trip = await this.trackingService.getTripById(data.tripId);
       

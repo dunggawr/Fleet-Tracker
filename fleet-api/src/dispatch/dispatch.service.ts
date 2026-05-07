@@ -161,10 +161,13 @@ export class DispatchService {
       }
 
       // 2. Batch fetch orders
-      const orders = await queryRunner.manager.find(Order, {
+      const fetchedOrders = await queryRunner.manager.find(Order, {
         where: { id: In(uniqueOrderIds) },
         lock: { mode: 'pessimistic_write' },
       });
+
+      // Sort fetched orders to match the input orderIds sequence
+      const orders = uniqueOrderIds.map(id => fetchedOrders.find(o => o.id === id)).filter(Boolean) as Order[];
 
       if (orders.length !== uniqueOrderIds.length) {
         const foundIds = orders.map(o => o.id);

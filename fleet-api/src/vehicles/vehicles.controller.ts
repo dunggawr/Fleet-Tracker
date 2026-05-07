@@ -30,6 +30,8 @@ export class VehiclesController {
     return this.vehiclesService.findAll(query);
   }
 
+  @Get('available')
+  @ApiOperation({ summary: 'Get available vehicles for assignment' })
   findAvailable(@Query('capacity', new ParseFloatPipe({ optional: true })) capacity?: number) {
     return this.vehiclesService.findAvailable(capacity);
   }

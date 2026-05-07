@@ -54,7 +54,7 @@ describe('ViolationDetectorService', () => {
       longitude: 20,
       speed: 100, // Above MAX_SPEED (80)
       heading: 0,
-      timestamp: Date.now(),
+      timestamp: new Date().toISOString(),
     };
 
     await service.checkViolations(data);
@@ -71,7 +71,7 @@ describe('ViolationDetectorService', () => {
       longitude: 20,
       speed: 100,
       heading: 0,
-      timestamp: Date.now(),
+      timestamp: new Date().toISOString(),
     };
 
     // First violation
@@ -98,7 +98,7 @@ describe('ViolationDetectorService', () => {
       longitude: 20,
       speed: 50,
       heading: 0,
-      timestamp: Date.now(),
+      timestamp: new Date().toISOString(),
     };
 
     tripRepo.findOne.mockResolvedValue({ id: 't1', plannedRoute: { type: 'LineString', coordinates: [] } });
@@ -120,7 +120,7 @@ describe('ViolationDetectorService', () => {
       longitude: 20,
       speed: 50,
       heading: 0,
-      timestamp: Date.now(),
+      timestamp: new Date().toISOString(),
     };
 
     tripRepo.findOne.mockResolvedValue({ id: 't1', plannedRoute: { type: 'LineString', coordinates: [] } });
