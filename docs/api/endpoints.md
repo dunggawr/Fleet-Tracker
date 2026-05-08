@@ -51,6 +51,10 @@ Lấy thông tin profile người dùng hiện tại.
 ### GET `/vehicles`
 Lấy danh sách phương tiện.
 
+### GET `/vehicles/available`
+Lấy danh sách phương tiện đang rảnh (không trong chuyến đi nào).
+**Roles:** Admin, Dispatcher.
+
 ### POST `/vehicles`
 Tạo phương tiện mới.
 
@@ -167,20 +171,31 @@ Cập nhật GPS. Server thực hiện debouncing (5s) và kiểm tra tính hợ
 
 ## 🔔 Alerts
 
+### GET `/alerts/active`
+Lấy danh sách các cảnh báo chưa xử lý.
+**Roles:** Admin, Dispatcher.
+
+### GET `/alerts/stats`
+Thống kê số lượng cảnh báo theo loại.
+**Roles:** Admin.
+
 ### POST `/alerts/report-incident`
 Tài xế báo cáo sự cố. Cảnh báo sẽ được tự động debouncing nếu trùng vị trí/thời gian.
-**Request Body:**
+**Roles:** Driver.
+
+**Request Body (ReportIncidentDto):**
 ```json
 {
   "tripId": "uuid",
   "vehicleId": "uuid",
   "message": "Chi tiết sự cố...",
   "location": {
-    "latitude": 10.123,
-    "longitude": 106.456
+    "type": "Point",
+    "coordinates": [106.660172, 10.762622]
   }
 }
 ```
 
-### POST `/alerts/:id/resolve`
-Đánh dấu cảnh báo đã xử lý (Admin).
+### PUT `/alerts/:id/resolve`
+Đánh dấu cảnh báo đã xử lý.
+**Roles:** Admin, Dispatcher.

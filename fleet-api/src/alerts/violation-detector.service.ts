@@ -101,9 +101,12 @@ export class ViolationDetectorService implements OnModuleInit {
 
   @OnEvent('trip.status_changed')
   handleTripStatusChanged(payload: { id: string; status: string }) {
-    if (payload.status === TripStatus.COMPLETED || payload.status === TripStatus.CANCELLED) {
+    if (
+      payload.status === TripStatus.COMPLETED ||
+      payload.status === TripStatus.CANCELLED
+    ) {
       this.routeCache.delete(payload.id);
-      
+
       // Clear lastAlertMap entries for this trip
       for (const key of this.lastAlertMap.keys()) {
         if (key.startsWith(payload.id)) {
@@ -121,7 +124,7 @@ export class ViolationDetectorService implements OnModuleInit {
 
   private cleanupStaleEntries() {
     const now = Date.now();
-    const STALE_THRESHOLD = 24 * 60 * 60 * 1000; // 24 hours
+    const STALE_THRESHOLD = 12 * 60 * 60 * 1000; // Reduced to 12 hours for better memory management
 
     // Cleanup lastAlertMap
     let alertCleanupCount = 0;
@@ -142,7 +145,9 @@ export class ViolationDetectorService implements OnModuleInit {
     }
 
     if (alertCleanupCount > 0 || stopCleanupCount > 0) {
-      this.logger.log(`Cleaned up ${alertCleanupCount} stale alerts and ${stopCleanupCount} stale stop entries`);
+      this.logger.log(
+        `Cleaned up ${alertCleanupCount} stale alerts and ${stopCleanupCount} stale stop entries`,
+      );
     }
   }
 

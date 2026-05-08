@@ -47,18 +47,21 @@ export class TrackingService implements OnModuleDestroy {
 
     this.isFlushing = true;
     const batch = [...this.gpsBuffer];
-    
+    // Atomically clear the portion we're about to save
+    this.gpsBuffer = this.gpsBuffer.slice(batch.length);
+
     try {
       await this.gpsRepository.save(batch);
-      // Only clear buffer if save was successful
-      this.gpsBuffer = this.gpsBuffer.slice(batch.length);
       this.logger.debug(`Flushed ${batch.length} GPS points to DB`);
     } catch (error) {
       this.logger.error(`Failed to flush GPS buffer: ${error.message}`);
-      // In production, might want to limit buffer size to prevent memory issues
+      // Put back items if failed to save (at the beginning of the buffer)
+      this.gpsBuffer = [...batch, ...this.gpsBuffer];
+
+      // Limit buffer size to prevent memory leaks if DB is down for long
       if (this.gpsBuffer.length > 5000) {
         this.logger.warn('GPS Buffer too large, dropping oldest points');
-        this.gpsBuffer = this.gpsBuffer.slice(1000);
+        this.gpsBuffer = this.gpsBuffer.slice(-5000);
       }
     } finally {
       this.isFlushing = false;

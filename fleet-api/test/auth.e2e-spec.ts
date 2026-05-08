@@ -9,8 +9,8 @@ describe('AuthModule (e2e)', () => {
 
   // Use seeded users found in DB
   const adminCredentials = {
-    email: 'admin2@fleettracker.com',
-    password: 'Admin@456',
+    email: 'admin@fleettracker.com',
+    password: 'Admin@123',
   };
 
   const driverCredentials = {
@@ -50,7 +50,7 @@ describe('AuthModule (e2e)', () => {
       expect(response.body.user.email).toBe(adminCredentials.email);
 
       // Check cookies
-      const cookies = response.get('Set-Cookie');
+      const cookies = response.get('Set-Cookie') as string[];
       expect(cookies).toBeDefined();
       expect(cookies.some(c => c.includes('access_token'))).toBeTruthy();
       expect(cookies.some(c => c.includes('refresh_token'))).toBeTruthy();
@@ -103,7 +103,7 @@ describe('AuthModule (e2e)', () => {
         .send(adminCredentials)
         .expect(200);
 
-      const cookies = loginRes.get('Set-Cookie');
+      const cookies = loginRes.get('Set-Cookie') || [];
 
       const response = await request(app.getHttpServer())
         .get('/auth/me')
@@ -197,7 +197,7 @@ describe('AuthModule (e2e)', () => {
         .send(adminCredentials)
         .expect(200);
 
-      const cookies = loginRes.get('Set-Cookie');
+      const cookies = loginRes.get('Set-Cookie') || [];
 
       const response = await request(app.getHttpServer())
         .post('/auth/refresh')
@@ -216,7 +216,7 @@ describe('AuthModule (e2e)', () => {
         .send(adminCredentials)
         .expect(200);
 
-      const cookies = loginRes.get('Set-Cookie');
+      const cookies = loginRes.get('Set-Cookie') || [];
       const token = loginRes.body.accessToken;
 
       const response = await request(app.getHttpServer())
@@ -225,7 +225,8 @@ describe('AuthModule (e2e)', () => {
         .set('Cookie', cookies)
         .expect(200);
 
-      const setCookies = response.get('Set-Cookie');
+      const setCookies = response.get('Set-Cookie') as string[];
+      expect(setCookies).toBeDefined();
       expect(setCookies.some(c => c.includes('access_token=;'))).toBeTruthy();
       expect(setCookies.some(c => c.includes('refresh_token=;'))).toBeTruthy();
     });

@@ -92,7 +92,11 @@ export class TrackingGateway
             `Driver connected: ${client.id} (Driver ID: ${driver.id})`,
           );
         } else {
-          this.logger.warn(`User ${payload.sub} has driver role but no driver profile found`);
+          this.logger.warn(
+            `User ${payload.sub} has driver role but no driver profile found. Disconnecting.`,
+          );
+          client.disconnect();
+          return;
         }
       }
 
