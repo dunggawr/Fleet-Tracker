@@ -43,8 +43,13 @@ class HttpClient {
     return result as T;
   }
 
-  get<T>(endpoint: string) {
-    return this.request<T>(endpoint);
+  get<T>(endpoint: string, options: RequestInit & { params?: Record<string, string> } = {}) {
+    let finalEndpoint = endpoint;
+    if (options.params) {
+      const searchParams = new URLSearchParams(options.params);
+      finalEndpoint += `?${searchParams.toString()}`;
+    }
+    return this.request<T>(finalEndpoint, options);
   }
 
   post<T>(endpoint: string, data?: unknown) {
