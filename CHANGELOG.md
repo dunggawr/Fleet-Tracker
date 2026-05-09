@@ -74,17 +74,6 @@ Tất cả các thay đổi quan trọng đối với dự án FleetTracker sẽ
     - Cập nhật script `comprehensive-seed.ts` để khởi tạo dữ liệu mẫu cho toàn bộ hệ thống.
 ### Fixed
 - Lỗi mismatch kiểu dữ liệu giữa Frontend và Backend (Status ENUMs, field names như `customerName` vs `deliveryAddress`).
-## [2026-05-08] - Final API Hardening & Testing Completion (PR #8)
-### Added
-- Backend: Đạt độ phủ test >95% cho các service quan trọng (`Alerts`, `ViolationDetector`, `Dispatch`).
-- Backend: Hoàn thiện bộ unit test cho `TrackingGateway`, `AuthController`, `JwtStrategy`, và `RolesGuard`.
-- Backend: Triển khai kiểm tra quyền sở hữu (Ownership validation) cho WebSocket rooms.
-- Documentation: Tạo `walkthrough.md` tổng kết toàn bộ quá trình hardening.
-
-### Fixed
-- Backend: Khắc phục lỗi rò rỉ mock (mock leakage) giữa các bài test trong `JwtStrategy`.
-- Backend: Sửa lỗi trích xuất token từ nhiều nguồn (Cookies, Headers, Auth object) trong WebSocket gateway.
-
 ## [2026-05-07] - Testing & API Docs
 ### Added
 - Backend: Triển khai bộ Unit Test toàn diện cho `AuthService` (13/13 tests pass).
