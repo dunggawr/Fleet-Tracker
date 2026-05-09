@@ -1,11 +1,5 @@
 # Phase 08: Admin Dashboard — Maps & Real-time Monitoring
 
-**Status:** ⬜ Pending
-**Dependencies:** Phase 05 (Backend Real-time), Phase 07 (Admin Core UI)
-**Ước tính:** 5-6 ngày
-
-# Phase 08: Admin Dashboard — Maps & Real-time Monitoring
-
 **Status:** ✅ Completed
 **Dependencies:** Phase 05 (Backend Real-time), Phase 07 (Admin Core UI)
 **Ước tính:** 5-6 ngày

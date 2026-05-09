@@ -83,9 +83,9 @@ fleet-tracker/
 | 05 | Backend — Real-time GPS & Alerts | ✅ Complete | 14 | 5-7 ngày |
 | 06 | Backend — Reports & Optimization | ✅ Complete | 12 | 4-5 ngày |
 | 07 | Admin Dashboard — Core UI | ✅ Complete | 20 | 6-8 ngày |
-| 08 | Admin Dashboard — Maps & Monitoring | ⬜ Pending | 12 | 5-6 ngày |
-| 09 | Admin Dashboard — Reports & Analytics | ⬜ Pending | 10 | 3-4 ngày |
-| 10 | Driver Mobile App | ⬜ Pending | 16 | 7-10 ngày |
+| 08 | Admin Dashboard — Maps & Monitoring | ✅ Completed | 12 | 5-6 ngày |
+| 09 | Admin Dashboard — Reports & Analytics | ✅ Complete | 10 | 3-4 ngày |
+| 10 | Driver Mobile App | 🟡 In Progress | 16 | 7-10 ngày |
 
 **Tổng: ~139 tasks | ~42-56 ngày**
 

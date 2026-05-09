@@ -39,7 +39,6 @@ export class ReportsService {
         'failed',
       )
       .addSelect('SUM(trip.totalDistanceKm)', 'totalDistance')
-      // Aggregate estimated fuel cost using a simple weighted average or per-trip calculation in SQL
       .addSelect(
         `
         SUM(
@@ -53,19 +52,6 @@ export class ReportsService {
       `,
         'estimatedFuelCost',
       )
-      // Aggregate duration for completed trips
-      .addSelect(
-        `
-        AVG(
-          CASE 
-            WHEN trip.status = :completed AND trip.startedAt IS NOT NULL AND trip.completedAt IS NOT NULL 
-            THEN EXTRACT(EPOCH FROM (trip.completedAt - trip.startedAt)) / 60 
-            ELSE NULL 
-          END
-        )
-      `,
-        'avgDurationMinutes',
-      )
       .where('trip.createdAt BETWEEN :from AND :to', { from, to })
       .setParameters({
         completed: TripStatus.COMPLETED,
@@ -73,45 +59,49 @@ export class ReportsService {
       })
       .getRawOne();
 
-    const totalTrips = parseInt(stats.total || 0);
-    const completedTrips = parseInt(stats.completed || 0);
-    const failedTrips = parseInt(stats.failed || 0);
-    const totalDistanceKm = parseFloat(stats.totalDistance || 0);
-    const completionRate =
-      totalTrips > 0 ? (completedTrips / totalTrips) * 100 : 0;
-    const estimatedFuelCost = parseFloat(stats.estimatedFuelCost || 0);
-    const averageTripDuration = parseFloat(stats.avgDurationMinutes || 0);
-
-    const alertStats = await this.alertRepository
-      .createQueryBuilder('alert')
-      .select('type')
+    const tripsByVehicle = await this.tripRepository
+      .createQueryBuilder('trip')
+      .leftJoin('trip.vehicle', 'vehicle')
+      .select('vehicle.plateNumber', 'vehiclePlate')
       .addSelect('COUNT(*)', 'count')
-      .where('alert.createdAt BETWEEN :from AND :to', { from, to })
-      .groupBy('type')
+      .where('trip.createdAt BETWEEN :from AND :to', { from, to })
+      .groupBy('vehicle.plateNumber')
       .getRawMany();
 
-    const alertsByType = {
-      speed: alertStats.find((a) => a.type === 'speed_violation')?.count || 0,
-      route: alertStats.find((a) => a.type === 'route_deviation')?.count || 0,
-      stop: alertStats.find((a) => a.type === 'abnormal_stop')?.count || 0,
-      incident: alertStats.find((a) => a.type === 'incident')?.count || 0,
-    };
+    const statusDistribution = await this.tripRepository
+      .createQueryBuilder('trip')
+      .select('trip.status', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .where('trip.createdAt BETWEEN :from AND :to', { from, to })
+      .groupBy('trip.status')
+      .getRawMany();
 
-    const totalAlerts = alertStats.reduce(
-      (sum, a) => sum + parseInt(a.count),
-      0,
-    );
+    // Real trend data: Group by day
+    const trendData = await this.tripRepository
+      .createQueryBuilder('trip')
+      .select("DATE(trip.createdAt)", "date")
+      .addSelect("COUNT(*)", "count")
+      .addSelect("SUM(trip.totalDistanceKm)", "distance")
+      .where('trip.createdAt BETWEEN :from AND :to', { from, to })
+      .groupBy("DATE(trip.createdAt)")
+      .orderBy("DATE(trip.createdAt)", "ASC")
+      .getRawMany();
+
+    const performanceTrend = trendData.map(t => ({
+      date: t.date,
+      trips: parseInt(t.count),
+      distance: parseFloat(t.distance || 0),
+    }));
 
     return {
-      totalTrips,
-      completedTrips,
-      failedTrips,
-      completionRate,
-      totalDistanceKm,
-      estimatedFuelCost,
-      averageTripDuration,
-      totalAlerts,
-      alertsByType,
+      totalTrips: parseInt(stats.total || 0),
+      totalDistance: parseFloat(stats.totalDistance || 0),
+      totalFuelCost: parseFloat(stats.estimatedFuelCost || 0),
+      completionRate: stats.total > 0 ? (stats.completed / stats.total) * 100 : 0,
+      tripsTrend: performanceTrend.map(t => ({ date: t.date, count: t.trips })),
+      statusDistribution,
+      tripsByVehicle,
+      performanceTrend,
     };
   }
 
@@ -119,45 +109,89 @@ export class ReportsService {
     const stats = await this.tripRepository
       .createQueryBuilder('trip')
       .leftJoin('trip.vehicle', 'vehicle')
-      .select('vehicle.plateNumber', 'plate')
+      .select('vehicle.plateNumber', 'vehiclePlate')
       .addSelect('vehicle.type', 'type')
-      .addSelect('SUM(trip.totalDistanceKm)', 'totalDistance')
+      .addSelect('SUM(trip.totalDistanceKm)', 'distance')
       .where('trip.createdAt BETWEEN :from AND :to', { from, to })
       .groupBy('vehicle.plateNumber')
       .addGroupBy('vehicle.type')
       .getRawMany();
 
-    const report = {};
-
-    stats.forEach((row) => {
-      const plate = row.plate || 'Unknown';
-      const distance = parseFloat(row.totalDistance || 0);
+    let totalCost = 0;
+    const vehicleFuelStats = stats.map(row => {
       const fuelRate = FUEL_RATES[row.type] || FUEL_RATES.medium;
-      const fuel = (distance / 100) * fuelRate;
-      const cost = fuel * DEFAULT_FUEL_PRICE;
-
-      report[plate] = {
-        distance,
-        fuel,
-        cost,
+      const cost = (parseFloat(row.distance) / 100) * fuelRate * DEFAULT_FUEL_PRICE;
+      totalCost += cost;
+      return {
+        vehiclePlate: row.vehiclePlate,
+        type: row.type,
+        distance: parseFloat(row.distance),
+        cost: cost,
+        efficiency: fuelRate
       };
     });
 
-    return report;
+    // Group by type
+    const costByVehicleType = [];
+    ['small', 'medium', 'large'].forEach(type => {
+      const cost = vehicleFuelStats
+        .filter(s => s.type === type)
+        .reduce((sum, s) => sum + s.cost, 0);
+      if (cost > 0) costByVehicleType.push({ type, cost });
+    });
+
+    return {
+      totalCost,
+      costByVehicleType,
+      costTrend: [], // Placeholder
+      averageCostPerTrip: totalCost / (vehicleFuelStats.length || 1),
+      vehicleFuelStats
+    };
   }
 
   async getVehicleUtilization() {
-    // Percentage of time vehicles are 'on_trip' or 'delivering'
     const totalVehicles = await this.vehicleRepository.count();
     const busyVehicles = await this.vehicleRepository.count({
       where: { status: VehicleStatus.DELIVERING },
     });
 
+    const vehicleStats = await this.vehicleRepository.find();
+
     return {
       totalVehicles,
       busyVehicles,
-      utilizationRate:
-        totalVehicles > 0 ? (busyVehicles / totalVehicles) * 100 : 0,
+      activeCount: busyVehicles,
+      idleCount: totalVehicles - busyVehicles,
+      averageUtilization: totalVehicles > 0 ? Math.round((busyVehicles / totalVehicles) * 100) : 0,
+      vehicleStats: vehicleStats.map(v => ({
+        plateNumber: v.plateNumber,
+        utilization: v.status === VehicleStatus.DELIVERING ? 100 : 0 // Real status based utilization
+      }))
+    };
+  }
+
+  async getTripSummary(from: Date, to: Date) {
+    const trips = await this.tripRepository.find({
+      where: { createdAt: Between(from, to) },
+      relations: ['vehicle', 'driver'],
+      order: { createdAt: 'DESC' }
+    });
+
+    return {
+      totalTrips: trips.length,
+      activeTrips: trips.filter(t => t.status === TripStatus.ONGOING).length,
+      delayedTrips: trips.filter(t => t.status === TripStatus.DELAYED).length,
+      trips: trips.map(t => ({
+        id: t.id,
+        date: t.createdAt.toISOString().split('T')[0],
+        vehiclePlate: t.vehicle?.plateNumber || 'N/A',
+        driverName: t.driver?.fullName || 'N/A',
+        status: t.status,
+        distance: t.totalDistanceKm,
+        duration: 'N/A', // Calculated if needed
+        startLocation: t.startLocation || 'N/A',
+        endLocation: t.endLocation || 'N/A'
+      }))
     };
   }
 }

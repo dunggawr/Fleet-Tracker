@@ -10,6 +10,7 @@ export enum ReportName {
   FLEET_PERFORMANCE = 'fleet-performance',
   FUEL_COST = 'fuel-cost',
   KPI_LEADERBOARD = 'kpi-leaderboard',
+  TRIP_SUMMARY = 'trip-summary',
 }
 
 export class ExportReportDto {

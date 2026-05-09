@@ -1,6 +1,6 @@
 # Phase 10: Driver Mobile App (React Native / Expo)
 
-**Status:** ⬜ Pending
+**Status:** 🟡 In Progress
 **Dependencies:** Phase 02 (Auth), Phase 03 (Core APIs), Phase 05 (GPS Real-time)
 **Ước tính:** 7-10 ngày
 
@@ -13,21 +13,21 @@ Xây dựng Driver Mobile App với Expo: đăng nhập, nhận chuyến, xem tu
 ## Implementation Steps
 
 ### 1. Auth & Navigation
-- [ ] Login screen (email + password)
-- [ ] JWT storage (expo-secure-store)
+- [x] Login screen (email + password)
+- [x] JWT storage (expo-secure-store)
 - [ ] Auto-login check on app launch
-- [ ] Tab navigation: Trips | Map | Profile
+- [x] Tab navigation: Trips | Map | Profile
 - [ ] Protected routes (redirect to login if no token)
 
 ### 2. Trip List (Trips tab)
-- [ ] 3 sections: Pending (accept/reject), Active (current trip), Completed (history)
-- [ ] Trip card: trip ID, pickup → delivery, orders count, created time
+- [x] 3 sections: Pending (accept/reject), Active (current trip), Completed (history)
+- [x] Trip card: trip ID, pickup → delivery, orders count, created time
 - [ ] Pull-to-refresh
 - [ ] Accept button → confirm modal → call API
 - [ ] Reject button → confirm modal → call API
 
 ### 3. Active Trip Screen
-- [ ] Full-screen map (react-native-maps)
+- [x] Full-screen map (react-native-maps)
 - [ ] Planned route overlay (polyline)
 - [ ] Current position marker (auto-center)
 - [ ] Order waypoints markers (numbered: 1, 2, 3...)
@@ -41,7 +41,7 @@ Xây dựng Driver Mobile App với Expo: đăng nhập, nhận chuyến, xem tu
 - [ ] Navigation integration (open in Google Maps/Apple Maps)
 
 ### 4. Delivery Confirmation
-- [ ] Camera screen (expo-camera):
+- [x] Camera screen (expo-camera):
   - Chụp ảnh bằng chứng giao hàng
   - Preview → confirm → upload to Supabase Storage
   - Attach photo URL to order completion
@@ -71,7 +71,7 @@ Xây dựng Driver Mobile App với Expo: đăng nhập, nhận chuyến, xem tu
 - [ ] Logout button
 
 ### 8. WebSocket Integration
-- [ ] Connect on login, disconnect on logout
+- [x] Connect on login, disconnect on logout
 - [ ] Emit `gps:update` every 5-10s during active trip
 - [ ] Listen `trip:new` → new trip notification
 - [ ] Listen `trip:cancelled` → trip cancelled by admin
