@@ -23,15 +23,17 @@ const PRESET_RANGES = [
 export function DateRangeFilter({ onRangeChange }: DateRangeFilterProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedLabel, setSelectedLabel] = useState('Last 7 Days');
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
 
-  const handlePresetClick = (preset: any) => {
+  const handlePresetClick = (preset: typeof PRESET_RANGES[0]) => {
     const to = new Date();
     let from = new Date();
 
     if (preset.days === 'current_month') {
       from = new Date(to.getFullYear(), to.getMonth(), 1);
     } else {
-      from.setDate(to.getDate() - preset.days);
+      from.setDate(to.getDate() - (preset.days as number));
     }
 
     const range = {
@@ -41,6 +43,14 @@ export function DateRangeFilter({ onRangeChange }: DateRangeFilterProps) {
 
     setSelectedLabel(preset.label);
     onRangeChange(range);
+    setIsOpen(false);
+  };
+
+  const handleApply = () => {
+    if (!customFrom || !customTo) return;
+    
+    setSelectedLabel(`${customFrom} to ${customTo}`);
+    onRangeChange({ from: customFrom, to: customTo });
     setIsOpen(false);
   };
 
@@ -67,11 +77,29 @@ export function DateRangeFilter({ onRangeChange }: DateRangeFilterProps) {
           <div className="custom-range">
             <span className="custom-label">Custom Range</span>
             <div className="inputs">
-              <input type="date" className="date-input" />
+              <input 
+                type="date" 
+                className="date-input" 
+                value={customFrom}
+                onChange={(e) => setCustomFrom(e.target.value)}
+              />
               <span>to</span>
-              <input type="date" className="date-input" />
+              <input 
+                type="date" 
+                className="date-input" 
+                value={customTo}
+                onChange={(e) => setCustomTo(e.target.value)}
+              />
             </div>
-            <Button size="sm" fullWidth style={{ marginTop: '12px' }}>Apply</Button>
+            <Button 
+              size="sm" 
+              fullWidth 
+              style={{ marginTop: '12px' }}
+              onClick={handleApply}
+              disabled={!customFrom || !customTo}
+            >
+              Apply
+            </Button>
           </div>
         </div>
       )}

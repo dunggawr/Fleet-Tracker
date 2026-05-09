@@ -97,7 +97,9 @@ describe('TrackingGateway', () => {
         handshake: { auth: { token: 'valid-token' }, headers: {} },
       } as any;
       mockJwtService.verify.mockReturnValue({ role: 'driver', sub: 'user-1' });
-      mockTrackingService.getDriverByUserId.mockResolvedValue({ id: 'driver-1' });
+      mockTrackingService.getDriverByUserId.mockResolvedValue({
+        id: 'driver-1',
+      });
 
       await gateway.handleConnection(socket);
 
@@ -121,7 +123,10 @@ describe('TrackingGateway', () => {
     it('should extract token from authorization header', async () => {
       const socket = {
         ...mockSocket,
-        handshake: { auth: {}, headers: { authorization: 'Bearer header-token' } },
+        handshake: {
+          auth: {},
+          headers: { authorization: 'Bearer header-token' },
+        },
       } as any;
       mockJwtService.verify.mockReturnValue({ role: 'admin', sub: 'user-1' });
 
@@ -133,7 +138,10 @@ describe('TrackingGateway', () => {
     it('should extract token from cookies', async () => {
       const socket = {
         ...mockSocket,
-        handshake: { auth: {}, headers: { cookie: 'access_token=cookie-token' } },
+        handshake: {
+          auth: {},
+          headers: { cookie: 'access_token=cookie-token' },
+        },
       } as any;
       mockJwtService.verify.mockReturnValue({ role: 'admin', sub: 'user-1' });
 
@@ -187,7 +195,12 @@ describe('TrackingGateway', () => {
         ...mockSocket,
         data: { user: { role: 'admin' } },
       } as any;
-      const data = { tripId: 'trip-1', vehicleId: 'v-1', latitude: 1, longitude: 1 };
+      const data = {
+        tripId: 'trip-1',
+        vehicleId: 'v-1',
+        latitude: 1,
+        longitude: 1,
+      };
       mockTrackingService.processGpsUpdate.mockResolvedValue({ id: 'res-1' });
 
       const result = await gateway.handleGpsUpdate(socket, data as any);
@@ -201,7 +214,12 @@ describe('TrackingGateway', () => {
         ...mockSocket,
         data: { user: { role: 'driver' }, driverId: 'driver-1' },
       } as any;
-      const data = { tripId: 'trip-1', vehicleId: 'v-1', latitude: 1, longitude: 1 };
+      const data = {
+        tripId: 'trip-1',
+        vehicleId: 'v-1',
+        latitude: 1,
+        longitude: 1,
+      };
       mockTrackingService.validateDriverTrip.mockResolvedValue(false);
 
       const result = await gateway.handleGpsUpdate(socket, data as any);
@@ -215,8 +233,15 @@ describe('TrackingGateway', () => {
         ...mockSocket,
         data: { user: { role: 'admin' } },
       } as any;
-      const data = { tripId: 'trip-1', vehicleId: 'v-1', latitude: 1, longitude: 1 };
-      mockTrackingService.processGpsUpdate.mockRejectedValue(new Error('DB Error'));
+      const data = {
+        tripId: 'trip-1',
+        vehicleId: 'v-1',
+        latitude: 1,
+        longitude: 1,
+      };
+      mockTrackingService.processGpsUpdate.mockRejectedValue(
+        new Error('DB Error'),
+      );
 
       const result = await gateway.handleGpsUpdate(socket, data as any);
 
@@ -232,8 +257,13 @@ describe('TrackingGateway', () => {
     });
 
     it('should allow admin to subscribe', async () => {
-      const socket = { ...mockSocket, data: { user: { role: 'admin' } } } as any;
-      const result = await gateway.handleSubscribeTrip(socket, { tripId: 'trip-1' });
+      const socket = {
+        ...mockSocket,
+        data: { user: { role: 'admin' } },
+      } as any;
+      const result = await gateway.handleSubscribeTrip(socket, {
+        tripId: 'trip-1',
+      });
       expect(result.event).toBe('subscribed');
       expect(socket.join).toHaveBeenCalledWith('trip:trip-1');
     });
@@ -243,9 +273,13 @@ describe('TrackingGateway', () => {
         ...mockSocket,
         data: { user: { role: 'driver' }, driverId: 'driver-1' },
       } as any;
-      mockTrackingService.getTripById.mockResolvedValue({ driverId: 'driver-1' });
+      mockTrackingService.getTripById.mockResolvedValue({
+        driverId: 'driver-1',
+      });
 
-      const result = await gateway.handleSubscribeTrip(socket, { tripId: 'trip-1' });
+      const result = await gateway.handleSubscribeTrip(socket, {
+        tripId: 'trip-1',
+      });
       expect(result.event).toBe('subscribed');
     });
 
@@ -254,9 +288,13 @@ describe('TrackingGateway', () => {
         ...mockSocket,
         data: { user: { role: 'driver' }, driverId: 'driver-1' },
       } as any;
-      mockTrackingService.getTripById.mockResolvedValue({ driverId: 'driver-2' });
+      mockTrackingService.getTripById.mockResolvedValue({
+        driverId: 'driver-2',
+      });
 
-      const result = await gateway.handleSubscribeTrip(socket, { tripId: 'trip-1' });
+      const result = await gateway.handleSubscribeTrip(socket, {
+        tripId: 'trip-1',
+      });
       expect(result.event).toBe('error');
     });
   });

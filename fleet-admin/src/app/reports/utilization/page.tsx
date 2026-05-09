@@ -13,33 +13,62 @@ import {
 } from 'recharts';
 import { Truck, Clock, Zap } from 'lucide-react';
 import { StatCard } from '@/components/ui/StatCard';
+import { DateRangeFilter } from '../components/DateRangeFilter';
+import { ExportActions } from '../components/ExportActions';
 import { ReportChartWrapper } from '../components/ReportChartWrapper';
 import { api } from '@/lib/api';
 
-const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444'];
+interface VehicleUtilizationStats {
+  plateNumber: string;
+  utilization: number;
+  status: string;
+}
+
+interface UtilizationData {
+  activeCount: number;
+  idleCount: number;
+  averageUtilization: number;
+  vehicleStats: VehicleUtilizationStats[];
+}
 
 export default function UtilizationPage() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<UtilizationData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [dateRange, setDateRange] = useState(() => {
+    const to = new Date();
+    const from = new Date();
+    from.setDate(to.getDate() - 7);
+    return {
+      from: from.toISOString().split('T')[0],
+      to: to.toISOString().split('T')[0],
+    };
+  });
 
-  const fetchData = async () => {
+  const fetchData = React.useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await api.get<any>('/reports/vehicle-utilization');
+      const response = await api.get<UtilizationData>('/reports/vehicle-utilization', {
+        params: dateRange
+      });
       setData(response);
     } catch (error) {
       console.error('Error fetching utilization report:', error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [dateRange]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   return (
     <div className="utilization-reports">
+      <div className="action-bar">
+        <DateRangeFilter onRangeChange={setDateRange} />
+        <ExportActions reportName="vehicle-utilization" params={dateRange} />
+      </div>
+
       <div className="stats-grid">
         <StatCard 
           label="Active Vehicles" 
@@ -82,7 +111,7 @@ export default function UtilizationPage() {
                 }} 
               />
               <Bar dataKey="utilization" fill="var(--color-primary)" radius={[0, 4, 4, 0]}>
-                {(data?.vehicleStats || []).map((entry: any, index: number) => (
+                {(data?.vehicleStats || []).map((entry: VehicleUtilizationStats, index: number) => (
                   <Cell 
                     key={`cell-${index}`} 
                     fill={entry.utilization > 80 ? 'var(--color-success)' : entry.utilization > 40 ? 'var(--color-primary)' : 'var(--color-warning)'} 
@@ -99,6 +128,12 @@ export default function UtilizationPage() {
           display: flex;
           flex-direction: column;
           gap: var(--space-xl);
+        }
+
+        .action-bar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
         }
 
         .stats-grid {

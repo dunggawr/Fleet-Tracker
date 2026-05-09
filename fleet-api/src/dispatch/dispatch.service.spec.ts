@@ -26,8 +26,12 @@ describe('DispatchService', () => {
       manager: {
         findOne: jest.fn(),
         find: jest.fn(),
-        create: jest.fn().mockImplementation((entity, data) => ({ id: 'new-id', ...data })),
-        save: jest.fn().mockImplementation((entity, data) => Promise.resolve(data)),
+        create: jest
+          .fn()
+          .mockImplementation((entity, data) => ({ id: 'new-id', ...data })),
+        save: jest
+          .fn()
+          .mockImplementation((entity, data) => Promise.resolve(data)),
       },
     };
 
@@ -86,16 +90,27 @@ describe('DispatchService', () => {
   describe('suggestVehicles', () => {
     it('should throw NotFoundException if order not found', async () => {
       orderRepo.findOneBy.mockResolvedValue(null);
-      await expect(service.suggestVehicles('o1')).rejects.toThrow(NotFoundException);
+      await expect(service.suggestVehicles('o1')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw BadRequestException if order is not pending', async () => {
-      orderRepo.findOneBy.mockResolvedValue({ id: 'o1', status: OrderStatus.ASSIGNED });
-      await expect(service.suggestVehicles('o1')).rejects.toThrow(BadRequestException);
+      orderRepo.findOneBy.mockResolvedValue({
+        id: 'o1',
+        status: OrderStatus.ASSIGNED,
+      });
+      await expect(service.suggestVehicles('o1')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should return suggested vehicles', async () => {
-      orderRepo.findOneBy.mockResolvedValue({ id: 'o1', status: OrderStatus.PENDING, weightKg: 100 });
+      orderRepo.findOneBy.mockResolvedValue({
+        id: 'o1',
+        status: OrderStatus.PENDING,
+        weightKg: 100,
+      });
       const mockVehicles = [{ id: 'v1' }];
       vehicleRepo.createQueryBuilder().getMany.mockResolvedValue(mockVehicles);
 
@@ -108,14 +123,18 @@ describe('DispatchService', () => {
 
   describe('assignOrder', () => {
     it('should successfully assign a single order', async () => {
-      const mockOrder = { id: 'o1', status: OrderStatus.PENDING, weightKg: 100 };
-      const mockVehicle = { 
-        id: 'v1', 
-        status: VehicleStatus.AVAILABLE, 
+      const mockOrder = {
+        id: 'o1',
+        status: OrderStatus.PENDING,
+        weightKg: 100,
+      };
+      const mockVehicle = {
+        id: 'v1',
+        status: VehicleStatus.AVAILABLE,
         driverId: 'd1',
         driver: { id: 'd1', status: DriverStatus.AVAILABLE },
         maxCapacityKg: 1000,
-        currentLoadKg: 0
+        currentLoadKg: 0,
       };
 
       mockQueryRunner.manager.findOne
@@ -160,9 +179,12 @@ describe('DispatchService', () => {
 
       const result = await service.assignBulkOrders(orderIds, vehicleId);
 
-      expect(mockQueryRunner.manager.find).toHaveBeenCalledWith(Order, expect.objectContaining({
-        where: { id: In(['o1', 'o2']) },
-      }));
+      expect(mockQueryRunner.manager.find).toHaveBeenCalledWith(
+        Order,
+        expect.objectContaining({
+          where: { id: In(['o1', 'o2']) },
+        }),
+      );
       expect(mockQueryRunner.manager.save).toHaveBeenCalledTimes(4);
       expect(mockQueryRunner.commitTransaction).toHaveBeenCalled();
       expect(result).toBeDefined();
@@ -177,23 +199,23 @@ describe('DispatchService', () => {
     });
 
     it('should group orders into clusters based on distance', async () => {
-      const o1 = { 
-        id: 'o1', 
-        pickupAddress: 'A', 
+      const o1 = {
+        id: 'o1',
+        pickupAddress: 'A',
         weightKg: 10,
-        pickupLocation: { coordinates: [106.0, 10.0] } 
+        pickupLocation: { coordinates: [106.0, 10.0] },
       };
-      const o2 = { 
-        id: 'o2', 
-        pickupAddress: 'B', 
+      const o2 = {
+        id: 'o2',
+        pickupAddress: 'B',
         weightKg: 20,
-        pickupLocation: { coordinates: [106.01, 10.01] } // Close to A
+        pickupLocation: { coordinates: [106.01, 10.01] }, // Close to A
       };
-      const o3 = { 
-        id: 'o3', 
-        pickupAddress: 'C', 
+      const o3 = {
+        id: 'o3',
+        pickupAddress: 'C',
         weightKg: 30,
-        pickupLocation: { coordinates: [107.0, 11.0] } // Far from A
+        pickupLocation: { coordinates: [107.0, 11.0] }, // Far from A
       };
 
       orderRepo.find.mockResolvedValue([o1, o2, o3]);

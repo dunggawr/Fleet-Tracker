@@ -95,6 +95,39 @@ class HttpClient {
 
     return result as T;
   }
+  async getBlob(endpoint: string, options: RequestInit & { params?: Record<string, string> } = {}): Promise<Blob> {
+    let finalEndpoint = endpoint;
+    if (options.params) {
+      const searchParams = new URLSearchParams(options.params);
+      finalEndpoint += `?${searchParams.toString()}`;
+    }
+    
+    const url = `${API_BASE}${finalEndpoint}`;
+    const headers: HeadersInit = {
+      'x-client-type': 'web',
+      ...options.headers,
+    };
+
+    const response = await fetch(url, {
+      ...options,
+      headers,
+      credentials: 'include',
+    });
+
+    if (response.status === 401) {
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login';
+      }
+      throw new Error('Unauthorized');
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error?.error?.message || `HTTP ${response.status}`);
+    }
+
+    return response.blob();
+  }
 }
 
 export const api = new HttpClient();

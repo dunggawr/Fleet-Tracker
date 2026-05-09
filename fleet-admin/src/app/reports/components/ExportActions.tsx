@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Download, FileText, Table as TableIcon } from 'lucide-react';
+import { FileText, Table as TableIcon } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { api } from '@/lib/api';
 
@@ -19,22 +19,14 @@ export function ExportActions({ reportName, params = {} }: ExportActionsProps) {
     setLoader(true);
 
     try {
-      const queryParams = new URLSearchParams({
-        report_name: reportName,
-        type,
-        ...params,
+      const blob = await api.getBlob('/reports/export', {
+        params: {
+          report_name: reportName,
+          type,
+          ...params,
+        },
       });
 
-      const url = `/reports/export?${queryParams.toString()}`;
-      
-      // We use the raw fetch here to handle the blob correctly
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}${url}`, {
-        credentials: 'include',
-      });
-
-      if (!response.ok) throw new Error('Export failed');
-
-      const blob = await response.blob();
       const downloadUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = downloadUrl;

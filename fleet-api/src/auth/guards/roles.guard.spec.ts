@@ -46,7 +46,9 @@ describe('RolesGuard', () => {
 
   it('should return true if user has required role', () => {
     mockReflector.getAllAndOverride.mockReturnValue([UserRole.ADMIN]);
-    (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue({
+    (
+      mockExecutionContext.switchToHttp().getRequest as jest.Mock
+    ).mockReturnValue({
       user: { role: UserRole.ADMIN },
     });
     expect(guard.canActivate(mockExecutionContext)).toBe(true);
@@ -54,7 +56,9 @@ describe('RolesGuard', () => {
 
   it('should return false if user does not have required role', () => {
     mockReflector.getAllAndOverride.mockReturnValue([UserRole.ADMIN]);
-    (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue({
+    (
+      mockExecutionContext.switchToHttp().getRequest as jest.Mock
+    ).mockReturnValue({
       user: { role: UserRole.OPERATOR },
     });
     expect(guard.canActivate(mockExecutionContext)).toBe(false);
@@ -62,7 +66,9 @@ describe('RolesGuard', () => {
 
   it('should return false if no user is present', () => {
     mockReflector.getAllAndOverride.mockReturnValue([UserRole.ADMIN]);
-    (mockExecutionContext.switchToHttp().getRequest as jest.Mock).mockReturnValue({
+    (
+      mockExecutionContext.switchToHttp().getRequest as jest.Mock
+    ).mockReturnValue({
       user: null,
     });
     expect(guard.canActivate(mockExecutionContext)).toBe(false);
