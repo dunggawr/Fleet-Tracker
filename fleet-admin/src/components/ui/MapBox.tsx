@@ -30,6 +30,7 @@ interface MapBoxProps {
   center?: { lat: number; lng: number };
   zoom?: number;
   className?: string;
+  followVehicle?: boolean;
 }
 
 export function MapBox({ 
@@ -38,7 +39,8 @@ export function MapBox({
   geofence = [],
   center = { lat: 21.0285, lng: 105.8542 }, // Default to Hanoi
   zoom = 12,
-  className = ''
+  className = '',
+  followVehicle = false
 }: MapBoxProps) {
   const mapRef = React.useRef<MapRef>(null);
 
@@ -50,14 +52,16 @@ export function MapBox({
 
   const [popupInfo, setPopupInfo] = React.useState<MapMarker | null>(null);
 
-  // Update viewState when center changes
+  // Update viewState when center changes, but only if followVehicle is enabled
   React.useEffect(() => {
-    setViewState(prev => ({
-      ...prev,
-      longitude: center.lng,
-      latitude: center.lat,
-    }));
-  }, [center.lat, center.lng]);
+    if (followVehicle) {
+      setViewState(prev => ({
+        ...prev,
+        longitude: center.lng,
+        latitude: center.lat,
+      }));
+    }
+  }, [center.lat, center.lng, followVehicle]);
 
   if (!MAPBOX_TOKEN) {
     return (
@@ -163,7 +167,14 @@ export function MapBox({
               type="line"
               paint={{
                 'line-color': '#f43f5e',
-                'line-width': 40, // Visual representation of ~500m buffer
+                'line-width': [
+                  'interpolate',
+                  ['exponential', 2],
+                  ['zoom'],
+                  10, 5,
+                  14, 40,
+                  18, 500
+                ],
                 'line-opacity': 0.1
               }}
             />

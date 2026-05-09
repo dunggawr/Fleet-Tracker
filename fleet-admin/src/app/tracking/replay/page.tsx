@@ -5,22 +5,16 @@ import { MapBox } from '@/components/ui/MapBox';
 import { useVehicles } from '@/hooks/use-vehicles';
 import { Truck, Play, Pause, RotateCcw, FastForward, Calendar, Clock, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
+import { api } from '@/lib/api';
 
-// Mock historical data generation
-const generateHistory = (vehicleId: string, date: string) => {
-  const points = [];
-  const startLat = 21.0285;
-  const startLng = 105.8542;
-  
-  for (let i = 0; i < 100; i++) {
-    points.push({
-      lat: startLat + Math.sin(i / 10) * 0.01 + (i * 0.0005),
-      lng: startLng + Math.cos(i / 10) * 0.01 + (i * 0.0005),
-      speed: 40 + Math.random() * 30,
-      timestamp: new Date().getTime() - (100 - i) * 60000,
-    });
-  }
-  return points;
+// Transform API response to UI points
+const transformHistory = (logs: any[]) => {
+  return logs.map(log => ({
+    lat: log.location.coordinates[1],
+    lng: log.location.coordinates[0],
+    speed: parseFloat(log.speedKmh) || 0,
+    timestamp: new Date(log.recordedAt).getTime(),
+  }));
 };
 
 export default function RouteReplayPage() {
@@ -34,12 +28,28 @@ export default function RouteReplayPage() {
 
   // Load history when vehicle or date changes
   useEffect(() => {
-    if (selectedVehicleId) {
-      const data = generateHistory(selectedVehicleId, date);
-      setHistory(data);
-      setCurrentIndex(0);
-      setIsPlaying(false);
+    async function loadHistory() {
+      if (selectedVehicleId) {
+        try {
+          const from = new Date(date);
+          const to = new Date(date);
+          to.setHours(23, 59, 59, 999);
+          
+          const response = await api.get<any[]>(`/tracking/vehicle/${selectedVehicleId}/history`, {
+            params: { from: from.toISOString(), to: to.toISOString() }
+          });
+          
+          const data = transformHistory(response);
+          setHistory(data);
+          setCurrentIndex(0);
+          setIsPlaying(false);
+        } catch (err) {
+          console.error('Failed to load history:', err);
+          setHistory([]);
+        }
+      }
     }
+    loadHistory();
   }, [selectedVehicleId, date]);
 
   // Playback logic

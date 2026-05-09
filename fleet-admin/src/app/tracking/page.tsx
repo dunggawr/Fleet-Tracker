@@ -12,6 +12,7 @@ export default function TrackingPage() {
   const { vehicles, isLoading } = useVehicles();
   const { vehicleLocations, trails, alerts, isConnected } = useTracking();
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
+  const [followVehicle, setFollowVehicle] = useState(true);
 
   // Combine static vehicle data with real-time location data
   const mapMarkers = useMemo((): MapMarker[] => {
@@ -87,6 +88,7 @@ export default function TrackingPage() {
             lng: vehicleLocations[selectedVehicle.id]?.lng ?? selectedVehicle.lastKnownLocation?.lng ?? 105.8542
           } : undefined)}
           zoom={mapFocus ? 16 : (selectedVehicle ? 15 : 12)}
+          followVehicle={followVehicle && !mapFocus}
         />
 
         {/* Connection Status Indicator */}
@@ -95,6 +97,20 @@ export default function TrackingPage() {
           <span className="text-xs font-medium text-slate-300">
             {isConnected ? 'Live' : 'Disconnected'}
           </span>
+        </div>
+
+        {/* Map Controls Overlay */}
+        <div className="absolute top-4 right-16 z-10 flex items-center gap-2">
+          <button
+            onClick={() => setFollowVehicle(!followVehicle)}
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+              followVehicle 
+                ? 'bg-primary-600 text-white shadow-lg shadow-primary-900/20' 
+                : 'bg-slate-900/80 text-slate-300 hover:bg-slate-800'
+            } backdrop-blur-md border border-slate-700`}
+          >
+            {followVehicle ? 'Following' : 'Follow Vehicle'}
+          </button>
         </div>
 
         {/* Alerts Overlay */}

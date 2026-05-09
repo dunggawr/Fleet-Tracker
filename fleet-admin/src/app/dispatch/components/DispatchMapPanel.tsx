@@ -71,7 +71,7 @@ export function DispatchMapPanel({
     if (!selectedOrderId) return [];
     
     const order = orders.find(o => o.id === selectedOrderId);
-    if (!order) return [];
+    if (!order || !order.pickupLocation) return [];
 
     // Simple suggestion: lines to top 3 closest available vehicles
     const orderLoc = order.pickupLocation;
