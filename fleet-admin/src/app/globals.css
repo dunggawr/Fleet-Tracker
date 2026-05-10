@@ -1,6 +1,5 @@
-@import "tailwindcss";
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
 
 @theme {
   --color-primary: #6366f1;
@@ -230,7 +229,7 @@ a:hover { color: var(--color-primary); }
 
 @utility alert-speed { @apply border-l-danger; }
 @utility alert-route { @apply border-l-warning; }
-@utility alert-stop { @apply alert-stop; }
+@utility alert-stop { @apply border-l-info; }
 @utility alert-incident { @apply border-l-danger; }
 
 /* ===== Scrollbar ===== */

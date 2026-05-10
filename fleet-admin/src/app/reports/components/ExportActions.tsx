@@ -44,7 +44,7 @@ export function ExportActions({ reportName, params = {} }: ExportActionsProps) {
   };
 
   return (
-    <div className="flex gap-[var(--space-sm)]">
+    <div className="flex gap-(--space-sm)">
       <Button 
         variant="secondary" 
         size="sm" 

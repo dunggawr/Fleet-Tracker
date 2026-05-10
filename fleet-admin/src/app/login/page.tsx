@@ -28,11 +28,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-[radial-gradient(circle_at_top_right,_#1e1b4b,_#020617)] p-8">
+    <div className="min-h-screen w-full flex items-center justify-center bg-[radial-gradient(circle_at_top_right,#1e1b4b,#020617)] p-8">
       <div className="w-full max-w-[420px] bg-surface-low/50 backdrop-blur-2xl border border-white/10 rounded-xl p-12 shadow-lg">
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-4 mb-4">
-            <div className="w-14 h-14 bg-gradient-to-br from-primary to-primary-dark rounded-xl flex items-center justify-center shadow-glow">
+            <div className="w-14 h-14 bg-linear-to-br from-primary to-primary-dark rounded-xl flex items-center justify-center shadow-glow">
               <Truck size={28} className="text-white" />
             </div>
             <h1 className="text-3xl font-extrabold text-text tracking-tight m-0 leading-none">Fleet Tracker</h1>

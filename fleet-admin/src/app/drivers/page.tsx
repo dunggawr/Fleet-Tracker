@@ -44,13 +44,13 @@ export default function DriversPage() {
     { 
       header: 'Driver', 
       accessor: (d: DriverWithUser) => (
-        <div className="flex items-center gap-[var(--space-md)]">
-          <div className="w-8 h-8 bg-[var(--color-surface-highest)] rounded-full flex items-center justify-center text-[var(--color-primary-light)]">
+        <div className="flex items-center gap-(--space-md)">
+          <div className="w-8 h-8 bg-surface-highest rounded-full flex items-center justify-center text-(--color-primary-light)">
             <UserIcon size={16} />
           </div>
           <div className="flex flex-col">
-            <span className="font-semibold text-[var(--color-text)]">{d.fullName}</span>
-            <span className="text-[12px] text-[var(--color-text-dim)]">{d.user?.email || 'N/A'}</span>
+            <span className="font-semibold text-text">{d.fullName}</span>
+            <span className="text-[12px] text-(--color-text-dim)">{d.user?.email || 'N/A'}</span>
           </div>
         </div>
       )
@@ -81,11 +81,11 @@ export default function DriversPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-[var(--space-xl)]">
+    <div className="flex flex-col gap-(--space-xl)">
       <header className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Driver Management</h1>
-          <p className="text-[var(--color-text-dim)]">Monitor driver performance, status, and contact information.</p>
+          <p className="text-(--color-text-dim)">Monitor driver performance, status, and contact information.</p>
         </div>
         <Button variant="primary" icon={<Plus size={18} />} onClick={() => {}}>
           Register New Driver
@@ -98,33 +98,33 @@ export default function DriversPage() {
         title="Driver Details"
       >
         {selectedDriver && (
-          <div className="flex flex-col gap-[var(--space-lg)]">
-            <div className="flex items-center gap-[var(--space-md)]">
-              <div className="w-14 h-14 bg-[var(--color-surface-highest)] rounded-full flex items-center justify-center text-[var(--color-primary-light)]">
+          <div className="flex flex-col gap-(--space-lg)">
+            <div className="flex items-center gap-(--space-md)">
+              <div className="w-14 h-14 bg-surface-highest rounded-full flex items-center justify-center text-(--color-primary-light)">
                 <UserIcon size={24} />
               </div>
               <div>
                 <h3 className="text-xl font-semibold">{selectedDriver.fullName}</h3>
-                <p className="text-[var(--color-text-dim)]">{selectedDriver.user?.email}</p>
+                <p className="text-(--color-text-dim)">{selectedDriver.user?.email}</p>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-[var(--space-md)]">
-              <div className="flex flex-col gap-[6px] p-[var(--space-md)] bg-[var(--color-surface-low)] border border-[var(--color-border)] rounded-[var(--radius-default)]">
-                <span className="text-[11px] font-bold text-[var(--color-text-dim)] uppercase tracking-wider">Phone</span>
+            <div className="grid grid-cols-2 gap-(--space-md)">
+              <div className="flex flex-col gap-[6px] p-(--space-md) bg-surface-low border border-border rounded-default">
+                <span className="text-[11px] font-bold text-(--color-text-dim) uppercase tracking-wider">Phone</span>
                 <span className="text-sm font-medium">{selectedDriver.phone}</span>
               </div>
-              <div className="flex flex-col gap-[6px] p-[var(--space-md)] bg-[var(--color-surface-low)] border border-[var(--color-border)] rounded-[var(--radius-default)]">
-                <span className="text-[11px] font-bold text-[var(--color-text-dim)] uppercase tracking-wider">Status</span>
+              <div className="flex flex-col gap-[6px] p-(--space-md) bg-surface-low border border-border rounded-default">
+                <span className="text-[11px] font-bold text-(--color-text-dim) uppercase tracking-wider">Status</span>
                 <Badge variant={selectedDriver.status === 'available' ? 'success' : selectedDriver.status === 'on_trip' ? 'primary' : 'neutral'}>
                   {selectedDriver.status.replace('_', ' ')}
                 </Badge>
               </div>
-              <div className="flex flex-col gap-[6px] p-[var(--space-md)] bg-[var(--color-surface-low)] border border-[var(--color-border)] rounded-[var(--radius-default)]">
-                <span className="text-[11px] font-bold text-[var(--color-text-dim)] uppercase tracking-wider">License Class</span>
+              <div className="flex flex-col gap-[6px] p-(--space-md) bg-surface-low border border-border rounded-default">
+                <span className="text-[11px] font-bold text-(--color-text-dim) uppercase tracking-wider">License Class</span>
                 <span className="text-sm font-medium">{selectedDriver.licenseClass}</span>
               </div>
-              <div className="flex flex-col gap-[6px] p-[var(--space-md)] bg-[var(--color-surface-low)] border border-[var(--color-border)] rounded-[var(--radius-default)]">
-                <span className="text-[11px] font-bold text-[var(--color-text-dim)] uppercase tracking-wider">Expiry</span>
+              <div className="flex flex-col gap-[6px] p-(--space-md) bg-surface-low border border-border rounded-default">
+                <span className="text-[11px] font-bold text-(--color-text-dim) uppercase tracking-wider">Expiry</span>
                 <span className="text-sm font-medium">{selectedDriver.licenseExpiry && mounted ? new Date(selectedDriver.licenseExpiry).toLocaleDateString() : 'N/A'}</span>
               </div>
             </div>
@@ -132,7 +132,7 @@ export default function DriversPage() {
         )}
       </Modal>
 
-      <section className="card flex justify-between items-center py-[var(--space-md)] px-[var(--space-lg)]">
+      <section className="card flex justify-between items-center py-(--space-md) px-(--space-lg)">
         <div className="flex-1 max-w-[400px]">
           <SearchInput
             placeholder="Search by name, email or phone..."
@@ -140,10 +140,10 @@ export default function DriversPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <div className="flex items-center gap-[var(--space-lg)] ml-4">
+        <div className="flex items-center gap-(--space-lg) ml-4">
           <Button variant="secondary" size="md" icon={<Filter size={18} />}>Filters</Button>
-          <div className="w-[1px] h-6 bg-[var(--color-border)]" />
-          <span className="text-xs uppercase tracking-wider text-[var(--color-text-dim)]">Total <b className="text-[var(--color-text)]">{filteredDrivers.length}</b> drivers</span>
+          <div className="w-px h-6 bg-border" />
+          <span className="text-xs uppercase tracking-wider text-(--color-text-dim)">Total <b className="text-text">{filteredDrivers.length}</b> drivers</span>
         </div>
       </section>
 

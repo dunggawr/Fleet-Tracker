@@ -65,7 +65,7 @@ export function DispatchOrdersSidebar({
                     {clusterView && (
                       <div className="flex justify-between items-center px-1">
                         <span className="text-[11px] font-bold uppercase tracking-widest text-(--color-text-dim)">{group.label}</span>
-                        <Badge variant="neutral" size="sm">{group.orders.length}</Badge>
+                        <Badge variant="neutral">{group.orders.length}</Badge>
                       </div>
                     )}
                     <div className="space-y-2">

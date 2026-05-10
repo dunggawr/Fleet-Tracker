@@ -54,7 +54,7 @@ export default function DispatchPage() {
   };
 
   return (
-    <div className="grid grid-cols-[320px_1fr_320px] h-[calc(100vh-var(--header-height)-var(--space-xl)*2)] gap-[var(--space-md)] -m-[var(--space-md)] p-[var(--space-md)] overflow-hidden">
+    <div className="grid grid-cols-[320px_1fr_320px] h-[calc(100vh-var(--header-height)-var(--space-xl)*2)] gap-(--space-md) -m-(--space-md) p-(--space-md) overflow-hidden">
       <DispatchOrdersSidebar
         pendingOrderCount={pendingOrders.length}
         isLoading={isLoading}

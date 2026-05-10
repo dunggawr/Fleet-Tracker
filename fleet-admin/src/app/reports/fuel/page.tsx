@@ -65,13 +65,13 @@ export default function FuelCostPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-[var(--space-xl)]">
+    <div className="flex flex-col gap-(--space-xl)">
       <div className="flex justify-between items-center">
         <DateRangeFilter onRangeChange={setDateRange} />
         <ExportActions reportName="fuel_cost" params={dateRange} />
       </div>
 
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-[var(--space-lg)]">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-(--space-lg)">
         <StatCard 
           label="Total Fuel Cost" 
           value={`$${(data?.totalCost || 0).toLocaleString()}`} 
@@ -93,7 +93,7 @@ export default function FuelCostPage() {
         />
       </div>
 
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(400px,1fr))] gap-[var(--space-lg)]">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(400px,1fr))] gap-(--space-lg)">
         <div className="chart-item">
           <ReportChartWrapper 
             title="Fuel Cost by Vehicle Type" 
@@ -150,10 +150,10 @@ export default function FuelCostPage() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-[var(--space-md)] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-lg)] p-[var(--space-lg)]">
+      <div className="flex flex-col gap-(--space-md) bg-surface border border-border rounded-(--radius-lg) p-(--space-lg)">
         <header className="section-header">
-          <h2 className="text-xl font-bold text-[var(--color-text)]">Vehicle Fuel Efficiency</h2>
-          <p className="text-sm text-[var(--color-text-dim)]">Detailed cost and consumption per vehicle</p>
+          <h2 className="text-xl font-bold text-text">Vehicle Fuel Efficiency</h2>
+          <p className="text-sm text-(--color-text-dim)">Detailed cost and consumption per vehicle</p>
         </header>
         <DataTable 
           data={data?.vehicleFuelStats || []} 

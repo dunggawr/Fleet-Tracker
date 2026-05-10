@@ -46,7 +46,7 @@ export function DispatchVehiclesSidebar({
                   <Truck size={16} className="text-(--color-primary-light)" />
                   <span>{vehicle.plateNumber}</span>
                 </div>
-                <Badge variant="success" size="sm">{vehicle.status}</Badge>
+                <Badge variant="success">{vehicle.status}</Badge>
               </div>
               
               <div className="space-y-1.5 mb-3">

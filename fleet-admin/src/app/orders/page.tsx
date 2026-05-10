@@ -85,7 +85,7 @@ export default function OrdersPage() {
     { 
       header: 'Order ID', 
       accessor: (o: Order) => (
-        <div className="flex items-center gap-2 text-[var(--color-primary-light)] font-semibold">
+        <div className="flex items-center gap-2 text-(--color-primary-light) font-semibold">
           <Package size={16} />
           <span>{o.id.split('-')[0]}</span>
         </div>
@@ -96,12 +96,12 @@ export default function OrdersPage() {
       accessor: (o: Order) => (
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 text-xs max-w-[150px] overflow-hidden truncate">
-            <MapPin size={12} className="text-[var(--color-primary)]" />
+            <MapPin size={12} className="text-primary" />
             <span>{o.pickupAddress}</span>
           </div>
-          <ChevronRight size={14} className="text-[var(--color-text-dim)]" />
+          <ChevronRight size={14} className="text-(--color-text-dim)" />
           <div className="flex items-center gap-1.5 text-xs max-w-[150px] overflow-hidden truncate">
-            <MapPin size={12} className="text-[var(--color-success)]" />
+            <MapPin size={12} className="text-success" />
             <span>{o.deliveryAddress}</span>
           </div>
         </div>
@@ -119,7 +119,7 @@ export default function OrdersPage() {
     { 
       header: 'Created At', 
       accessor: (o: Order) => (
-        <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-dim)]">
+        <div className="flex items-center gap-1.5 text-xs text-(--color-text-dim)">
           <Clock size={14} />
           <span>{format(new Date(o.createdAt), 'yyyy-MM-dd HH:mm')}</span>
         </div>
@@ -134,11 +134,11 @@ export default function OrdersPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-[var(--space-xl)]">
+    <div className="flex flex-col gap-(--space-xl)">
       <header className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Order Management</h1>
-          <p className="text-[var(--color-text-dim)]">Create, track and manage delivery orders for your fleet.</p>
+          <p className="text-(--color-text-dim)">Create, track and manage delivery orders for your fleet.</p>
         </div>
         <Button variant="primary" icon={<Plus size={18} />} onClick={() => setIsModalOpen(true)}>
           Create New Order
@@ -157,7 +157,7 @@ export default function OrdersPage() {
         )}
       >
         <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-[var(--space-lg)]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-(--space-lg)">
             <Input 
               label="Weight (kg)" 
               type="number"
@@ -189,7 +189,7 @@ export default function OrdersPage() {
         </form>
       </Modal>
 
-      <section className="card flex justify-between items-center px-[var(--space-lg)] py-[var(--space-md)]">
+      <section className="card flex justify-between items-center px-(--space-lg) py-(--space-md)">
         <div className="flex-1 max-w-[400px]">
           <SearchInput
             placeholder="Search by ID or address..."
@@ -197,11 +197,11 @@ export default function OrdersPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <div className="flex items-center gap-[var(--space-lg)]">
+        <div className="flex items-center gap-(--space-lg)">
           <Button variant="secondary" size="md" icon={<Filter size={18} />}>Filters</Button>
-          <div className="w-px h-6 bg-[var(--color-border)]" />
-          <span className="text-[var(--font-label-sm)] text-[var(--color-text-dim)]">
-            Total <span className="font-bold text-[var(--color-text)]">{filteredOrders.length}</span> orders
+          <div className="w-px h-6 bg-border" />
+          <span className="text-(--color-text-dim)">
+            Total <span className="font-bold text-text">{filteredOrders.length}</span> orders
           </span>
         </div>
       </section>

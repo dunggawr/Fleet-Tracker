@@ -57,39 +57,39 @@ export function DateRangeFilter({ onRangeChange }: DateRangeFilterProps) {
   return (
     <div className="relative w-[220px]">
       <div 
-        className="flex items-center gap-(--space-sm) py-[10px] px-(--space-md) bg-[var(--color-surface-high)] border border-[var(--color-border)] rounded-[var(--radius-default)] cursor-pointer text-[var(--color-text)] font-medium text-sm transition-all duration-150 hover:border-[var(--color-primary)]"
+        className="flex items-center gap-(--space-sm) py-[10px] px-(--space-md) bg-surface-high border border-border rounded-sm cursor-pointer text-text font-medium text-sm transition-all duration-150 hover:border-primary"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <Calendar size={18} className="text-[var(--color-primary-light)]" />
+        <Calendar size={18} className="text-(--color-primary-light)" />
         <span>{selectedLabel}</span>
         <ChevronDown size={16} className={`ml-auto transition-transform duration-150 ${isOpen ? 'rotate-180' : ''}`} />
       </div>
 
       {isOpen && (
-        <div className="absolute top-[calc(100%+8px)] right-0 w-[280px] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-[var(--shadow-lg)] z-[100] p-[var(--space-sm)] animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute top-[calc(100%+8px)] right-0 w-[280px] bg-surface border border-border rounded-md shadow-lg z-100 p-(--space-sm) animate-in fade-in slide-in-from-top-2 duration-200">
           {PRESET_RANGES.map((preset) => (
             <div 
               key={preset.label} 
-              className="py-[10px] px-[var(--space-md)] rounded-[var(--radius-sm)] cursor-pointer text-[var(--color-text-dim)] transition-all duration-150 hover:bg-[var(--color-surface-high)] hover:text-[var(--color-text)]"
+              className="py-[10px] px-(--space-md) rounded-sm cursor-pointer text-(--color-text-dim) transition-all duration-150 hover:bg-surface-high hover:text-text"
               onClick={() => handlePresetClick(preset)}
             >
               {preset.label}
             </div>
           ))}
-          <div className="h-[1px] bg-[var(--color-border)] my-[var(--space-sm)]" />
-          <div className="py-[var(--space-sm)] px-[var(--space-md)]">
-            <span className="block text-[12px] text-[var(--color-text-muted)] mb-2 uppercase font-semibold">Custom Range</span>
-            <div className="flex items-center gap-[var(--space-xs)] text-[12px] text-[var(--color-text-muted)]">
+          <div className="h-px bg-border my-(--space-sm)" />
+          <div className="py-(--space-sm) px-(--space-md)">
+            <span className="block text-[12px] text-(--color-text-muted) mb-2 uppercase font-semibold">Custom Range</span>
+            <div className="flex items-center gap-(--space-xs) text-[12px] text-(--color-text-muted)">
               <input 
                 type="date" 
-                className="flex-1 bg-[var(--color-surface-high)] border border-[var(--color-border)] rounded-sm p-[6px] color-[var(--color-text)] text-[12px] outline-none focus:border-[var(--color-primary)]" 
+                className="flex-1 bg-surface-high border border-border rounded-sm p-[6px] text-text text-[12px] outline-none focus:border-primary" 
                 value={customFrom}
                 onChange={(e) => setCustomFrom(e.target.value)}
               />
               <span>to</span>
               <input 
                 type="date" 
-                className="flex-1 bg-[var(--color-surface-high)] border border-[var(--color-border)] rounded-sm p-[6px] color-[var(--color-text)] text-[12px] outline-none focus:border-[var(--color-primary)]" 
+                className="flex-1 bg-surface-high border border-border rounded-sm p-[6px] text-text text-[12px] outline-none focus:border-primary" 
                 value={customTo}
                 onChange={(e) => setCustomTo(e.target.value)}
               />
