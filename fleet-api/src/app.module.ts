@@ -26,6 +26,7 @@ import { TrackingModule } from './tracking/tracking.module';
 import { AlertsModule } from './alerts/alerts.module';
 import { ReportsModule } from './reports/reports.module';
 import { OptimizationModule } from './optimization/optimization.module';
+import { HealthModule } from './common/health/health.module';
 
 @Module({
   imports: [
@@ -68,11 +69,18 @@ import { OptimizationModule } from './optimization/optimization.module';
           Alert,
           DriverKpi,
         ],
-        synchronize: configService.get<string>('NODE_ENV') === 'development',
-        logging: true,
-        ssl: configService.get<string>('DB_SSL') === 'true',
+        synchronize:
+          configService.get<string>('NODE_ENV') === 'production'
+            ? false
+            : configService.get<string>('DB_SYNCHRONIZE') === 'true',
+        logging: configService.get<string>('NODE_ENV') !== 'production',
+        ssl:
+          configService.get<string>('NODE_ENV') === 'production'
+            ? true
+            : configService.get<string>('DB_SSL') === 'true',
         extra: {
           ssl:
+            configService.get<string>('NODE_ENV') === 'production' ||
             configService.get<string>('DB_SSL') === 'true'
               ? {
                   rejectUnauthorized:
@@ -98,6 +106,7 @@ import { OptimizationModule } from './optimization/optimization.module';
     AlertsModule,
     ReportsModule,
     OptimizationModule,
+    HealthModule,
 
     // Modules to be added in future phases
     // TripsModule will be added in Phase 04

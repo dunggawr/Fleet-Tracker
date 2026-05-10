@@ -59,16 +59,31 @@ $ npm run test:cov
 
 ## Deployment
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+### Railway (Recommended)
+Project này đã được tối ưu để triển khai lên Railway.
+1. Kết nối GitHub repo với Railway.
+2. Thêm PostgreSQL service.
+3. Cấu hình Variables: `NODE_ENV=production`, `DB_SSL=true`, `JWT_SECRET`,...
+4. Railway sẽ tự động chạy Dockerfile và thực thi Database Migrations.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
+### Docker
+Bạn có thể chạy môi trường production tại local dùng Docker Compose:
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+$ docker-compose -f docker-compose.prod.yml up --build
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## Database Migrations
+Sử dụng các lệnh sau để quản lý schema:
+```bash
+# Tạo migration mới từ các thay đổi entity
+$ npm run migration:generate -- src/database/migrations/Name
+
+# Chạy migration
+$ npm run migration:run
+```
+
+## Health Checks
+Endpoint giám sát hệ thống: `GET /api/health`
 
 ## Resources
 
