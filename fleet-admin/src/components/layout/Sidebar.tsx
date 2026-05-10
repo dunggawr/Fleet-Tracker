@@ -12,7 +12,9 @@ import {
   Settings,
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Signal,
+  BarChart3
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -22,6 +24,7 @@ const navItems = [
   { name: 'Drivers', href: '/drivers', icon: Users },
   { name: 'Orders', href: '/orders', icon: ClipboardList },
   { name: 'Dispatch Center', href: '/dispatch', icon: MapIcon },
+  { name: 'Reports', href: '/reports', icon: BarChart3 },
 ];
 
 export function Sidebar() {

@@ -2,7 +2,43 @@
 
 Tất cả các thay đổi quan trọng đối với dự án FleetTracker sẽ được ghi nhận tại đây.
 
-## [2026-05-02]
+## [2026-05-09] - Admin Reports & Analytics (Phase 09)
+### Added
+- **Frontend (Admin Dashboard)**:
+    - Triển khai toàn bộ module **Reports & Analytics**:
+        - **Fuel Report**: Biểu đồ phân tích chi phí nhiên liệu theo xe và thời gian.
+        - **KPI Report**: Theo dõi chỉ số hoàn thành chuyến đi và điểm an toàn.
+        - **Trips Report**: Thống kê số lượng chuyến đi và quãng đường.
+        - **Utilization Report**: Biểu đồ đo lường hiệu suất sử dụng đội xe.
+    - Tích hợp tính năng lọc (Filtering) và phân trang cho các bảng dữ liệu báo cáo.
+- **Documentation**:
+    - Cập nhật tiến độ dự án cho Phase 10 (Driver App).
+    - Tạo PR #12 hoàn tất Phase 09.
+
+### Fixed
+- Frontend: Khắc phục lỗi TypeScript nghiêm trọng trong component `DataTable` gây lỗi build production.
+- Frontend: Đồng bộ hóa kiểu dữ liệu cho các cột báo cáo để đảm bảo type-safety.
+
+## [2026-05-09] - Admin Maps & Monitoring (Phase 08)
+### Added
+- **Frontend (Admin Dashboard)**:
+    - Triển khai toàn bộ module **Real-time Fleet Tracking**:
+        - Bản đồ vệ tinh với markers xe di chuyển mượt mà (smooth animation).
+        - Hiển thị trail (lịch sử di chuyển ngắn hạn) với màu sắc theo tốc độ.
+        - Visualization hành lang địa giới (Geofence Corridor) 500m quanh tuyến đường dự kiến.
+    - Hoàn thiện module **Route Replay** (`/tracking/replay`):
+        - Hỗ trợ chọn xe và ngày để xem lại hành trình.
+        - Bộ điều khiển playback (Play/Pause/Speed) và thanh timeline slider.
+    - Cải tiến **Alerts Panel**:
+        - Tích hợp âm thanh thông báo và click để focus bản đồ vào vị trí sự cố.
+        - Hỗ trợ lọc cảnh báo theo loại và trạng thái xử lý.
+    - Tích hợp bản đồ vào **Dispatch Center** để hỗ trợ điều phối trực quan.
+### Fixed
+- Frontend: Khắc phục lỗi TypeScript trong component `MapBox` và trang `tracking`.
+- Frontend: Sửa lỗi hiển thị sai tên tài xế (mismatch `fullName` vs `name`) trên tooltip.
+- Frontend: Xử lý triệt để lỗi crash bản đồ khi dữ liệu GPS nhận về giá trị `NaN`.
+
+## [2026-05-08] - Final API Hardening & Testing Completion (PR #8)
 ### Added
 - Khởi tạo cấu trúc monorepo: `fleet-api`, `fleet-admin`, `fleet-driver`.
 - Thêm file `README.md` gốc với đầy đủ thông tin dự án và hướng dẫn khởi chạy.

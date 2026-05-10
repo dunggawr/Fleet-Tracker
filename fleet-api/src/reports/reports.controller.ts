@@ -82,8 +82,33 @@ export class ReportsController {
   @Get('vehicle-utilization')
   @Roles(UserRole.ADMIN, UserRole.DISPATCHER)
   @ApiOperation({ summary: 'Get vehicle utilization statistics' })
-  async getVehicleUtilization() {
-    return this.reportsService.getVehicleUtilization();
+  async getVehicleUtilization(@Query() query: DateRangeDto) {
+    const from = new Date(query.from);
+    const to = new Date(query.to);
+
+    if (from > to) {
+      throw new BadRequestException(
+        'From date must be before or equal to To date',
+      );
+    }
+
+    return this.reportsService.getVehicleUtilization(from, to);
+  }
+
+  @Get('trip-summary')
+  @Roles(UserRole.ADMIN, UserRole.DISPATCHER)
+  @ApiOperation({ summary: 'Get trip summary report' })
+  async getTripSummary(@Query() query: DateRangeDto) {
+    const from = new Date(query.from);
+    const to = new Date(query.to);
+
+    if (from > to) {
+      throw new BadRequestException(
+        'From date must be before or equal to To date',
+      );
+    }
+
+    return this.reportsService.getTripSummary(from, to);
   }
 
   @Get('export')
@@ -106,6 +131,10 @@ export class ReportsController {
       data = await this.reportsService.getFuelCostReport(from, to);
     } else if (query.report_name === ReportName.KPI_LEADERBOARD) {
       data = await this.kpiService.getKpiLeaderboard();
+    } else if (query.report_name === ReportName.TRIP_SUMMARY) {
+      data = await this.reportsService.getTripSummary(from, to);
+    } else if (query.report_name === ReportName.VEHICLE_UTILIZATION) {
+      data = await this.reportsService.getVehicleUtilization(from, to);
     } else {
       throw new BadRequestException(
         `Unknown report name: ${query.report_name}`,

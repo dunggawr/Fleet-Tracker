@@ -46,7 +46,9 @@ describe('AlertsService', () => {
               select: jest.fn().mockReturnThis(),
               addSelect: jest.fn().mockReturnThis(),
               groupBy: jest.fn().mockReturnThis(),
-              getRawMany: jest.fn().mockResolvedValue([{ type: 'SPEED_VIOLATION', count: '1' }]),
+              getRawMany: jest
+                .fn()
+                .mockResolvedValue([{ type: 'SPEED_VIOLATION', count: '1' }]),
             }),
           },
         },
@@ -89,10 +91,12 @@ describe('AlertsService', () => {
       const result = await service.createAlert(dto);
 
       expect(tripRepo.findOne).toHaveBeenCalledWith({ where: { id: 't1' } });
-      expect(alertRepo.create).toHaveBeenCalledWith(expect.objectContaining({
-        driverId: 'd1',
-        isResolved: false,
-      }));
+      expect(alertRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          driverId: 'd1',
+          isResolved: false,
+        }),
+      );
       expect(alertRepo.save).toHaveBeenCalled();
       expect(eventEmitter.emit).toHaveBeenCalledWith('alert.new', mockAlert);
       expect(result).toEqual(mockAlert);
@@ -109,25 +113,34 @@ describe('AlertsService', () => {
       await service.createAlert(dto);
 
       expect(tripRepo.findOne).not.toHaveBeenCalled();
-      expect(alertRepo.create).toHaveBeenCalledWith(expect.objectContaining({
-        tripId: undefined,
-        driverId: undefined,
-      }));
+      expect(alertRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tripId: undefined,
+          driverId: undefined,
+        }),
+      );
     });
   });
 
   describe('resolveAlert', () => {
     it('should resolve an existing alert', async () => {
-      jest.spyOn(alertRepo, 'findOne')
+      jest
+        .spyOn(alertRepo, 'findOne')
         .mockResolvedValueOnce(mockAlert as any) // Check existence
         .mockResolvedValueOnce({ ...mockAlert, isResolved: true } as any); // Return after update
 
       const result = await service.resolveAlert('a1');
 
-      expect(alertRepo.update).toHaveBeenCalledWith('a1', expect.objectContaining({
-        isResolved: true,
-      }));
-      expect(eventEmitter.emit).toHaveBeenCalledWith('alert.resolved', expect.objectContaining({ isResolved: true }));
+      expect(alertRepo.update).toHaveBeenCalledWith(
+        'a1',
+        expect.objectContaining({
+          isResolved: true,
+        }),
+      );
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        'alert.resolved',
+        expect.objectContaining({ isResolved: true }),
+      );
       expect(result?.isResolved).toBe(true);
     });
 
@@ -145,9 +158,11 @@ describe('AlertsService', () => {
     it('should return all unresolved alerts', async () => {
       const result = await service.getActiveAlerts();
 
-      expect(alertRepo.find).toHaveBeenCalledWith(expect.objectContaining({
-        where: { isResolved: false },
-      }));
+      expect(alertRepo.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { isResolved: false },
+        }),
+      );
       expect(result).toEqual([mockAlert]);
     });
   });

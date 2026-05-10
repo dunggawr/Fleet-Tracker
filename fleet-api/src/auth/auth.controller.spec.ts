@@ -76,7 +76,11 @@ describe('AuthController', () => {
       };
       mockAuthService.login.mockResolvedValue(loginResponse);
 
-      const result = await controller.login(loginDto, mockResponse, mockRequest);
+      const result = await controller.login(
+        loginDto,
+        mockResponse,
+        mockRequest,
+      );
 
       expect(result).toEqual(loginResponse);
       expect(mockResponse.cookie).toHaveBeenCalledTimes(2);

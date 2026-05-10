@@ -45,12 +45,40 @@ export default function RootLayout() {
   return <RootLayoutNav />;
 }
 
+import { useAuthStore } from '../store/useAuthStore';
+import { useTripStore, TripStatus } from '../store/useTripStore';
+import { useRouter, useSegments } from 'expo-router';
+import { startBackgroundLocation, stopBackgroundLocation } from '../lib/backgroundTasks';
+
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
+  const { isAuthenticated } = useAuthStore();
+  const { activeTrip } = useTripStore();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    const inAuthGroup = segments[0] === '(tabs)';
+    
+    if (!isAuthenticated && inAuthGroup) {
+      router.replace('/login');
+    } else if (isAuthenticated && segments[0] === 'login') {
+      router.replace('/(tabs)');
+    }
+  }, [isAuthenticated, segments]);
+
+  useEffect(() => {
+    if (activeTrip && (activeTrip.status === TripStatus.STARTED || activeTrip.status === TripStatus.PICKED_UP || activeTrip.status === TripStatus.DELIVERING)) {
+      startBackgroundLocation();
+    } else {
+      stopBackgroundLocation();
+    }
+  }, [activeTrip?.status]);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={DarkTheme}>
       <Stack>
+        <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
