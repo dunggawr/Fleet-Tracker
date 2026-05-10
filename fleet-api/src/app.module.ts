@@ -83,9 +83,7 @@ import { HealthModule } from './common/health/health.module';
             configService.get<string>('NODE_ENV') === 'production' ||
             configService.get<string>('DB_SSL') === 'true'
               ? {
-                  rejectUnauthorized:
-                    configService.get<string>('DB_SSL_REJECT_UNAUTHORIZED') ===
-                    'true',
+                  rejectUnauthorized: false,
                 }
               : null,
         },
