@@ -63,13 +63,13 @@ export default function UtilizationPage() {
   }, [fetchData]);
 
   return (
-    <div className="utilization-reports">
-      <div className="action-bar">
+    <div className="flex flex-col gap-8">
+      <div className="flex justify-between items-center">
         <DateRangeFilter onRangeChange={setDateRange} />
         <ExportActions reportName="vehicle-utilization" params={dateRange} />
       </div>
 
-      <div className="stats-grid">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-6">
         <StatCard 
           label="Active Vehicles" 
           value={data?.activeCount || 0} 
@@ -90,7 +90,7 @@ export default function UtilizationPage() {
         />
       </div>
 
-      <div className="charts-grid">
+      <div className="w-full">
         <ReportChartWrapper 
           title="Utilization by Vehicle" 
           subtitle="Percentage of time spent on trips"
@@ -122,30 +122,6 @@ export default function UtilizationPage() {
           </ResponsiveContainer>
         </ReportChartWrapper>
       </div>
-
-      <style jsx>{`
-        .utilization-reports {
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-xl);
-        }
-
-        .action-bar {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .stats-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-          gap: var(--space-lg);
-        }
-
-        .charts-grid {
-          width: 100%;
-        }
-      `}</style>
     </div>
   );
 }
