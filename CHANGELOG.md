@@ -1,3 +1,36 @@
+## [2026-05-10] - Driver App Polishing & SOS Integration (Phase 10)
+### Added
+- **Mobile (Driver App)**:
+    - Triển khai toàn bộ tính năng **SOS Alert**:
+        - Giao diện nút SOS với countdown và phản hồi rung/âm thanh.
+        - Tích hợp WebSocket gửi tọa độ khẩn cấp (`sos:alert`) về Admin.
+        - Hỗ trợ gửi kèm thông tin trip và lý do sự cố.
+    - Hoàn thiện **Real-time Tracking**:
+        - Tích hợp `expo-location` và `expo-task-manager` cho việc tracking ngầm (background).
+        - Cơ chế **Offline Batching**: Tự động lưu trữ tọa độ khi mất mạng và đồng bộ khi có kết nối trở lại.
+    - Cải thiện UX/UI:
+        - Hiển thị trạng thái kết nối (Connection Awareness) trực quan.
+        - Tối ưu hóa hiệu suất Map rendering trên thiết bị di động.
+- **Backend (API)**:
+    - Triển khai `gps:batch_update` socket handler để hỗ trợ đồng bộ vị trí số lượng lớn.
+    - Bổ sung `sos:alert` handler trong `TrackingGateway` để điều hướng cảnh báo khẩn cấp.
+    - Cập nhật `AlertsModule` hỗ trợ báo cáo sự cố chi tiết từ tài xế.
+
+### Changed
+- **Mobile (Driver App)**:
+    - Nâng cấp cơ chế Offline Sync: Sử dụng sự kiện `gps:batch_update` để gửi toàn bộ dữ liệu vị trí trong queue chỉ với một request.
+    - Cải thiện **Proof of Delivery (POD)**:
+        - Sử dụng `expo-file-system` để lưu trữ tạm thời chữ ký, khắc phục lỗi hiển thị trên Android.
+        - Fix logic hoàn tất chuyến đi: Chỉ đóng chuyến đi khi *tất cả* đơn hàng đã được giao và ký nhận.
+        - Khắc phục lỗi build TypeScript v18 của `expo-file-system`.
+    - Profile: Thay thế `Math.random()` bằng các phép tính tốc độ thực tế từ lịch sử di chuyển.
+
+### Fixed
+- Build: Khắc phục triệt để lỗi TypeScript config và JSX resolution trên Expo.
+- Backend: Sửa lỗi type-safety trong các báo cáo nhiên liệu (explicit typing for Decimal fields).
+- State: Hoàn thiện logic `rejectTrip` và đồng bộ trạng thái đơn hàng.
+
+
 # Changelog
 
 Tất cả các thay đổi quan trọng đối với dự án FleetTracker sẽ được ghi nhận tại đây.
@@ -123,7 +156,7 @@ Tất cả các thay đổi quan trọng đối với dự án FleetTracker sẽ
     - Chuyển đổi logic cập nhật `completionRate` sang SQL atomic updates để tránh race condition.
 - **Reports Module**:
     - Sử dụng triệt để Database Aggregation cho báo cáo hiệu suất đội xe.
-    - Cập nhật bộ test suite cho `KpiService` và `ReportsService`.
+    - Cập nhật bộ test suite cho `KpiService` and `ReportsService`.
 
 ### Changed
 - **Reports Module**: 
@@ -133,4 +166,4 @@ Tất cả các thay đổi quan trọng đối với dự án FleetTracker sẽ
 ### Fixed
 - **Driver App**: Fix lỗi TypeScript compile (`unused @ts-expect-error`) trong `ExternalLink.tsx`.
 - **KPI Module**: Sửa lỗi kiểu dữ liệu trả về `null` trong `getOrCreateKpi`.
-- **Optimization Module**: Đồng bộ hóa chính xác tọa độ trạm dừng (`waypoints`) với Mapbox API.
+- **Optimization Module**: Đồng bộ hóa chính xác tọa độ trạm dừng (`waypoints`) with Mapbox API.

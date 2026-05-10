@@ -1,6 +1,6 @@
 # API Documentation - Fleet Tracker
 
-Ngày cập nhật: 2026-05-07
+Ngày cập nhật: 2026-05-10
 Base URL: `http://localhost:3001`
 
 ---
@@ -144,7 +144,7 @@ Token phải được gửi qua `auth.token` trong handshake.
 ### Events Emitted (Client -> Server):
 
 #### `gps:update`
-Cập nhật GPS. Server thực hiện debouncing (5s) và kiểm tra tính hợp lệ của trip/vehicle.
+Cập nhật GPS đơn lẻ. Server thực hiện debouncing (5s) và kiểm tra tính hợp lệ của trip/vehicle.
 **Payload:**
 ```json
 {
@@ -158,12 +158,33 @@ Cập nhật GPS. Server thực hiện debouncing (5s) và kiểm tra tính hợ
 }
 ```
 
+#### `gps:batch_update`
+Cập nhật GPS theo lô (Batch). Dùng khi tài xế có kết nối trở lại sau khi offline để đồng bộ toàn bộ lịch sử di chuyển.
+**Payload:** `GpsUpdateDto[]` (Mảng các object tương tự `gps:update`).
+
+**Response Event:** `gps:batch_received`
+**Payload:** `{ count: number, timestamp: number }`
+
 #### `subscribe:trip`
 Đăng ký nhận cập nhật cho một chuyến đi cụ thể.
 **Payload:**
 ```json
 {
   "tripId": "uuid"
+}
+```
+
+#### `sos:alert` (Client -> Server)
+Gửi tín hiệu khẩn cấp ngay lập tức. Server sẽ broadcast đến toàn bộ Admin và Dispatcher.
+**Payload:**
+```json
+{
+  "tripId": "uuid",
+  "vehicleId": "uuid",
+  "latitude": 10.123,
+  "longitude": 106.456,
+  "message": "Chi tiết sự cố (tùy chọn)",
+  "timestamp": 1651854000000
 }
 ```
 
@@ -189,9 +210,10 @@ Tài xế báo cáo sự cố. Cảnh báo sẽ được tự động debouncing
   "tripId": "uuid",
   "vehicleId": "uuid",
   "message": "Chi tiết sự cố...",
+  "type": "ACCIDENT | MECHANICAL | THEFT | OTHER",
   "location": {
-    "type": "Point",
-    "coordinates": [106.660172, 10.762622]
+    "latitude": 10.762622,
+    "longitude": 106.660172
   }
 }
 ```
