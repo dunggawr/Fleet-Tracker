@@ -28,12 +28,12 @@ export const AppDataSource = new DataSource({
   ],
   migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
   synchronize: false, // Always false for migrations
-  ssl: process.env.DB_SSL === 'true',
+  ssl: process.env.DB_SSL === 'true' || process.env.NODE_ENV === 'production',
   extra: {
     ssl:
-      process.env.DB_SSL === 'true'
+      process.env.DB_SSL === 'true' || process.env.NODE_ENV === 'production'
         ? {
-            rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED === 'true',
+            rejectUnauthorized: false,
           }
         : null,
   },
