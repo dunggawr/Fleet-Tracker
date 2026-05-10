@@ -4,22 +4,31 @@ import React from 'react';
 import { Truck, Users, MapPin, CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { SearchInput } from '@/components/ui/SearchInput';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import type { Vehicle } from '@/types';
 
 interface DispatchVehiclesSidebarProps {
   availableVehicles: Vehicle[];
+  searchQuery: string;
+  onSearchQueryChange: (value: string) => void;
   isLoading: boolean;
   isAssigning: boolean;
   selectedOrder: string | null;
+  selectedVehicleId: string | null;
+  onSelectVehicle: (vehicleId: string) => void;
   onAssignVehicle: (vehicleId: string) => void;
 }
 
 export function DispatchVehiclesSidebar({
   availableVehicles,
+  searchQuery,
+  onSearchQueryChange,
   isLoading,
   isAssigning,
   selectedOrder,
+  selectedVehicleId,
+  onSelectVehicle,
   onAssignVehicle,
 }: DispatchVehiclesSidebarProps) {
   return (
@@ -33,11 +42,31 @@ export function DispatchVehiclesSidebar({
           <div className="flex items-center justify-center h-32">
             <LoadingSpinner size={24} />
           </div>
-        ) : availableVehicles.length === 0 ? (
-          <div className="text-center py-8 text-dim">No available vehicles</div>
         ) : (
-          availableVehicles.map((vehicle) => (
-            <div key={vehicle.id} className="dispatch-card vehicle-card">
+          <>
+            <div className="dispatch-search">
+              <SearchInput
+                placeholder="Search vehicles..."
+                value={searchQuery}
+                onChange={(event) => onSearchQueryChange(event.target.value)}
+              />
+            </div>
+            
+            {availableVehicles.length === 0 ? (
+              <div className="text-center py-8 text-dim">
+                {searchQuery ? (
+                  <>No vehicles matching "<strong>{searchQuery}</strong>"</>
+                ) : (
+                  'No available vehicles'
+                )}
+              </div>
+            ) : (
+              availableVehicles.map((vehicle) => (
+            <div 
+              key={vehicle.id} 
+              className={`dispatch-card vehicle-card ${selectedVehicleId === vehicle.id ? 'selected' : ''}`}
+              onClick={() => onSelectVehicle(vehicle.id)}
+            >
               <div className="card-header">
                 <div className="vehicle-info">
                   <Truck size={18} />
@@ -61,7 +90,10 @@ export function DispatchVehiclesSidebar({
                   disabled={!selectedOrder || isAssigning}
                   isLoading={isAssigning}
                   icon={<CheckCircle2 size={16} />}
-                  onClick={() => onAssignVehicle(vehicle.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAssignVehicle(vehicle.id);
+                  }}
                 >
                   Assign Order
                 </Button>
@@ -69,9 +101,19 @@ export function DispatchVehiclesSidebar({
             </div>
           ))
         )}
+          </>
+        )}
       </div>
 
       <style jsx>{`
+        .dispatch-search {
+          margin-bottom: var(--space-sm);
+        }
+
+        .dispatch-search :global(.search-input-group) {
+          width: 100%;
+        }
+
         .dispatch-card {
           background: var(--color-surface-low);
           border: 1px solid var(--color-border);
@@ -83,6 +125,12 @@ export function DispatchVehiclesSidebar({
         .dispatch-card:hover {
           border-color: var(--color-primary-light);
           background: var(--color-surface-high);
+        }
+
+        .dispatch-card.selected {
+          border-color: var(--color-primary);
+          background: rgba(99, 102, 241, 0.05);
+          box-shadow: 0 0 0 1px var(--color-primary);
         }
 
         .card-header {

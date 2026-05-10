@@ -2,12 +2,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Vehicle } from '@/types';
 
-export function useVehicles() {
+export function useVehicles(queryParams?: Record<string, any>) {
   const queryClient = useQueryClient();
 
   const vehiclesQuery = useQuery({
-    queryKey: ['vehicles'],
-    queryFn: () => api.get<Vehicle[]>('/vehicles'),
+    queryKey: ['vehicles', queryParams],
+    queryFn: async () => {
+      const res = await api.get<Vehicle[]>('/vehicles', { params: queryParams });
+      return Array.isArray(res) ? res : ((res as any).data || []);
+    },
   });
 
   const createVehicleMutation = useMutation({

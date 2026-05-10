@@ -46,53 +46,64 @@ export function DispatchOrdersSidebar({
           <div className="flex items-center justify-center h-32">
             <LoadingSpinner size={24} />
           </div>
-        ) : groups.length === 0 ? (
-          <div className="text-center py-8 text-dim">No pending orders</div>
         ) : (
           <>
-            <div className="dispatch-search">
-              <SearchInput
-                placeholder="Search pending orders..."
-                value={searchQuery}
-                onChange={(event) => onSearchQueryChange(event.target.value)}
-              />
-            </div>
-            {groups.map((group) => (
-              <div key={group.key} className="cluster-group">
-                {clusterView && (
-                  <div className="cluster-header">
-                    <span>{group.label}</span>
-                    <Badge variant="neutral">{group.orders.length}</Badge>
-                  </div>
-                )}
-                {group.orders.map((order) => (
-                  <div
-                    key={order.id}
-                    className={`dispatch-card ${selectedOrder === order.id ? 'selected' : ''}`}
-                    onClick={() => onSelectOrder(order.id)}
-                  >
-                    <div className="card-header">
-                      <span className="order-id">{order.id.split('-')[0]}</span>
-                      <span className="order-weight">{order.weightKg}kg</span>
-                    </div>
-                    <div className="order-route">
-                      <div className="point">
-                        <MapPin size={12} className="text-primary" />
-                        <span>{order.pickupAddress}</span>
-                      </div>
-                      <ChevronRight size={14} className="text-dim" />
-                      <div className="point">
-                        <MapPin size={12} className="text-success" />
-                        <span>{order.deliveryAddress}</span>
-                      </div>
-                    </div>
-                    <div className="card-footer">
-                      <Button variant="ghost" size="sm">Details</Button>
-                    </div>
-                  </div>
-                ))}
+            {(pendingOrderCount > 0 || searchQuery) && (
+              <div className="dispatch-search">
+                <SearchInput
+                  placeholder="Search pending orders..."
+                  value={searchQuery}
+                  onChange={(event) => onSearchQueryChange(event.target.value)}
+                />
               </div>
-            ))}
+            )}
+            
+            {groups.length === 0 ? (
+              <div className="text-center py-8 text-dim">
+                {searchQuery ? (
+                  <>No orders matching "<strong>{searchQuery}</strong>"</>
+                ) : (
+                  'No pending orders'
+                )}
+              </div>
+            ) : (
+              groups.map((group) => (
+                <div key={group.key} className="cluster-group">
+                  {clusterView && (
+                    <div className="cluster-header">
+                      <span>{group.label}</span>
+                      <Badge variant="neutral">{group.orders.length}</Badge>
+                    </div>
+                  )}
+                  {group.orders.map((order) => (
+                    <div
+                      key={order.id}
+                      className={`dispatch-card ${selectedOrder === order.id ? 'selected' : ''}`}
+                      onClick={() => onSelectOrder(order.id)}
+                    >
+                      <div className="card-header">
+                        <span className="order-id">{order.id.split('-')[0]}</span>
+                        <span className="order-weight">{order.weightKg}kg</span>
+                      </div>
+                      <div className="order-route">
+                        <div className="point">
+                          <MapPin size={12} className="text-primary" />
+                          <span>{order.pickupAddress}</span>
+                        </div>
+                        <ChevronRight size={14} className="text-dim" />
+                        <div className="point">
+                          <MapPin size={12} className="text-success" />
+                          <span>{order.deliveryAddress}</span>
+                        </div>
+                      </div>
+                      <div className="card-footer">
+                        <Button variant="ghost" size="sm">Details</Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))
+            )}
           </>
         )}
       </div>

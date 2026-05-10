@@ -1,18 +1,62 @@
-'use client';
-
-import React from 'react';
-import { Package, Truck, Users, Navigation } from 'lucide-react';
+import { MapBox, MapMarker } from '@/components/ui/MapBox';
 import { Button } from '@/components/ui/Button';
+import { 
+  Truck, 
+  Package, 
+  Navigation, 
+  Users 
+} from 'lucide-react';
+import { Order, Vehicle } from '@/types';
 
 interface DispatchMapPanelProps {
   clusterView: boolean;
   onToggleClusterView: () => void;
+  selectedMarkerId?: string | null;
+  orders: Order[];
+  vehicles: Vehicle[];
 }
 
-export function DispatchMapPanel({ clusterView, onToggleClusterView }: DispatchMapPanelProps) {
+export function DispatchMapPanel({ 
+  clusterView, 
+  onToggleClusterView,
+  selectedMarkerId,
+  orders,
+  vehicles
+}: DispatchMapPanelProps) {
+  
+  // Transform real data into markers
+  const markers: MapMarker[] = [
+    // Vehicle markers
+    ...vehicles.map(v => {
+      const loc = v.lastKnownLocation as any;
+      const [lng, lat] = loc?.coordinates || [105.83, 21.02];
+      return {
+        id: v.id,
+        lat: lat,
+        lng: lng,
+        label: v.plateNumber,
+        color: 'var(--color-primary-light)',
+        icon: <Truck size={18} />
+      };
+    }),
+    // Order markers
+    ...orders.map(o => {
+      const loc = o.pickupLocation as any;
+      const [lng, lat] = loc?.coordinates || [105.86, 21.04];
+      return {
+        id: o.id,
+        lat: lat,
+        lng: lng,
+        label: `Order ${o.id.split('-')[0]}`,
+        color: 'var(--color-warning)',
+        icon: <Package size={18} />
+      };
+    })
+  ];
+
   return (
     <main className="dispatch-map-area">
-      <div className="map-placeholder">
+      <div className="map-container-inner">
         <div className="map-overlay-top">
           <div className="map-search card">
             <Navigation size={18} />
@@ -20,16 +64,12 @@ export function DispatchMapPanel({ clusterView, onToggleClusterView }: DispatchM
           </div>
         </div>
 
-        <div className="mock-map">
-          <div className="map-pin vehicle-pin" style={{ top: '30%', left: '40%' }}>
-            <Truck size={20} />
-            <div className="pin-label">VN-102</div>
-          </div>
-          <div className="map-pin order-pin" style={{ top: '50%', left: '60%' }}>
-            <Package size={20} />
-            <div className="pin-label">ORD-8289</div>
-          </div>
-          <div className="map-grid-pattern" />
+        <div className="real-map-wrapper">
+          <MapBox 
+            markers={markers} 
+            zoom={13} 
+            selectedMarkerId={selectedMarkerId} 
+          />
         </div>
 
         <div className="map-overlay-bottom">
@@ -53,13 +93,20 @@ export function DispatchMapPanel({ clusterView, onToggleClusterView }: DispatchM
           border-radius: var(--radius-md);
           overflow: hidden;
           border: 1px solid var(--color-border);
+          height: 100%;
+          min-height: 500px;
         }
 
-        .map-placeholder {
+        .map-container-inner {
           width: 100%;
           height: 100%;
-          display: flex;
-          flex-direction: column;
+          position: relative;
+        }
+
+        .real-map-wrapper {
+          position: absolute;
+          inset: 0;
+          z-index: 1;
         }
 
         .map-overlay-top {

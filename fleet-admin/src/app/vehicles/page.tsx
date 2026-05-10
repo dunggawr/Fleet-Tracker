@@ -86,7 +86,7 @@ export default function VehiclesPage() {
     }
   };
 
-  const filteredVehicles = vehicles.filter(v => 
+  const filteredVehicles = vehicles.filter((v: Vehicle) => 
     v.plateNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
     v.driver?.fullName?.toLowerCase().includes(searchQuery.toLowerCase())
   );

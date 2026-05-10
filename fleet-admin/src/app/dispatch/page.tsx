@@ -9,8 +9,10 @@ import { useDispatch } from '@/hooks/use-dispatch';
 export default function DispatchPage() {
   const { pendingOrders, availableVehicles, assignOrder, isLoading, isAssigning } = useDispatch();
   const [selectedOrder, setSelectedOrder] = React.useState<string | null>(null);
+  const [selectedVehicle, setSelectedVehicle] = React.useState<string | null>(null);
   const [clusterView, setClusterView] = React.useState(true);
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [vehicleSearchQuery, setVehicleSearchQuery] = React.useState('');
 
   const filteredPendingOrders = React.useMemo(() => {
     return pendingOrders.filter((order) =>
@@ -20,6 +22,15 @@ export default function DispatchPage() {
         .includes(searchQuery.toLowerCase()),
     );
   }, [pendingOrders, searchQuery]);
+
+  const filteredVehicles = React.useMemo(() => {
+    return availableVehicles.filter((vehicle) =>
+      [vehicle.id, vehicle.plateNumber, vehicle.type, vehicle.driver?.fullName]
+        .join(' ')
+        .toLowerCase()
+        .includes(vehicleSearchQuery.toLowerCase()),
+    );
+  }, [availableVehicles, vehicleSearchQuery]);
 
   const clusterGroups = React.useMemo<DispatchOrderGroup[]>(() => {
     if (!clusterView) {
@@ -61,7 +72,10 @@ export default function DispatchPage() {
         searchQuery={searchQuery}
         onSearchQueryChange={setSearchQuery}
         selectedOrder={selectedOrder}
-        onSelectOrder={setSelectedOrder}
+        onSelectOrder={(id) => {
+          setSelectedOrder(id);
+          setSelectedVehicle(null); // Clear vehicle selection when order is selected
+        }}
         clusterView={clusterView}
         groups={clusterGroups}
       />
@@ -69,13 +83,23 @@ export default function DispatchPage() {
       <DispatchMapPanel
         clusterView={clusterView}
         onToggleClusterView={() => setClusterView((value) => !value)}
+        selectedMarkerId={selectedOrder || selectedVehicle}
+        orders={pendingOrders}
+        vehicles={availableVehicles}
       />
 
       <DispatchVehiclesSidebar
-        availableVehicles={availableVehicles}
+        availableVehicles={filteredVehicles}
+        searchQuery={vehicleSearchQuery}
+        onSearchQueryChange={setVehicleSearchQuery}
         isLoading={isLoading}
         isAssigning={isAssigning}
         selectedOrder={selectedOrder}
+        selectedVehicleId={selectedVehicle}
+        onSelectVehicle={(id) => {
+          setSelectedVehicle(id);
+          setSelectedOrder(null); // Clear order selection when vehicle is selected
+        }}
         onAssignVehicle={handleAssign}
       />
 

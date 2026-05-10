@@ -2,7 +2,7 @@
 /* Based on: Fleet Intelligence System (Stitch) */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
+@import 'mapbox-gl/dist/mapbox-gl.css';
 :root {
   /* === Colors === */
   --color-primary: #6366f1;
