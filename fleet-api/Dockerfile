@@ -27,11 +27,11 @@ RUN npm install --omit=dev
 COPY --from=builder /app/dist ./dist
 
 # Copy database source and tsconfig for migrations (running via ts-node in prod)
-COPY src/database ./src/database
+COPY src ./src 
 COPY tsconfig.json ./
 
 # Expose port
 EXPOSE 3001
 
 # Run migrations and then start the application
-CMD ["sh", "-c", "npm run migration:run:prod && node dist/main"]
+CMD ["sh", "-c", "npm run migration:run:prod && node dist/src/main"]
