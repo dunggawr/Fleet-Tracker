@@ -136,11 +136,54 @@ export function DispatchVehiclesSidebar({
     );
   };
 
+  const matchesSearch = (v: Vehicle) => {
+    if (!searchQuery) return true;
+    const searchStr = [v.id, v.plateNumber, v.type, v.driver?.fullName]
+      .join(' ')
+      .toLowerCase();
+    return searchStr.includes(searchQuery.toLowerCase());
+  };
+
+  // ===== Search & Grouping Logic (Unified) =====
+  
+  // 1. Unified list of all vehicles to display (Suggestions + Available)
+  // Ensures consistency between badge count and rendered cards
+  const combinedList = React.useMemo(() => {
+    const result: { vehicle: Vehicle; suggestion?: DispatchSuggestion }[] = [];
+    const seenIds = new Set<string>();
+
+    // A. Add suggestions first (they match the search and have extra metadata)
+    if (suggestions) {
+      suggestions.forEach(s => {
+        if (matchesSearch(s.vehicle)) {
+          result.push({ vehicle: s.vehicle, suggestion: s });
+          seenIds.add(s.vehicle.id);
+        }
+      });
+    }
+
+    // B. Add other available vehicles that are not already in suggestions
+    availableVehicles.forEach(v => {
+      if (!seenIds.has(v.id) && matchesSearch(v)) {
+        result.push({ vehicle: v });
+        seenIds.add(v.id);
+      }
+    });
+
+    return result;
+  }, [availableVehicles, suggestions, searchQuery]);
+
+  // Derived lists for sections
+  const filteredSuggestions = combinedList.filter(item => !!item.suggestion);
+  const filteredOthers = combinedList.filter(item => !item.suggestion);
+
+  const totalVisibleCount = combinedList.length;
+
   return (
     <aside className="dispatch-sidebar vehicles-list">
       <div className="sidebar-header">
         <h3>Available Fleet</h3>
-        <Badge variant="success">{availableVehicles.length}</Badge>
+        <Badge variant="success">{totalVisibleCount}</Badge>
       </div>
 
       <div className="sidebar-content">
@@ -166,39 +209,14 @@ export function DispatchVehiclesSidebar({
                   {isSuggestLoading
                     ? 'Đang tìm xe phù hợp...'
                     : isSmartMode
-                    ? `Top ${suggestions!.length} xe phù hợp nhất (gần nhất + đủ tải)`
+                    ? `Top ${filteredSuggestions.length} xe phù hợp nhất (gần nhất + đủ tải)`
                     : 'Sắp xếp theo khoảng cách & tải trọng'}
                 </span>
                 {isSuggestLoading && <LoadingSpinner size={14} />}
               </div>
             )}
 
-            {isSmartMode ? (
-              // Render danh sách theo thứ tự suggestions từ API (đã sắp xếp theo khoảng cách)
-              <>
-                <div className="section-label">Gợi ý thông minh</div>
-                {suggestions!.map((s) =>
-                  renderVehicleCard(s.vehicle, s)
-                )}
-                {/* Hiển thị phần còn lại nếu có */}
-                {availableVehicles.filter(
-                  (v) => !suggestions!.some((s) => s.vehicle.id === v.id)
-                ).length > 0 && (
-                  <>
-                    <div className="section-label other-section">Xe khác</div>
-                    {availableVehicles
-                      .filter((v) => !suggestions!.some((s) => s.vehicle.id === v.id))
-                      .filter((v) =>
-                        [v.id, v.plateNumber, v.type, v.driver?.fullName]
-                          .join(' ')
-                          .toLowerCase()
-                          .includes(searchQuery.toLowerCase())
-                      )
-                      .map((v) => renderVehicleCard(v))}
-                  </>
-                )}
-              </>
-            ) : availableVehicles.length === 0 ? (
+            {totalVisibleCount === 0 ? (
               <div className="text-center py-8 text-dim">
                 {searchQuery ? (
                   <>No vehicles matching "<strong>{searchQuery}</strong>"</>
@@ -206,23 +224,83 @@ export function DispatchVehiclesSidebar({
                   'No available vehicles'
                 )}
               </div>
+            ) : isSmartMode ? (
+              <>
+                {/* Section: Gợi ý thông minh (Top suggestions) */}
+                {filteredSuggestions.length > 0 && (
+                  <>
+                    <div className="section-label">Gợi ý thông minh</div>
+                    {filteredSuggestions.map((item) => renderVehicleCard(item.vehicle, item.suggestion))}
+                  </>
+                )}
+
+                {/* Section: Xe khác (Remaining available fleet) */}
+                {filteredOthers.length > 0 && (
+                  <>
+                    <div className="section-label other-section">
+                      {filteredSuggestions.length > 0 ? 'Xe khác' : 'Danh sách xe'}
+                    </div>
+                    {filteredOthers
+                      .sort((a, b) => {
+                        const capA = checkCapacity(a.vehicle).ok ? 0 : 1;
+                        const capB = checkCapacity(b.vehicle).ok ? 0 : 1;
+                        return capA - capB;
+                      })
+                      .map((item) => renderVehicleCard(item.vehicle))}
+                  </>
+                )}
+              </>
             ) : (
-              // Normal mode: sắp xếp xe đủ tải lên trên
-              [...availableVehicles]
+              // Normal mode: Show all matching available vehicles sorted by capacity
+              combinedList
                 .sort((a, b) => {
-                  const capA = checkCapacity(a).ok ? 0 : 1;
-                  const capB = checkCapacity(b).ok ? 0 : 1;
+                  const capA = checkCapacity(a.vehicle).ok ? 0 : 1;
+                  const capB = checkCapacity(b.vehicle).ok ? 0 : 1;
                   return capA - capB;
                 })
-                .map((vehicle) => renderVehicleCard(vehicle))
+                .map((item) => renderVehicleCard(item.vehicle))
             )}
           </>
         )}
       </div>
 
       <style jsx>{`
+        .dispatch-sidebar {
+          display: flex;
+          flex-direction: column;
+          background: var(--color-surface);
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-md);
+          overflow: hidden;
+          height: 100%;
+        }
+
+        .sidebar-header {
+          padding: var(--space-md);
+          border-bottom: 1px solid var(--color-border);
+          flex-shrink: 0;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .sidebar-content {
+          flex: 1;
+          overflow-y: auto;
+          min-height: 0;
+          padding: var(--space-md);
+          display: flex;
+          flex-direction: column;
+        }
+
         .dispatch-search {
-          margin-bottom: var(--space-sm);
+          position: sticky;
+          top: 0;
+          background: var(--color-surface);
+          padding-bottom: var(--space-sm);
+          margin-top: calc(var(--space-md) * -1);
+          padding-top: var(--space-md);
+          z-index: 10;
         }
 
         .dispatch-search :global(.search-input-group) {
@@ -230,16 +308,21 @@ export function DispatchVehiclesSidebar({
         }
 
         .suggest-banner {
+          position: sticky;
+          top: 54px; /* Sau search input (46px) + gap/padding */
+          z-index: 9;
           display: flex;
           align-items: center;
           gap: var(--space-xs);
           padding: 8px var(--space-sm);
-          background: rgba(99, 102, 241, 0.08);
-          border: 1px solid rgba(99, 102, 241, 0.25);
+          background: rgba(99, 102, 241, 0.1);
+          backdrop-filter: blur(8px);
+          border: 1px solid rgba(99, 102, 241, 0.3);
           border-radius: var(--radius-sm);
           font-size: 12px;
           color: var(--color-primary-light);
           margin-bottom: var(--space-sm);
+          box-shadow: var(--shadow-sm);
         }
 
         .section-label {

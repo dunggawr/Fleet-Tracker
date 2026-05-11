@@ -118,8 +118,43 @@ export function DispatchOrdersSidebar({
       </div>
 
       <style jsx>{`
+        .dispatch-sidebar {
+          display: flex;
+          flex-direction: column;
+          background: var(--color-surface);
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-md);
+          overflow: hidden;
+          height: 100%;
+        }
+
+        .sidebar-header {
+          padding: var(--space-md);
+          border-bottom: 1px solid var(--color-border);
+          flex-shrink: 0;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .sidebar-content {
+          flex: 1;
+          overflow-y: auto;
+          min-height: 0;
+          padding: var(--space-md);
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-md);
+        }
+
         .dispatch-search {
-          margin-bottom: var(--space-sm);
+          position: sticky;
+          top: 0;
+          background: var(--color-surface);
+          padding-bottom: var(--space-sm);
+          margin-top: calc(var(--space-md) * -1);
+          padding-top: var(--space-md);
+          z-index: 10;
         }
 
         .dispatch-search :global(.search-input-group) {

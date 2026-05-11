@@ -3,10 +3,8 @@ import { StyleSheet, Text, View, TouchableOpacity, Image, ActivityIndicator } fr
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { X, Camera, Check, RefreshCw } from 'lucide-react-native';
-import { useAuthStore } from '@/store/useAuthStore';
 import Toast from 'react-native-toast-message';
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001/api';
+import { authFetch } from '@/lib/authFetch';
 
 export default function CameraScreen() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -15,7 +13,6 @@ export default function CameraScreen() {
   const cameraRef = useRef<CameraView>(null);
   const router = useRouter();
   const { orderId } = useLocalSearchParams();
-  const { token } = useAuthStore();
 
   if (!permission) {
     return <View />;
@@ -54,10 +51,9 @@ export default function CameraScreen() {
         type: 'image/jpeg',
       });
 
-      const response = await fetch(`${API_URL}/upload?folder=orders`, {
+      const response = await authFetch('/upload?folder=orders', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
         },
         body: formData,

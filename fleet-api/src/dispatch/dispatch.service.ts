@@ -36,26 +36,42 @@ export class DispatchService {
     }
 
     // Find available vehicles sorted by distance
-    const vehicles = await this.vehicleRepository
+    // AC-DIS-01: Filter by availability, capacity, and license expiry
+    const result = await this.vehicleRepository
       .createQueryBuilder('vehicle')
       .innerJoinAndSelect('vehicle.driver', 'driver')
       .where('vehicle.status = :vStatus', { vStatus: VehicleStatus.AVAILABLE })
       .andWhere('driver.status = :dStatus', { dStatus: DriverStatus.AVAILABLE })
       .andWhere('driver.license_expiry > :today', { today: new Date() })
+      .andWhere('vehicle.last_known_location IS NOT NULL') // Avoid null location issues
       .andWhere(
         'vehicle.max_capacity_kg - vehicle.current_load_kg >= :weight',
         { weight: order.weightKg },
       )
       .addSelect(
-        'ST_Distance(vehicle.last_known_location, order.pickup_location)',
+        'ST_Distance(vehicle.last_known_location, ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography)',
         'distance',
       )
-      .innerJoin('orders', 'order', 'order.id = :orderId', { orderId })
+      .setParameters({
+        lng: order.pickupLocation.coordinates[0],
+        lat: order.pickupLocation.coordinates[1],
+      })
       .orderBy('distance', 'ASC')
-      .limit(10)
-      .getMany();
+      .limit(5)
+      .getRawAndEntities();
 
-    return vehicles;
+    // Map to DispatchSuggestion format
+    return result.entities.map((vehicle, index) => {
+      // TypeORM aliased selects are in raw[index].distance
+      const distanceMeters = parseFloat(result.raw[index].distance);
+      return {
+        vehicle,
+        driver: vehicle.driver,
+        distanceKm: isNaN(distanceMeters) ? 0 : distanceMeters / 1000,
+        freeCapacityKg: Number(vehicle.maxCapacityKg) - Number(vehicle.currentLoadKg),
+        kpiScore: 0, // In future, fetch from DriverKpi
+      };
+    });
   }
 
   async assignOrder(orderId: string, vehicleId: string) {

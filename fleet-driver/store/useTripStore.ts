@@ -1,9 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAuthStore } from './useAuthStore';
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001/api';
+import { authFetch } from '@/lib/authFetch';
 
 export enum TripStatus {
   PENDING = 'pending',
@@ -79,12 +77,7 @@ export const useTripStore = create<TripState>()(
       fetchTrips: async () => {
         set({ isLoading: true, error: null });
         try {
-          const { token } = useAuthStore.getState();
-          const response = await fetch(`${API_URL}/trips/my`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
+          const response = await authFetch('/trips/my');
           
           if (!response.ok) throw new Error('Failed to fetch trips');
           
@@ -145,12 +138,10 @@ export const useTripStore = create<TripState>()(
       acceptTrip: async (id: string) => {
         set({ isLoading: true, error: null });
         try {
-          const { token } = useAuthStore.getState();
-          const response = await fetch(`${API_URL}/trips/${id}/status`, {
+          const response = await authFetch(`/trips/${id}/status`, {
             method: 'PATCH',
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({ status: TripStatus.ACCEPTED }),
           });
@@ -170,12 +161,10 @@ export const useTripStore = create<TripState>()(
       rejectTrip: async (id: string) => {
         set({ isLoading: true, error: null });
         try {
-          const { token } = useAuthStore.getState();
-          const response = await fetch(`${API_URL}/trips/${id}/status`, {
+          const response = await authFetch(`/trips/${id}/status`, {
             method: 'PATCH',
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({ status: TripStatus.CANCELLED }),
           });
@@ -195,12 +184,10 @@ export const useTripStore = create<TripState>()(
       updateTripStatus: async (id: string, status: TripStatus) => {
         set({ isLoading: true, error: null });
         try {
-          const { token } = useAuthStore.getState();
-          const response = await fetch(`${API_URL}/trips/${id}/status`, {
+          const response = await authFetch(`/trips/${id}/status`, {
             method: 'PATCH',
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({ status }),
           });
@@ -220,14 +207,10 @@ export const useTripStore = create<TripState>()(
       updateOrderStatus: async (id: string, status: OrderStatus, photoUrl?: string, signatureUrl?: string) => {
         set({ isLoading: true, error: null });
         try {
-          const token = useAuthStore.getState()?.token;
-          if (!token) throw new Error('Authentication token not found');
-
-          const response = await fetch(`${API_URL}/orders/${id}/status`, {
+          const response = await authFetch(`/orders/${id}/status`, {
             method: 'PATCH',
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({ status, photoUrl, signatureUrl }),
           });

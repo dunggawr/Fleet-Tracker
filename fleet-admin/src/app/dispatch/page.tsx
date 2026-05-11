@@ -7,6 +7,7 @@ import { DispatchVehiclesSidebar } from './components/DispatchVehiclesSidebar';
 import { DispatchMapPanel } from './components/DispatchMapPanel';
 import { useDispatch } from '@/hooks/use-dispatch';
 import { useDispatchSuggest, useDispatchCluster } from '@/hooks/use-dispatch-suggest';
+import { Vehicle } from '@/types';
 
 export default function DispatchPage() {
   const searchParams = useSearchParams();
@@ -57,7 +58,7 @@ export default function DispatchPage() {
   }, [pendingOrders, searchQuery]);
 
   const filteredVehicles = React.useMemo(() => {
-    return availableVehicles.filter((vehicle) =>
+    return availableVehicles.filter((vehicle: Vehicle) =>
       [vehicle.id, vehicle.plateNumber, vehicle.type, vehicle.driver?.fullName]
         .join(' ')
         .toLowerCase()
@@ -190,12 +191,18 @@ export default function DispatchPage() {
       <style jsx>{`
         .dispatch-container {
           display: grid;
-          grid-template-columns: 320px 1fr 320px;
-          height: calc(100vh - var(--header-height) - var(--space-xl) * 2);
+          grid-template-columns: 350px 1fr 350px;
+          height: calc(100vh - var(--header-height) - (var(--space-xl) * 2));
           gap: var(--space-md);
-          margin: -var(--space-md);
-          padding: var(--space-md);
           overflow: hidden;
+          position: relative;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1400px) {
+          .dispatch-container {
+            grid-template-columns: 300px 1fr 300px;
+          }
         }
       `}</style>
     </div>

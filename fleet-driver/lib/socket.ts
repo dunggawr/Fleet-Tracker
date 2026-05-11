@@ -1,6 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '../store/useAuthStore';
 import { useTripStore } from '../store/useTripStore';
+import { refreshAccessToken } from './authFetch';
 import NetInfo from '@react-native-community/netinfo';
 import { offlineQueue } from './offlineQueue';
 
@@ -24,6 +25,22 @@ class SocketService {
       reconnectionDelay: 2000,
       reconnectionDelayMax: 5000,
       timeout: 10000,
+    });
+
+    // Refresh token chủ động trước khi reconnect
+    this.socket.io.on('reconnect_attempt', async () => {
+      console.log('[Socket] Reconnecting... Refreshing token.');
+      try {
+        const newToken = await refreshAccessToken();
+        if (newToken && this.socket) {
+          this.socket.auth = {
+            token: `Bearer ${newToken}`,
+          };
+          console.log('[Socket] Token refreshed for reconnection');
+        }
+      } catch (err) {
+        console.error('[Socket] Failed to refresh token during reconnect:', err);
+      }
     });
 
     this.socket.on('connect', () => {
