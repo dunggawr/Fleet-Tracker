@@ -34,6 +34,7 @@ interface DriverWithUser extends Driver {
 const driverSchema = z.object({
   fullName: z.string().min(1, 'Full name is required'),
   email: z.string().email('Invalid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
   phone: z.string().min(10, 'Phone number must be at least 10 digits'),
   licenseClass: z.string().min(1, 'License class is required'),
   licenseExpiry: z.string().min(1, 'License expiry is required'),
@@ -182,6 +183,13 @@ export default function DriversPage() {
               placeholder="driver@example.com" 
               {...register('email')}
               error={errors.email?.message}
+            />
+            <Input 
+              label="Password" 
+              type="password"
+              placeholder="Minimum 6 characters" 
+              {...register('password')}
+              error={errors.password?.message}
             />
             <Input 
               label="Phone Number" 

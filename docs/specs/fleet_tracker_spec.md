@@ -27,8 +27,8 @@ FleetTracker là hệ thống quản lý đội xe vận tải (5-10 xe) gồm:
 | A-02 | Là Admin, tôi muốn thêm/sửa/xóa xe để quản lý đội xe | 🔴 Must |
 | A-03 | Là Admin, tôi muốn thêm/sửa/xóa tài xế | 🔴 Must |
 | A-04 | Là Admin, tôi muốn tạo đơn hàng mới | 🔴 Must |
-| A-05 | Là Admin, tôi muốn gán đơn hàng cho xe phù hợp | 🔴 Must |
-| A-06 | Là Admin, tôi muốn hệ thống gợi ý xe phù hợp nhất | 🟡 Should |
+| A-05 | Là Admin, tôi muốn gán đơn hàng cho xe phù hợp | 🔴 Must | ✅ Done |
+| A-06 | Là Admin, tôi muốn hệ thống gợi ý xe phù hợp nhất | 🟡 Should | ✅ Done |
 | A-07 | Là Admin, tôi muốn xem toàn bộ xe trên bản đồ real-time | 🔴 Must |
 | A-08 | Là Admin, tôi muốn nhận cảnh báo khi xe sai tuyến | 🟡 Should |
 | A-09 | Là Admin, tôi muốn nhận cảnh báo khi xe dừng bất thường | 🟡 Should |

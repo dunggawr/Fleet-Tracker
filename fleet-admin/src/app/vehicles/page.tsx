@@ -9,7 +9,8 @@ import {
   Trash2, 
   Eye,
   MoreVertical,
-  Navigation
+  Navigation,
+  UserPlus
 } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
 import { Badge } from '@/components/ui/Badge';
@@ -25,6 +26,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useVehicles } from '@/hooks/use-vehicles';
+import { useDrivers } from '@/hooks/use-drivers';
 import { Vehicle } from '@/types';
 import { useRouter } from 'next/navigation';
 
@@ -33,6 +35,7 @@ const vehicleSchema = z.object({
   type: z.enum(['small', 'medium', 'large']),
   status: z.enum(['available', 'delivering', 'maintenance']),
   maxCapacityKg: z.number().min(100, 'Minimum capacity is 100kg'),
+  driverId: z.string().uuid().optional().nullable(),
 });
 
 type VehicleFormValues = z.infer<typeof vehicleSchema>;
@@ -40,11 +43,15 @@ type VehicleFormValues = z.infer<typeof vehicleSchema>;
 export default function VehiclesPage() {
   const router = useRouter();
   const { vehicles, isLoading, createVehicle, updateVehicle, deleteVehicle, isCreating, isUpdating, isDeleting } = useVehicles();
+  const { drivers } = useDrivers();
   const [searchQuery, setSearchQuery] = React.useState('');
   const [typeFilter, setTypeFilter] = React.useState<string>('all');
   const [statusFilter, setStatusFilter] = React.useState<string>('all');
   const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [isAssignModalOpen, setIsAssignModalOpen] = React.useState(false);
   const [selectedVehicle, setSelectedVehicle] = React.useState<Vehicle | null>(null);
+  const [vehicleToAssign, setVehicleToAssign] = React.useState<Vehicle | null>(null);
+  const [assignedDriverId, setAssignedDriverId] = React.useState('');
   const [vehicleToDelete, setVehicleToDelete] = React.useState<Vehicle | null>(null);
   const isEditing = Boolean(selectedVehicle);
 
@@ -54,12 +61,26 @@ export default function VehiclesPage() {
       status: 'available',
       type: 'medium',
       maxCapacityKg: 1000,
+      driverId: '',
     }
   });
 
+  const sortedDrivers = React.useMemo(() => {
+    return [...drivers].sort((left, right) => {
+      if (left.status === right.status) {
+        return left.fullName.localeCompare(right.fullName);
+      }
+
+      if (left.status === 'available') return -1;
+      if (right.status === 'available') return 1;
+
+      return left.fullName.localeCompare(right.fullName);
+    });
+  }, [drivers]);
+
   const openCreateModal = () => {
     setSelectedVehicle(null);
-    reset({ plateNumber: '', type: 'medium', status: 'available', maxCapacityKg: 1000 });
+    reset({ plateNumber: '', type: 'medium', status: 'available', maxCapacityKg: 1000, driverId: '' });
     setIsModalOpen(true);
   };
 
@@ -70,8 +91,15 @@ export default function VehiclesPage() {
       type: vehicle.type,
       status: vehicle.status,
       maxCapacityKg: vehicle.maxCapacityKg || 1000,
+      driverId: vehicle.driverId || '',
     });
     setIsModalOpen(true);
+  };
+
+  const openAssignModal = (vehicle: Vehicle) => {
+    setVehicleToAssign(vehicle);
+    setAssignedDriverId(vehicle.driverId || '');
+    setIsAssignModalOpen(true);
   };
 
   const closeModal = () => {
@@ -80,16 +108,42 @@ export default function VehiclesPage() {
     reset();
   };
 
+  const closeAssignModal = () => {
+    setIsAssignModalOpen(false);
+    setVehicleToAssign(null);
+    setAssignedDriverId('');
+  };
+
   const onSubmit = async (data: VehicleFormValues) => {
     try {
+      const payload = {
+        ...data,
+        driverId: data.driverId || undefined,
+      };
+
       if (selectedVehicle) {
-        await updateVehicle({ id: selectedVehicle.id, ...data });
+        await updateVehicle({ id: selectedVehicle.id, ...payload });
       } else {
-        await createVehicle(data);
+        await createVehicle(payload);
       }
       closeModal();
     } catch (err) {
       console.error('Failed to save vehicle:', err);
+    }
+  };
+
+  const onAssignDriver = async () => {
+    try {
+      if (!vehicleToAssign) return;
+
+      await updateVehicle({
+        id: vehicleToAssign.id,
+        driverId: assignedDriverId || undefined,
+      });
+
+      closeAssignModal();
+    } catch (err) {
+      console.error('Failed to assign driver:', err);
     }
   };
 
@@ -125,6 +179,9 @@ export default function VehiclesPage() {
         <Dropdown align="right" trigger={
           <Button variant="ghost" size="sm" icon={<MoreVertical size={16} />} />
         }>
+            <button className="dropdown-item" onClick={() => openAssignModal(v)}>
+              <UserPlus size={16} /> {v.driver ? 'Change Driver' : 'Assign Driver'}
+            </button>
           <button className="dropdown-item" onClick={() => router.push(`/dispatch?vehicleId=${v.id}`)}>
             <Navigation size={16} /> Track Vehicle
           </button>
@@ -195,8 +252,54 @@ export default function VehiclesPage() {
               </select>
               {errors.status && <p className="error-text">{errors.status.message}</p>}
             </div>
+            <div className="form-group">
+              <label className="label">Assigned Driver</label>
+              <select className="select" {...register('driverId')}>
+                <option value="">Unassigned</option>
+                {sortedDrivers.map((driver) => (
+                  <option key={driver.id} value={driver.id}>
+                    {driver.fullName} ({driver.status.replace('_', ' ')})
+                  </option>
+                ))}
+              </select>
+              {errors.driverId && <p className="error-text">Invalid driver selection</p>}
+            </div>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        isOpen={isAssignModalOpen}
+        onClose={closeAssignModal}
+        title={vehicleToAssign ? `${vehicleToAssign.plateNumber} - Assign Driver` : 'Assign Driver'}
+        size="sm"
+        footer={(
+          <>
+            <Button variant="secondary" onClick={closeAssignModal}>Cancel</Button>
+            <Button variant="primary" onClick={onAssignDriver} isLoading={isUpdating}>Save Assignment</Button>
+          </>
+        )}
+      >
+        <div className="form-grid">
+          <div className="form-group">
+            <label className="label">Select Driver</label>
+            <select
+              className="select"
+              value={assignedDriverId}
+              onChange={(e) => setAssignedDriverId(e.target.value)}
+            >
+              <option value="">Unassigned</option>
+              {sortedDrivers.map((driver) => (
+                <option key={driver.id} value={driver.id}>
+                  {driver.fullName} ({driver.status.replace('_', ' ')})
+                </option>
+              ))}
+            </select>
+          </div>
+          <p className="text-dim">
+            This will update the vehicle&apos;s assigned driver without changing other vehicle details.
+          </p>
+        </div>
       </Modal>
 
       <ConfirmDialog

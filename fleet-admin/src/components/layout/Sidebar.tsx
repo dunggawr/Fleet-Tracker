@@ -14,7 +14,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Signal,
-  BarChart3
+  BarChart3,
+  Navigation,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -24,6 +25,7 @@ const navItems = [
   { name: 'Drivers', href: '/drivers', icon: Users },
   { name: 'Orders', href: '/orders', icon: ClipboardList },
   { name: 'Dispatch Center', href: '/dispatch', icon: MapIcon },
+  { name: 'Live Tracking', href: '/tracking', icon: Navigation },
   { name: 'Reports', href: '/reports', icon: BarChart3 },
 ];
 

@@ -22,6 +22,9 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { TokenResponseDto } from './dto/token-response.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { Roles } from './decorators/roles.decorator';
@@ -74,6 +77,28 @@ export class AuthController {
     return { accessToken, refreshToken, user };
   }
 
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Request password reset code' })
+  @ApiResponse({ status: 200, description: 'Reset code sent to email' })
+  @ApiResponse({ status: 401, description: 'Email not found' })
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(forgotPasswordDto.email);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reset password with reset code' })
+  @ApiResponse({ status: 200, description: 'Password reset successfully' })
+  @ApiResponse({ status: 401, description: 'Invalid or expired reset code' })
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    return this.authService.resetPassword(
+      resetPasswordDto.email,
+      resetPasswordDto.resetCode,
+      resetPasswordDto.newPassword,
+    );
+  }
+
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Refresh access token' })
@@ -112,6 +137,24 @@ export class AuthController {
     }
 
     return { accessToken, refreshToken: newRefreshToken, user };
+  }
+
+  @Post('change-password')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Change user password' })
+  @ApiResponse({ status: 200, description: 'Password changed successfully' })
+  @ApiResponse({ status: 401, description: 'Invalid old password' })
+  async changePassword(
+    @GetUser() user: User,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ) {
+    return this.authService.changePassword(
+      user.id,
+      changePasswordDto.oldPassword,
+      changePasswordDto.newPassword,
+    );
   }
 
   @Post('logout')
