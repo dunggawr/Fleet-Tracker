@@ -35,7 +35,7 @@ export function useOrders() {
 
   const assignOrderMutation = useMutation({
     mutationFn: ({ orderId, vehicleId }: { orderId: string; vehicleId: string }) => 
-      api.post<Order>(`/orders/${orderId}/assign`, { vehicleId }),
+      api.post<Order>(`/dispatch/assign`, { orderId, vehicleId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
     },

@@ -38,7 +38,7 @@ export function useDispatchAssign() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ orderIds, vehicleId }: { orderIds: string[]; vehicleId: string }) =>
-      api.post('/dispatch/assign', { orderIds, vehicleId }),
+      api.post('/dispatch/bulk-assign', { orderIds, vehicleId }),
     onSuccess: () => {
       // Invalidate liên quan để refresh data
       queryClient.invalidateQueries({ queryKey: ['orders'] });
