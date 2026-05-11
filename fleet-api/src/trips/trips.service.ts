@@ -66,13 +66,25 @@ export class TripsService {
     try {
       const trip = await queryRunner.manager.findOne(Trip, {
         where: { id },
-        relations: ['driver', 'vehicle', 'tripOrders', 'tripOrders.order'],
         lock: { mode: 'pessimistic_write' },
       });
 
       if (!trip) {
         throw new NotFoundException(`Trip with ID ${id} not found`);
       }
+
+      // Fetch relations separately to avoid "FOR UPDATE cannot be applied to the nullable side of an outer join"
+      // We don't necessarily need to lock these rows for reading permission/metadata, 
+      // but we do need the data.
+      const fullTrip = await queryRunner.manager.findOne(Trip, {
+        where: { id },
+        relations: ['driver', 'vehicle', 'tripOrders', 'tripOrders.order'],
+      });
+      
+      // Update our locked trip object with relation data
+      trip.driver = fullTrip.driver;
+      trip.vehicle = fullTrip.vehicle;
+      trip.tripOrders = fullTrip.tripOrders;
 
       // Check if user is the assigned driver or admin
       const isDriver = role === 'driver';
