@@ -81,6 +81,10 @@ export class TripsService {
         relations: ['driver', 'vehicle', 'tripOrders', 'tripOrders.order'],
       });
       
+      if (!fullTrip) {
+        throw new NotFoundException(`Trip with ID ${id} data could not be re-loaded`);
+      }
+      
       // Update our locked trip object with relation data
       trip.driver = fullTrip.driver;
       trip.vehicle = fullTrip.vehicle;
