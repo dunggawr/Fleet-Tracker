@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  Truck, 
-  Users, 
-  ClipboardList, 
-  Map as MapIcon, 
+import React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  LayoutDashboard,
+  Truck,
+  Users,
+  ClipboardList,
+  Map as MapIcon,
   Settings,
   LogOut,
   ChevronLeft,
@@ -16,17 +16,17 @@ import {
   Signal,
   BarChart3,
   Navigation,
-} from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
+} from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 const navItems = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Vehicles', href: '/vehicles', icon: Truck },
-  { name: 'Drivers', href: '/drivers', icon: Users },
-  { name: 'Orders', href: '/orders', icon: ClipboardList },
-  { name: 'Dispatch Center', href: '/dispatch', icon: MapIcon },
-  { name: 'Live Tracking', href: '/tracking', icon: Navigation },
-  { name: 'Reports', href: '/reports', icon: BarChart3 },
+  { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Vehicles", href: "/vehicles", icon: Truck },
+  { name: "Drivers", href: "/drivers", icon: Users },
+  { name: "Orders", href: "/orders", icon: ClipboardList },
+  { name: "Dispatch Center", href: "/dispatch", icon: MapIcon },
+  { name: "Live Tracking", href: "/tracking", icon: Navigation },
+  { name: "Reports", href: "/reports", icon: BarChart3 },
 ];
 
 export function Sidebar() {
@@ -35,14 +35,18 @@ export function Sidebar() {
   const { logout } = useAuth();
 
   return (
-    <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
+    <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
       <div className="sidebar-header">
         <div className="logo">
           <div className="logo-icon">FT</div>
-          {!collapsed && <span className="logo-text">Fleet<span>Tracker</span></span>}
+          {!collapsed && (
+            <span className="logo-text">
+              Fleet<span>Tracker</span>
+            </span>
+          )}
         </div>
-        <button 
-          className="collapse-btn" 
+        <button
+          className="collapse-btn"
           onClick={() => setCollapsed(!collapsed)}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
@@ -53,13 +57,16 @@ export function Sidebar() {
       <nav className="sidebar-nav">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = pathname === item.href;
-          
+          const isActive =
+            item.href === "/"
+              ? pathname === "/"
+              : pathname === item.href || pathname.startsWith(`${item.href}/`);
+
           return (
-            <Link 
-              key={item.name} 
+            <Link
+              key={item.name}
               href={item.href}
-              className={`nav-item ${isActive ? 'active' : ''}`}
+              className={`nav-item ${isActive ? "active" : ""}`}
               title={collapsed ? item.name : undefined}
             >
               <Icon size={20} />
@@ -71,9 +78,15 @@ export function Sidebar() {
       </nav>
 
       <div className="sidebar-footer">
-        <Link href="/settings" className="nav-item">
+        <Link
+          href="/settings"
+          className={`nav-item ${pathname === "/settings" || pathname.startsWith("/settings/") ? "active" : ""}`}
+        >
           <Settings size={20} />
           {!collapsed && <span>Settings</span>}
+          {(pathname === "/settings" || pathname.startsWith("/settings/")) && (
+            <div className="active-indicator" />
+          )}
         </Link>
         <button className="nav-item logout-btn" onClick={logout}>
           <LogOut size={20} />

@@ -1,3 +1,27 @@
+## [2026-05-11] - Driver App Web Support & Platform Abstraction
+### Added
+- **Mobile (Driver App)**:
+    - Triển khai cơ chế **Platform-specific Components**: Tách biệt logic bản đồ giữa Native (Dùng `react-native-maps`) và Web (Dùng Mock component).
+    - Tạo `MapComponents.tsx` và `MapComponents.web.tsx` để đóng gói các thành phần bản đồ.
+    - Cho phép chạy Driver App trực tiếp trên trình duyệt (`expo start --web`) để thuận tiện cho việc kiểm thử luồng GPS mà không cần thiết bị thật.
+
+### Fixed
+- **Mobile (Driver App)**:
+    - Khắc phục lỗi crash nghiêm trọng khi chạy trên Web: `Importing native-only module "react-native/Libraries/Utilities/codegenNativeCommands"`.
+    - Sử dụng dynamic `require` trong `MapComponents.tsx` để cô lập hoàn toàn thư viện Native khỏi Web bundler.
+    - Sửa lỗi type definition cho `mapRef` để tương thích với cả `MapView` native và Mock component.
+
+## [2026-05-11] - Dispatch API Fixes & Backend Hardening
+### Fixed
+- **Backend (API)**:
+    - Khắc phục lỗi nghiêm trọng `QueryFailedError: FOR UPDATE cannot be applied to the nullable side of an outer join` bằng cách tách biệt truy vấn khóa (lock) thực thể và nạp dữ liệu quan hệ (relations).
+    - Áp dụng bản vá cho `DispatchService` (assign/bulk-assign) và `TripsService` (updateStatus).
+    - Giải quyết lỗi TypeScript build (`fullTrip is possibly null`) trong `TripsService.ts`.
+- **Frontend (Admin Dashboard)**:
+    - Sửa lỗi 404 khi gán đơn hàng: Cập nhật `use-orders.ts` gọi đúng endpoint `/api/dispatch/assign` thay vì `/api/orders/:id/assign`.
+    - Đồng bộ hóa `use-dispatch-suggest.ts` sử dụng `/api/dispatch/bulk-assign` cho các thao tác gán đơn hàng hàng loạt.
+    - Khắc phục lỗi Mapbox runtime: Chuyển đổi các biến màu CSS (`var(--color-...)`) sang mã Hex thông qua hàm `resolveColor` để tương thích với Mapbox GL JS.
+
 ## [2026-05-11] - Admin Dashboard Polishing & Build Stability (Phase 11)
 ### Added
 - **Frontend (Admin Dashboard)**:

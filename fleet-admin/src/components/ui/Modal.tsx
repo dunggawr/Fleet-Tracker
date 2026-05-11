@@ -11,15 +11,24 @@ interface ModalProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  className?: string;
 }
 
-export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }: ModalProps) {
+export function Modal({ 
+  isOpen, 
+  onClose, 
+  title, 
+  children, 
+  footer, 
+  size = 'md',
+  className = ""
+}: ModalProps) {
   if (!isOpen) return null;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div 
-        className={`modal-content size-${size}`} 
+        className={`modal-content size-${size} ${className}`} 
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"

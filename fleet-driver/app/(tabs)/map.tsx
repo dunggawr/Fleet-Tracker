@@ -9,9 +9,9 @@ import {
   Alert
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Navigation, MapPin, Truck, CheckCircle2, Phone, AlertTriangle } from 'lucide-react-native';
+import { MapComponent, MarkerComponent, PolylineComponent, PROVIDER_GOOGLE } from '../../components/MapComponents';
 import { useTripStore, TripStatus, OrderStatus } from '../../store/useTripStore';
 import { socketService } from '../../lib/socket';
 import Toast from 'react-native-toast-message';
@@ -25,7 +25,7 @@ export default function ActiveTripMap() {
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const { activeTrip, updateTripStatus, updateOrderStatus } = useTripStore();
-  const mapRef = useRef<MapView>(null);
+  const mapRef = useRef<any>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -239,8 +239,8 @@ export default function ActiveTripMap() {
 
   return (
     <View style={styles.container}>
-      <MapView
-        ref={mapRef}
+      <MapComponent
+        ref={mapRef as any}
         style={styles.map}
         provider={PROVIDER_GOOGLE}
         initialRegion={{
@@ -252,7 +252,7 @@ export default function ActiveTripMap() {
         customMapStyle={darkMapStyle}
       >
         {location && (
-          <Marker
+          <MarkerComponent
             coordinate={{
               latitude: location.coords.latitude,
               longitude: location.coords.longitude,
@@ -262,12 +262,12 @@ export default function ActiveTripMap() {
             <View style={styles.driverMarker}>
               <View style={styles.driverMarkerInner} />
             </View>
-          </Marker>
+          </MarkerComponent>
         )}
 
         {/* Route Polyline */}
         {activeTrip.plannedRoute && activeTrip.plannedRoute.length > 0 && (
-          <Polyline
+          <PolylineComponent
             coordinates={activeTrip.plannedRoute}
             strokeColor="#6366f1"
             strokeWidth={4}
@@ -277,20 +277,20 @@ export default function ActiveTripMap() {
 
         {/* Pickup Marker (Warehouse) */}
         {activeTrip.orders[0]?.pickupLocation && (
-          <Marker
+          <MarkerComponent
             coordinate={activeTrip.orders[0].pickupLocation}
             title="Pickup: Warehouse"
           >
              <View style={[styles.markerContainer, { backgroundColor: '#6366f1' }]}>
                 <Truck size={14} color="#fff" />
              </View>
-          </Marker>
+          </MarkerComponent>
         )}
         
         {/* Delivery Markers */}
         {activeTrip.orders.map((order) => (
           order.deliveryLocation && (
-            <Marker
+            <MarkerComponent
               key={order.id}
               coordinate={order.deliveryLocation}
               title={`Delivery: ${order.customerName}`}
@@ -299,10 +299,10 @@ export default function ActiveTripMap() {
               <View style={[styles.markerContainer, { backgroundColor: '#10b981' }]}>
                 <MapPin size={14} color="#fff" />
               </View>
-            </Marker>
+            </MarkerComponent>
           )
         ))}
-      </MapView>
+      </MapComponent>
 
       <View style={styles.topOverlay}>
         <View style={styles.header}>

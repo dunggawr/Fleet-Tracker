@@ -8,7 +8,10 @@ import {
   Edit2, 
   Trash2, 
   Phone,
-  Star
+  Star,
+  Mail,
+  CreditCard,
+  Calendar
 } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
 import { Badge } from '@/components/ui/Badge';
@@ -33,8 +36,8 @@ interface DriverWithUser extends Driver {
 
 const driverSchema = z.object({
   fullName: z.string().min(1, 'Full name is required'),
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  email: z.string().email('Invalid email address').optional().or(z.literal('')),
+  password: z.string().min(6, 'Password must be at least 6 characters').optional().or(z.literal('')),
   phone: z.string().min(10, 'Phone number must be at least 10 digits'),
   licenseClass: z.string().min(1, 'License class is required'),
   licenseExpiry: z.string().min(1, 'License expiry is required'),
@@ -44,14 +47,15 @@ type DriverFormValues = z.infer<typeof driverSchema>;
 
 export default function DriversPage() {
   const router = useRouter();
-  const { drivers, isLoading, registerDriver, deleteDriver, isRegistering, isDeleting } = useDrivers();
+  const { drivers, isLoading, registerDriver, updateDriver, deleteDriver, isRegistering, isUpdating, isDeleting } = useDrivers();
   const [searchQuery, setSearchQuery] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState<string>('all');
-  const [selectedDriver, setSelectedDriver] = React.useState<DriverWithUser | null>(null);
+  const [editingDriver, setEditingDriver] = React.useState<DriverWithUser | null>(null);
+  const [viewingDriver, setViewingDriver] = React.useState<DriverWithUser | null>(null);
   const [driverToDelete, setDriverToDelete] = React.useState<DriverWithUser | null>(null);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<DriverFormValues>({
+  const { register, handleSubmit, reset, formState: { errors }, setValue } = useForm<DriverFormValues>({
     resolver: zodResolver(driverSchema),
   });
   const [mounted, setMounted] = React.useState(false);
@@ -59,6 +63,21 @@ export default function DriversPage() {
   React.useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Handle form population when editing
+  React.useEffect(() => {
+    if (editingDriver) {
+      reset({
+        fullName: editingDriver.fullName,
+        email: editingDriver.user?.email || '',
+        password: '', // Password is never populated
+        phone: editingDriver.phone,
+        licenseClass: editingDriver.licenseClass || '',
+        licenseExpiry: editingDriver.licenseExpiry ? new Date(editingDriver.licenseExpiry).toISOString().split('T')[0] : '',
+      });
+      setIsModalOpen(true);
+    }
+  }, [editingDriver, reset]);
 
   const filteredDrivers = (drivers as DriverWithUser[]).filter(d => {
     const matchesSearch = d.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -69,6 +88,23 @@ export default function DriversPage() {
     
     return matchesSearch && matchesStatus;
   });
+
+  const onSubmit = async (data: DriverFormValues) => {
+    try {
+      if (editingDriver) {
+        // Remove email/password from update if they are empty/not supported
+        const { email, password, ...updateData } = data;
+        await updateDriver({ id: editingDriver.id, ...updateData });
+      } else {
+        await registerDriver(data as any);
+      }
+      setIsModalOpen(false);
+      setEditingDriver(null);
+      reset();
+    } catch (err) {
+      console.error('Operation failed:', err);
+    }
+  };
 
   const columns = [
     { 
@@ -87,8 +123,13 @@ export default function DriversPage() {
     },
     { header: 'Phone', accessor: 'phone' as keyof DriverWithUser },
     { 
-      header: 'License Class', 
-      accessor: 'licenseClass' as keyof DriverWithUser 
+      header: 'License', 
+      accessor: (d: DriverWithUser) => (
+        <div className="flex flex-col">
+          <span className="font-medium">{d.licenseClass || 'N/A'}</span>
+          <span className="text-xs text-dim">{d.licenseExpiry ? new Date(d.licenseExpiry).toLocaleDateString() : ''}</span>
+        </div>
+      )
     },
     { 
       header: 'Status', 
@@ -105,21 +146,11 @@ export default function DriversPage() {
           <Button 
             variant="ghost" 
             size="sm" 
-            icon={<Phone size={16} />} 
-            aria-label={`Call ${d.fullName}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              window.location.href = `tel:${d.phone}`;
-            }}
-          />
-          <Button 
-            variant="ghost" 
-            size="sm" 
             icon={<Edit2 size={16} />} 
             aria-label={`Edit ${d.fullName}`}
             onClick={(e) => {
               e.stopPropagation();
-              setSelectedDriver(d);
+              setEditingDriver(d);
             }}
           />
           <Button 
@@ -145,27 +176,38 @@ export default function DriversPage() {
           <h1>Driver Management</h1>
           <p className="text-dim">Monitor driver performance, status, and contact information.</p>
         </div>
-        <Button variant="primary" icon={<Plus size={18} />} onClick={() => { reset(); setIsModalOpen(true); }}>
+        <Button variant="primary" icon={<Plus size={18} />} onClick={() => { 
+          setEditingDriver(null);
+          reset({
+            fullName: '',
+            email: '',
+            password: '',
+            phone: '',
+            licenseClass: '',
+            licenseExpiry: '',
+          });
+          setIsModalOpen(true); 
+        }}>
           Register New Driver
         </Button>
       </header>
 
       <Modal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Register New Driver"
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingDriver(null);
+        }}
+        title={editingDriver ? 'Edit Driver Information' : 'Register New Driver'}
         footer={(
           <>
-            <Button variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-            <Button variant="primary" onClick={handleSubmit(async (data) => {
-              try {
-                await registerDriver(data);
-                setIsModalOpen(false);
-                reset();
-              } catch (err) {
-                console.error('Failed to register driver:', err);
-              }
-            })} isLoading={isRegistering}>Register Driver</Button>
+            <Button variant="secondary" onClick={() => {
+              setIsModalOpen(false);
+              setEditingDriver(null);
+            }}>Cancel</Button>
+            <Button variant="primary" onClick={handleSubmit(onSubmit)} isLoading={isRegistering || isUpdating}>
+              {editingDriver ? 'Save Changes' : 'Register Driver'}
+            </Button>
           </>
         )}
       >
@@ -177,23 +219,29 @@ export default function DriversPage() {
               {...register('fullName')}
               error={errors.fullName?.message}
             />
-            <Input 
-              label="Email Address" 
-              type="email"
-              placeholder="driver@example.com" 
-              {...register('email')}
-              error={errors.email?.message}
-            />
-            <Input 
-              label="Password" 
-              type="password"
-              placeholder="Minimum 6 characters" 
-              {...register('password')}
-              error={errors.password?.message}
-            />
+            
+            {!editingDriver && (
+              <>
+                <Input 
+                  label="Email Address" 
+                  type="email"
+                  placeholder="driver@example.com" 
+                  {...register('email')}
+                  error={errors.email?.message}
+                />
+                <Input 
+                  label="Password" 
+                  type="password"
+                  placeholder="Minimum 6 characters" 
+                  {...register('password')}
+                  error={errors.password?.message}
+                />
+              </>
+            )}
+
             <Input 
               label="Phone Number" 
-              placeholder="e.g. 0901234567" 
+              placeholder="e.g. 0943..." 
               {...register('phone')}
               error={errors.phone?.message}
             />
@@ -210,43 +258,63 @@ export default function DriversPage() {
               error={errors.licenseExpiry?.message}
             />
           </div>
+          
+          {editingDriver && (
+            <div className="mt-4 p-3 bg-surface-high rounded-md flex items-start gap-3">
+              <Mail size={16} className="text-dim mt-0.5" />
+              <div>
+                <p className="text-xs font-semibold text-dim uppercase tracking-wider">Account Email</p>
+                <p className="text-sm">{editingDriver.user?.email}</p>
+                <p className="text-xs text-dim italic mt-1">Contact IT to change account credentials.</p>
+              </div>
+            </div>
+          )}
         </form>
       </Modal>
 
       <Modal
-        isOpen={Boolean(selectedDriver)}
-        onClose={() => setSelectedDriver(null)}
+        isOpen={Boolean(viewingDriver)}
+        onClose={() => setViewingDriver(null)}
         title="Driver Details"
       >
-        {selectedDriver && (
+        {viewingDriver && (
           <div className="driver-detail">
             <div className="driver-detail-header">
               <div className="driver-avatar large">
                 <UserIcon size={24} />
               </div>
               <div>
-                <h3>{selectedDriver.fullName}</h3>
-                <p className="text-dim">{selectedDriver.user?.email}</p>
+                <h3>{viewingDriver.fullName}</h3>
+                <p className="text-dim">{viewingDriver.user?.email}</p>
               </div>
             </div>
             <div className="detail-grid">
               <div className="detail-item">
                 <span className="detail-label">Phone</span>
-                <span>{selectedDriver.phone}</span>
+                <div className="flex items-center gap-2">
+                  <Phone size={14} className="text-dim" />
+                  <span>{viewingDriver.phone}</span>
+                </div>
               </div>
               <div className="detail-item">
                 <span className="detail-label">Status</span>
-                <Badge variant={selectedDriver.status === 'available' ? 'success' : selectedDriver.status === 'on_trip' ? 'primary' : 'neutral'}>
-                  {selectedDriver.status.replace('_', ' ')}
+                <Badge variant={viewingDriver.status === 'available' ? 'success' : viewingDriver.status === 'on_trip' ? 'primary' : 'neutral'}>
+                  {viewingDriver.status.replace('_', ' ')}
                 </Badge>
               </div>
               <div className="detail-item">
                 <span className="detail-label">License Class</span>
-                <span>{selectedDriver.licenseClass}</span>
+                <div className="flex items-center gap-2">
+                  <CreditCard size={14} className="text-dim" />
+                  <span>{viewingDriver.licenseClass || 'N/A'}</span>
+                </div>
               </div>
               <div className="detail-item">
-                <span className="detail-label">Expiry</span>
-                <span>{selectedDriver.licenseExpiry && mounted ? new Date(selectedDriver.licenseExpiry).toLocaleDateString() : 'N/A'}</span>
+                <span className="detail-label">Expiry Date</span>
+                <div className="flex items-center gap-2">
+                  <Calendar size={14} className="text-dim" />
+                  <span>{viewingDriver.licenseExpiry && mounted ? new Date(viewingDriver.licenseExpiry).toLocaleDateString() : 'N/A'}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -300,7 +368,7 @@ export default function DriversPage() {
             <LoadingSpinner size={32} />
           </div>
         ) : (
-          <DataTable data={filteredDrivers} columns={columns} onRowClick={(driver) => setSelectedDriver(driver as DriverWithUser)} />
+          <DataTable data={filteredDrivers} columns={columns} onRowClick={(driver) => setViewingDriver(driver as DriverWithUser)} />
         )}
       </section>
 
@@ -345,11 +413,14 @@ export default function DriversPage() {
           display: flex;
           align-items: center;
           gap: var(--space-md);
+          margin-bottom: var(--space-md);
         }
 
         .driver-avatar.large {
           width: 56px;
           height: 56px;
+          background: var(--color-primary-faint);
+          color: var(--color-primary);
         }
 
         .detail-grid {
@@ -363,13 +434,14 @@ export default function DriversPage() {
           flex-direction: column;
           gap: 6px;
           padding: var(--space-md);
-          background: var(--color-surface-low);
+          background: var(--color-surface-high);
           border: 1px solid var(--color-border);
           border-radius: var(--radius-default);
         }
 
         .detail-label {
-          font: var(--font-label-sm);
+          font-size: 10px;
+          font-weight: 700;
           color: var(--color-text-dim);
           text-transform: uppercase;
           letter-spacing: 0.05em;
@@ -378,7 +450,7 @@ export default function DriversPage() {
         .driver-avatar {
           width: 32px;
           height: 32px;
-          background: var(--color-surface-highest);
+          background: var(--color-surface-high);
           border-radius: 50%;
           display: flex;
           align-items: center;
@@ -390,6 +462,12 @@ export default function DriversPage() {
           display: grid;
           grid-template-columns: 1fr;
           gap: var(--space-lg);
+        }
+
+        @media (min-width: 640px) {
+          .form-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
         }
 
         .driver-details {
@@ -407,18 +485,6 @@ export default function DriversPage() {
           color: var(--color-text-dim);
         }
 
-        .rating {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          color: var(--color-warning);
-          font-weight: 600;
-        }
-
-        .star-icon {
-          fill: var(--color-warning);
-        }
-
         .action-buttons {
           display: flex;
           gap: 4px;
@@ -431,7 +497,7 @@ export default function DriversPage() {
         }
 
         .results-count {
-          font: var(--font-label-sm);
+          font-size: 12px;
           color: var(--color-text-dim);
         }
 
@@ -441,7 +507,7 @@ export default function DriversPage() {
           border-radius: var(--radius-default);
           color: var(--color-text);
           padding: 8px 12px;
-          font: var(--font-label-md);
+          font-size: 14px;
           outline: none;
           cursor: pointer;
           transition: border-color 0.2s;
@@ -450,6 +516,22 @@ export default function DriversPage() {
         .select-filter:focus {
           border-color: var(--color-primary);
         }
+
+        .mt-4 { margin-top: 1rem; }
+        .p-3 { padding: 0.75rem; }
+        .bg-surface-high { background: var(--color-surface-high); }
+        .rounded-md { border-radius: 0.375rem; }
+        .flex { display: flex; }
+        .items-start { align-items: flex-start; }
+        .gap-3 { gap: 0.75rem; }
+        .text-xs { font-size: 0.75rem; }
+        .text-sm { font-size: 0.875rem; }
+        .font-semibold { font-weight: 600; }
+        .uppercase { text-transform: uppercase; }
+        .tracking-wider { letter-spacing: 0.05em; }
+        .italic { font-style: italic; }
+        .mt-1 { margin-top: 0.25rem; }
+        .mt-0.5 { margin-top: 0.125rem; }
       `}</style>
     </div>
   );

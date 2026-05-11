@@ -39,6 +39,7 @@ interface MapBoxProps {
   zoom?: number;
   selectedMarkerId?: string | null;
   className?: string;
+  onClick?: (coord: Coordinate) => void;
 }
 
 /**
@@ -74,7 +75,8 @@ export function MapBox({
   lines = [],
   zoom = 12, 
   selectedMarkerId = null,
-  className = "" 
+  className = "",
+  onClick
 }: MapBoxProps) {
   const mapRef = React.useRef<any>(null);
   const [webGLSupported, setWebGLSupported] = useState(true);
@@ -139,12 +141,22 @@ export function MapBox({
     };
   }, [path]);
 
+  const handleMapClick = (evt: any) => {
+    if (onClick) {
+      onClick({
+        lat: evt.lngLat.lat,
+        lng: evt.lngLat.lng
+      });
+    }
+  };
+
   return (
     <div className={`map-wrapper ${className}`}>
       <Map
         {...viewState}
         ref={mapRef}
         onMove={evt => setViewState(evt.viewState)}
+        onClick={handleMapClick}
         mapboxAccessToken={MAPBOX_TOKEN}
         mapLib={mapboxgl}
         mapStyle="mapbox://styles/mapbox/streets-v12"

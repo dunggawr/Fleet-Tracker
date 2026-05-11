@@ -11,7 +11,9 @@ import {
   ChevronRight,
   Eye,
   Truck as TruckIcon,
-  XCircle
+  XCircle,
+  LocateFixed,
+  Map as MapIcon
 } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
 import { Badge } from '@/components/ui/Badge';
@@ -19,6 +21,7 @@ import { Button } from '@/components/ui/Button';
 import { Dropdown } from '@/components/ui/Dropdown';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { MapBox, MapMarker } from '@/components/ui/MapBox';
 import { useRouter } from 'next/navigation';
 
 import { useOrders } from '@/hooks/use-orders';
@@ -50,28 +53,77 @@ export default function OrdersPage() {
   const [viewingOrder, setViewingOrder] = React.useState<Order | null>(null);
   const [orderToCancel, setOrderToCancel] = React.useState<Order | null>(null);
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<OrderFormValues>({
+  // Map Selection State
+  const [selectionMode, setSelectionMode] = React.useState<'none' | 'pickup' | 'delivery'>('none');
+  const [pickupCoord, setPickupCoord] = React.useState<{lat: number, lng: number} | null>(null);
+  const [deliveryCoord, setDeliveryCoord] = React.useState<{lat: number, lng: number} | null>(null);
+
+  const { register, handleSubmit, reset, formState: { errors }, setValue } = useForm<OrderFormValues>({
     resolver: zodResolver(orderSchema),
     defaultValues: {
-      weightKg: 1
+      weightKg: 1,
+      pickupAddress: '',
+      deliveryAddress: ''
     }
   });
 
   const onSubmit = async (data: OrderFormValues) => {
+    if (!pickupCoord || !deliveryCoord) {
+      alert('Please select both pickup and delivery locations on the map.');
+      return;
+    }
+
     try {
       await createOrder({
         ...data,
-        pickupLat: 10.762622,
-        pickupLng: 106.660172,
-        deliveryLat: 10.772622,
-        deliveryLng: 106.670172,
+        pickupLat: pickupCoord.lat,
+        pickupLng: pickupCoord.lng,
+        deliveryLat: deliveryCoord.lat,
+        deliveryLng: deliveryCoord.lng,
       } as any);
       setIsModalOpen(false);
       reset();
+      setPickupCoord(null);
+      setDeliveryCoord(null);
     } catch (err) {
       console.error('Failed to create order:', err);
     }
   };
+
+  const handleMapClick = (coord: {lat: number, lng: number}) => {
+    if (selectionMode === 'pickup') {
+      setPickupCoord(coord);
+      setValue('pickupAddress', `${coord.lat.toFixed(6)}, ${coord.lng.toFixed(6)}`);
+      setSelectionMode('none');
+    } else if (selectionMode === 'delivery') {
+      setDeliveryCoord(coord);
+      setValue('deliveryAddress', `${coord.lat.toFixed(6)}, ${coord.lng.toFixed(6)}`);
+      setSelectionMode('none');
+    }
+  };
+
+  const markers: MapMarker[] = React.useMemo(() => {
+    const list: MapMarker[] = [];
+    if (pickupCoord) {
+      list.push({
+        id: 'pickup',
+        lat: pickupCoord.lat,
+        lng: pickupCoord.lng,
+        label: 'Pickup',
+        color: 'var(--color-primary)'
+      });
+    }
+    if (deliveryCoord) {
+      list.push({
+        id: 'delivery',
+        lat: deliveryCoord.lat,
+        lng: deliveryCoord.lng,
+        label: 'Delivery',
+        color: 'var(--color-success)'
+      });
+    }
+    return list;
+  }, [pickupCoord, deliveryCoord]);
 
   const handleCancelOrder = async () => {
     if (!orderToCancel) return;
@@ -181,7 +233,12 @@ export default function OrdersPage() {
           <h1>Order Management</h1>
           <p className="text-dim">Create, track and manage delivery orders for your fleet.</p>
         </div>
-        <Button variant="primary" icon={<Plus size={18} />} onClick={() => setIsModalOpen(true)}>
+        <Button variant="primary" icon={<Plus size={18} />} onClick={() => {
+          setPickupCoord(null);
+          setDeliveryCoord(null);
+          reset();
+          setIsModalOpen(true);
+        }}>
           Create New Order
         </Button>
       </header>
@@ -190,6 +247,8 @@ export default function OrdersPage() {
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         title="Create New Order"
+        className="order-modal"
+        size="xl"
         footer={(
           <>
             <Button variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
@@ -197,35 +256,87 @@ export default function OrdersPage() {
           </>
         )}
       >
-        <form className="order-form" onSubmit={handleSubmit(onSubmit)}>
-          <div className="form-grid">
-            <Input 
-              label="Weight (kg)" 
-              type="number"
-              step="0.1"
-              {...register('weightKg', { valueAsNumber: true })}
-              error={errors.weightKg?.message}
-            />
-            <Input 
-              label="Description (Optional)" 
-              placeholder="E.g. Fragile items" 
-              {...register('description')}
-              error={errors.description?.message}
-            />
-            <Input 
-              label="Pickup Address" 
-              placeholder="Address or coordinates" 
-              {...register('pickupAddress')}
-              error={errors.pickupAddress?.message}
-            />
-            <Input 
-              label="Delivery Address" 
-              placeholder="Address or coordinates" 
-              {...register('deliveryAddress')}
-              error={errors.deliveryAddress?.message}
+        <div className="modal-layout">
+          <form className="order-form" onSubmit={handleSubmit(onSubmit)}>
+            <div className="form-section">
+              <h3 className="section-title">General Info</h3>
+              <div className="form-grid">
+                <Input 
+                  label="Weight (kg)" 
+                  type="number"
+                  step="0.1"
+                  {...register('weightKg', { valueAsNumber: true })}
+                  error={errors.weightKg?.message}
+                />
+                <Input 
+                  label="Description (Optional)" 
+                  placeholder="E.g. Fragile items" 
+                  {...register('description')}
+                  error={errors.description?.message}
+                />
+              </div>
+            </div>
+
+            <div className="form-section">
+              <h3 className="section-title">Route Selection</h3>
+              <div className="location-inputs">
+                <div className={`location-field ${selectionMode === 'pickup' ? 'active' : ''}`}>
+                  <Input 
+                    label="Pickup Address" 
+                    placeholder="Click map to select location" 
+                    {...register('pickupAddress')}
+                    error={errors.pickupAddress?.message}
+                    readOnly
+                  />
+                  <Button 
+                    type="button" 
+                    variant={selectionMode === 'pickup' ? 'primary' : 'secondary'}
+                    size="sm"
+                    icon={<MapIcon size={14} />}
+                    onClick={() => setSelectionMode(selectionMode === 'pickup' ? 'none' : 'pickup')}
+                  >
+                    {selectionMode === 'pickup' ? 'Picking...' : 'Pick on Map'}
+                  </Button>
+                </div>
+
+                <div className={`location-field ${selectionMode === 'delivery' ? 'active' : ''}`}>
+                  <Input 
+                    label="Delivery Address" 
+                    placeholder="Click map to select location" 
+                    {...register('deliveryAddress')}
+                    error={errors.deliveryAddress?.message}
+                    readOnly
+                  />
+                  <Button 
+                    type="button" 
+                    variant={selectionMode === 'delivery' ? 'primary' : 'secondary'}
+                    size="sm"
+                    icon={<MapIcon size={14} />}
+                    onClick={() => setSelectionMode(selectionMode === 'delivery' ? 'none' : 'delivery')}
+                  >
+                    {selectionMode === 'delivery' ? 'Picking...' : 'Pick on Map'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {selectionMode !== 'none' && (
+              <div className="selection-hint">
+                <LocateFixed size={14} />
+                <span>Click anywhere on the map to set <b>{selectionMode}</b> location</span>
+              </div>
+            )}
+          </form>
+
+          <div className="modal-map-container">
+            <MapBox 
+              markers={markers}
+              onClick={handleMapClick}
+              zoom={13}
+              className="rounded-lg shadow-inner"
             />
           </div>
-        </form>
+        </div>
       </Modal>
 
       <Modal
@@ -361,6 +472,86 @@ export default function OrdersPage() {
           color: var(--color-text-dim);
         }
 
+        .modal-layout {
+          display: grid;
+          grid-template-columns: 1fr 1.2fr;
+          gap: var(--space-xl);
+          min-height: 450px;
+        }
+
+        .order-form {
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-xl);
+        }
+
+        .form-section {
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-md);
+        }
+
+        .section-title {
+          font-size: 12px;
+          font-weight: 700;
+          color: var(--color-text-dim);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          border-bottom: 1px solid var(--color-border);
+          padding-bottom: 4px;
+        }
+
+        .location-inputs {
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-md);
+        }
+
+        .location-field {
+          display: flex;
+          align-items: flex-end;
+          gap: var(--space-sm);
+          padding: var(--space-sm);
+          border-radius: var(--radius-default);
+          transition: background 0.2s;
+        }
+
+        .location-field.active {
+          background: var(--color-primary-faint);
+          outline: 1px solid var(--color-primary);
+        }
+
+        .location-field :global(.input-group) {
+          flex: 1;
+        }
+
+        .selection-hint {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 12px;
+          background: var(--color-warning-faint);
+          color: var(--color-warning);
+          border-radius: var(--radius-default);
+          font-size: 12px;
+          animation: pulse 2s infinite;
+        }
+
+        .modal-map-container {
+          position: relative;
+          height: 100%;
+          min-height: 400px;
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-lg);
+          overflow: hidden;
+        }
+
+        @keyframes pulse {
+          0% { opacity: 0.8; }
+          50% { opacity: 1; }
+          100% { opacity: 0.8; }
+        }
+
         .order-details-view {
           display: flex;
           flex-direction: column;
@@ -406,7 +597,7 @@ export default function OrdersPage() {
         .form-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: var(--space-lg);
+          gap: var(--space-md);
         }
 
         .select-filter {
@@ -425,9 +616,12 @@ export default function OrdersPage() {
           border-color: var(--color-primary);
         }
 
-        @media (max-width: 600px) {
-          .form-grid {
+        @media (max-width: 1000px) {
+          .modal-layout {
             grid-template-columns: 1fr;
+          }
+          .modal-map-container {
+            min-height: 300px;
           }
         }
       `}</style>
