@@ -23,9 +23,19 @@ export interface MapMarker {
   icon?: React.ReactNode;
 }
 
+export interface MapLine {
+  id: string;
+  from: { lat: number; lng: number };
+  to: { lat: number; lng: number };
+  color?: string;
+  width?: number;
+  dashed?: boolean;
+}
+
 interface MapBoxProps {
   path?: Coordinate[];
   markers?: MapMarker[];
+  lines?: MapLine[];
   zoom?: number;
   selectedMarkerId?: string | null;
   className?: string;
@@ -38,6 +48,7 @@ interface MapBoxProps {
 export function MapBox({ 
   path = [], 
   markers = [], 
+  lines = [],
   zoom = 12, 
   selectedMarkerId = null,
   className = "" 
@@ -119,14 +130,14 @@ export function MapBox({
         <NavigationControl position="top-right" />
         <FullscreenControl position="top-right" />
 
-        {/* Path Layer */}
+        {/* Path Layer (trip route) */}
         {routeData && (
           <Source id="trip-route" type="geojson" data={routeData}>
             <Layer
               id="route-line"
               type="line"
               paint={{
-                'line-color': '#6366f1', // --color-primary
+                'line-color': '#6366f1',
                 'line-width': 4,
                 'line-opacity': 0.8
               }}
@@ -137,6 +148,37 @@ export function MapBox({
             />
           </Source>
         )}
+
+        {/* Dispatch suggestion route lines (vehicle → order pickup) */}
+        {lines.map((line) => {
+          const geojson: any = {
+            type: 'Feature',
+            properties: {},
+            geometry: {
+              type: 'LineString',
+              coordinates: [
+                [line.from.lng, line.from.lat],
+                [line.to.lng, line.to.lat],
+              ],
+            },
+          };
+          const dashArray = line.dashed ? [4, 3] : [1];
+          return (
+            <Source key={line.id} id={line.id} type="geojson" data={geojson}>
+              <Layer
+                id={`line-${line.id}`}
+                type="line"
+                paint={{
+                  'line-color': line.color || '#6366f1',
+                  'line-width': line.width ?? 2,
+                  'line-opacity': 0.75,
+                  'line-dasharray': dashArray,
+                }}
+                layout={{ 'line-join': 'round', 'line-cap': 'round' }}
+              />
+            </Source>
+          );
+        })}
 
         {/* Markers */}
         {markers.map((marker) => (

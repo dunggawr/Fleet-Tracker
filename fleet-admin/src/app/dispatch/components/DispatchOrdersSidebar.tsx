@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { MapPin, ChevronRight } from 'lucide-react';
+import { MapPin, ChevronRight, Layers } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { SearchInput } from '@/components/ui/SearchInput';
@@ -12,6 +12,10 @@ export interface DispatchOrderGroup {
   key: string;
   label: string;
   orders: Order[];
+  /** True khi nhóm này do API /dispatch/cluster tạo ra (PostGIS ST_DWithin 3km) */
+  isClusterGroup?: boolean;
+  /** Tọa độ trung tâm của cluster (từ API) */
+  centroid?: { lat: number; lng: number };
 }
 
 interface DispatchOrdersSidebarProps {
@@ -71,8 +75,13 @@ export function DispatchOrdersSidebar({
                 <div key={group.key} className="cluster-group">
                   {clusterView && (
                     <div className="cluster-header">
-                      <span>{group.label}</span>
-                      <Badge variant="neutral">{group.orders.length}</Badge>
+                      <div className="cluster-header-left">
+                        {group.isClusterGroup && <Layers size={12} className="cluster-icon" />}
+                        <span>{group.label}</span>
+                      </div>
+                      <Badge variant={group.isClusterGroup ? 'warning' : 'neutral'}>
+                        {group.orders.length}
+                      </Badge>
                     </div>
                   )}
                   {group.orders.map((order) => (
@@ -131,6 +140,16 @@ export function DispatchOrdersSidebar({
           color: var(--color-text-muted);
           text-transform: uppercase;
           letter-spacing: 0.05em;
+        }
+
+        .cluster-header-left {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+        }
+
+        .cluster-icon {
+          color: var(--color-warning);
         }
 
         .dispatch-card {
