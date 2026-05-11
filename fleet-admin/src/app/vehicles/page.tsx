@@ -7,7 +7,9 @@ import {
   Filter, 
   Edit2, 
   Trash2, 
-  Eye 
+  Eye,
+  MoreVertical,
+  Navigation
 } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
 import { Badge } from '@/components/ui/Badge';
@@ -15,6 +17,7 @@ import { SearchInput } from '@/components/ui/SearchInput';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Button } from '@/components/ui/Button';
+import { Dropdown } from '@/components/ui/Dropdown';
 
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
@@ -23,6 +26,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useVehicles } from '@/hooks/use-vehicles';
 import { Vehicle } from '@/types';
+import { useRouter } from 'next/navigation';
 
 const vehicleSchema = z.object({
   plateNumber: z.string().min(1, 'Plate number is required'),
@@ -34,8 +38,11 @@ const vehicleSchema = z.object({
 type VehicleFormValues = z.infer<typeof vehicleSchema>;
 
 export default function VehiclesPage() {
+  const router = useRouter();
   const { vehicles, isLoading, createVehicle, updateVehicle, deleteVehicle, isCreating, isUpdating, isDeleting } = useVehicles();
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [typeFilter, setTypeFilter] = React.useState<string>('all');
+  const [statusFilter, setStatusFilter] = React.useState<string>('all');
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [selectedVehicle, setSelectedVehicle] = React.useState<Vehicle | null>(null);
   const [vehicleToDelete, setVehicleToDelete] = React.useState<Vehicle | null>(null);
@@ -86,10 +93,15 @@ export default function VehiclesPage() {
     }
   };
 
-  const filteredVehicles = vehicles.filter((v: Vehicle) => 
-    v.plateNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    v.driver?.fullName?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredVehicles = vehicles.filter((v: Vehicle) => {
+    const matchesSearch = v.plateNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      v.driver?.fullName?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesType = typeFilter === 'all' || v.type === typeFilter;
+    const matchesStatus = statusFilter === 'all' || v.status === statusFilter;
+    
+    return matchesSearch && matchesType && matchesStatus;
+  });
 
   const columns = [
     { header: 'Plate Number', accessor: 'plateNumber' as keyof Vehicle },
@@ -110,11 +122,20 @@ export default function VehiclesPage() {
     {
       header: 'Actions',
       accessor: (v: Vehicle) => (
-        <div className="action-buttons">
-          <Button variant="ghost" size="sm" icon={<Eye size={16} />} aria-label={`View ${v.plateNumber}`} />
-          <Button variant="ghost" size="sm" icon={<Edit2 size={16} />} aria-label={`Edit ${v.plateNumber}`} onClick={() => openEditModal(v)} />
-          <Button variant="ghost" size="sm" icon={<Trash2 size={16} />} className="text-danger" aria-label={`Delete ${v.plateNumber}`} onClick={() => setVehicleToDelete(v)} />
-        </div>
+        <Dropdown align="right" trigger={
+          <Button variant="ghost" size="sm" icon={<MoreVertical size={16} />} />
+        }>
+          <button className="dropdown-item" onClick={() => router.push(`/dispatch?vehicleId=${v.id}`)}>
+            <Navigation size={16} /> Track Vehicle
+          </button>
+          <button className="dropdown-item" onClick={() => openEditModal(v)}>
+            <Edit2 size={16} /> Edit Details
+          </button>
+          <div className="dropdown-divider" />
+          <button className="dropdown-item danger" onClick={() => setVehicleToDelete(v)}>
+            <Trash2 size={16} /> Delete Vehicle
+          </button>
+        </Dropdown>
       )
     }
   ];
@@ -200,7 +221,26 @@ export default function VehiclesPage() {
           onChange={(e) => setSearchQuery(e.target.value)}
         />
         <div className="filter-actions">
-          <Button variant="secondary" size="md" icon={<Filter size={18} />}>Filters</Button>
+          <select 
+            className="select-filter" 
+            value={typeFilter} 
+            onChange={(e) => setTypeFilter(e.target.value)}
+          >
+            <option value="all">All Types</option>
+            <option value="small">Small</option>
+            <option value="medium">Medium</option>
+            <option value="large">Large</option>
+          </select>
+          <select 
+            className="select-filter" 
+            value={statusFilter} 
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="all">All Status</option>
+            <option value="available">Available</option>
+            <option value="delivering">Delivering</option>
+            <option value="maintenance">Maintenance</option>
+          </select>
           <div className="divider" />
           <span className="results-count">Showing <b>{filteredVehicles.length}</b> vehicles</span>
         </div>
@@ -212,7 +252,11 @@ export default function VehiclesPage() {
             <LoadingSpinner size={32} />
           </div>
         ) : (
-          <DataTable data={filteredVehicles} columns={columns} />
+          <DataTable 
+            data={filteredVehicles} 
+            columns={columns} 
+            onRowClick={(vehicle) => openEditModal(vehicle as Vehicle)}
+          />
         )}
       </section>
 
@@ -292,6 +336,22 @@ export default function VehiclesPage() {
         }
 
         .select:focus {
+          border-color: var(--color-primary);
+        }
+
+        .select-filter {
+          background: var(--color-surface-low);
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-default);
+          color: var(--color-text);
+          padding: 8px 12px;
+          font: var(--font-label-md);
+          outline: none;
+          cursor: pointer;
+          transition: border-color 0.2s;
+        }
+
+        .select-filter:focus {
           border-color: var(--color-primary);
         }
 

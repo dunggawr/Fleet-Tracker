@@ -98,28 +98,32 @@ export default function UtilizationPage() {
           isEmpty={!data?.vehicleStats?.length}
           height={400}
         >
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data?.vehicleStats} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" horizontal={false} />
-              <XAxis type="number" domain={[0, 100]} stroke="var(--color-text-muted)" fontSize={12} />
-              <YAxis dataKey="plateNumber" type="category" stroke="var(--color-text-muted)" fontSize={12} width={100} />
-              <Tooltip 
-                contentStyle={{ 
-                  background: 'var(--color-surface)', 
-                  border: '1px solid var(--color-border)',
-                  borderRadius: '8px'
-                }} 
-              />
-              <Bar dataKey="utilization" fill="var(--color-primary)" radius={[0, 4, 4, 0]}>
-                {(data?.vehicleStats || []).map((entry: VehicleUtilizationStats, index: number) => (
-                  <Cell 
-                    key={`cell-${index}`} 
-                    fill={entry.utilization > 80 ? 'var(--color-success)' : entry.utilization > 40 ? 'var(--color-primary)' : 'var(--color-warning)'} 
-                  />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+          <div style={{ width: '100%', height: '100%', minWidth: 0 }}>
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
+              <BarChart data={data?.vehicleStats} layout="vertical" margin={{ left: 20, right: 20, top: 10, bottom: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" horizontal={false} />
+                <XAxis type="number" domain={[0, 100]} stroke="var(--color-text-dim)" fontSize={12} tickFormatter={(val) => `${val}%`} />
+                <YAxis dataKey="plateNumber" type="category" stroke="var(--color-text-dim)" fontSize={12} width={100} />
+                <Tooltip 
+                  cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+                  contentStyle={{ 
+                    background: 'var(--color-surface-highest)', 
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-md)',
+                    boxShadow: 'var(--shadow-lg)'
+                  }} 
+                />
+                <Bar dataKey="utilization" fill="var(--color-primary)" radius={[0, 4, 4, 0]} barSize={20}>
+                  {(data?.vehicleStats || []).map((entry: VehicleUtilizationStats, index: number) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={entry.utilization > 80 ? 'var(--color-success)' : entry.utilization > 40 ? 'var(--color-primary)' : 'var(--color-warning)'} 
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </ReportChartWrapper>
       </div>
 
@@ -144,6 +148,7 @@ export default function UtilizationPage() {
 
         .charts-grid {
           width: 100%;
+          min-width: 0;
         }
       `}</style>
     </div>

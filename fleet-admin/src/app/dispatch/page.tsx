@@ -1,18 +1,35 @@
 'use client';
 
 import React from 'react';
+import { useSearchParams } from 'next/navigation';
 import { DispatchOrdersSidebar, DispatchOrderGroup } from './components/DispatchOrdersSidebar';
 import { DispatchVehiclesSidebar } from './components/DispatchVehiclesSidebar';
 import { DispatchMapPanel } from './components/DispatchMapPanel';
 import { useDispatch } from '@/hooks/use-dispatch';
 
 export default function DispatchPage() {
+  const searchParams = useSearchParams();
   const { pendingOrders, availableVehicles, assignOrder, isLoading, isAssigning } = useDispatch();
   const [selectedOrder, setSelectedOrder] = React.useState<string | null>(null);
   const [selectedVehicle, setSelectedVehicle] = React.useState<string | null>(null);
   const [clusterView, setClusterView] = React.useState(true);
   const [searchQuery, setSearchQuery] = React.useState('');
   const [vehicleSearchQuery, setVehicleSearchQuery] = React.useState('');
+
+  // Handle initial selection from URL
+  React.useEffect(() => {
+    const orderId = searchParams.get('orderId');
+    const vehicleId = searchParams.get('vehicleId');
+
+    if (orderId) {
+      setSelectedOrder(orderId);
+      setSelectedVehicle(null);
+      setClusterView(false); // Disable cluster to show the specific order
+    } else if (vehicleId) {
+      setSelectedVehicle(vehicleId);
+      setSelectedOrder(null);
+    }
+  }, [searchParams]);
 
   const filteredPendingOrders = React.useMemo(() => {
     return pendingOrders.filter((order) =>

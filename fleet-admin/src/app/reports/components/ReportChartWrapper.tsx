@@ -20,6 +20,11 @@ export function ReportChartWrapper({
   isEmpty, 
   height = 300 
 }: ReportChartWrapperProps) {
+  const [isMounted, setIsMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
   return (
     <div className="chart-wrapper">
       <div className="chart-header">
@@ -29,7 +34,7 @@ export function ReportChartWrapper({
         </div>
       </div>
 
-      <div className="chart-content" style={{ height }}>
+      <div className="chart-content" style={{ height: typeof height === 'number' ? `${height}px` : height }}>
         {isLoading ? (
           <div className="status-container">
             <LoadingSpinner size={32} />
@@ -39,9 +44,9 @@ export function ReportChartWrapper({
           <div className="status-container">
             <p className="empty-text">No data available for the selected range</p>
           </div>
-        ) : (
+        ) : isMounted ? (
           children
-        )}
+        ) : null}
       </div>
 
       <style jsx>{`
@@ -75,6 +80,10 @@ export function ReportChartWrapper({
         .chart-content {
           position: relative;
           width: 100%;
+          min-width: 0;
+          min-height: 1px;
+          flex: 1;
+          overflow: hidden;
         }
 
         .status-container {

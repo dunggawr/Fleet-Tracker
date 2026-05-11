@@ -8,13 +8,18 @@ import {
   Package, 
   Clock,
   MoreVertical,
-  ChevronRight
+  ChevronRight,
+  Eye,
+  Truck as TruckIcon,
+  XCircle
 } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { Dropdown } from '@/components/ui/Dropdown';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { useRouter } from 'next/navigation';
 
 import { useOrders } from '@/hooks/use-orders';
 import { format } from 'date-fns';
@@ -25,6 +30,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Order } from '@/types';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 const orderSchema = z.object({
   pickupAddress: z.string().min(1, 'Pickup address is required'),
@@ -36,9 +42,13 @@ const orderSchema = z.object({
 type OrderFormValues = z.infer<typeof orderSchema>;
 
 export default function OrdersPage() {
-  const { orders, isLoading, createOrder, isCreating } = useOrders();
+  const router = useRouter();
+  const { orders, isLoading, createOrder, cancelOrder, isCreating, isCancelling } = useOrders();
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [statusFilter, setStatusFilter] = React.useState<string>('all');
   const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [viewingOrder, setViewingOrder] = React.useState<Order | null>(null);
+  const [orderToCancel, setOrderToCancel] = React.useState<Order | null>(null);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<OrderFormValues>({
     resolver: zodResolver(orderSchema),
@@ -63,11 +73,25 @@ export default function OrdersPage() {
     }
   };
 
-  const filteredOrders = orders.filter(o => 
-    o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    o.pickupAddress.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    o.deliveryAddress.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleCancelOrder = async () => {
+    if (!orderToCancel) return;
+    try {
+      await cancelOrder(orderToCancel.id);
+      setOrderToCancel(null);
+    } catch (err) {
+      console.error('Failed to cancel order:', err);
+    }
+  };
+
+  const filteredOrders = orders.filter(o => {
+    const matchesSearch = o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      o.pickupAddress.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      o.deliveryAddress.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'all' || o.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
 
   const getStatusVariant = (status: Order['status']) => {
     switch (status) {
@@ -127,8 +151,25 @@ export default function OrdersPage() {
     },
     {
       header: 'Actions',
-      accessor: () => (
-        <Button variant="ghost" size="sm" icon={<MoreVertical size={16} />} />
+      accessor: (o: Order) => (
+        <Dropdown align="right" trigger={
+          <Button variant="ghost" size="sm" icon={<MoreVertical size={16} />} />
+        }>
+          <button className="dropdown-item" onClick={() => router.push(`/dispatch?orderId=${o.id}`)}>
+            <TruckIcon size={16} /> Dispatch Order
+          </button>
+          <button className="dropdown-item" onClick={() => setViewingOrder(o)}>
+            <Eye size={16} /> View Details
+          </button>
+          <div className="dropdown-divider" />
+          <button 
+            className="dropdown-item danger" 
+            disabled={o.status === 'cancelled' || o.status === 'delivered'}
+            onClick={() => setOrderToCancel(o)}
+          >
+            <XCircle size={16} /> Cancel Order
+          </button>
+        </Dropdown>
       )
     }
   ];
@@ -187,6 +228,54 @@ export default function OrdersPage() {
         </form>
       </Modal>
 
+      <Modal
+        isOpen={Boolean(viewingOrder)}
+        onClose={() => setViewingOrder(null)}
+        title={`Order Details - ${viewingOrder?.id.split('-')[0]}`}
+      >
+        {viewingOrder && (
+          <div className="order-details-view">
+            <div className="detail-row">
+              <span className="detail-label">Status</span>
+              <Badge variant={getStatusVariant(viewingOrder.status)}>
+                {viewingOrder.status.replace('_', ' ')}
+              </Badge>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">Pickup</span>
+              <span className="detail-value">{viewingOrder.pickupAddress}</span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">Delivery</span>
+              <span className="detail-value">{viewingOrder.deliveryAddress}</span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">Weight</span>
+              <span className="detail-value">{viewingOrder.weightKg} kg</span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">Description</span>
+              <span className="detail-value">{viewingOrder.description || 'N/A'}</span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">Created At</span>
+              <span className="detail-value">{format(new Date(viewingOrder.createdAt), 'PPPP p')}</span>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <ConfirmDialog
+        open={Boolean(orderToCancel)}
+        title="Cancel Order"
+        description={`Are you sure you want to cancel order ${orderToCancel?.id.split('-')[0]}? This action cannot be undone.`}
+        confirmLabel="Cancel Order"
+        confirmVariant="danger"
+        isLoading={isCancelling}
+        onClose={() => setOrderToCancel(null)}
+        onConfirm={handleCancelOrder}
+      />
+
       <section className="filters-bar card">
         <SearchInput
           placeholder="Search by ID or address..."
@@ -194,7 +283,19 @@ export default function OrdersPage() {
           onChange={(e) => setSearchQuery(e.target.value)}
         />
         <div className="filter-actions">
-          <Button variant="secondary" size="md" icon={<Filter size={18} />}>Filters</Button>
+          <select 
+            className="select-filter" 
+            value={statusFilter} 
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="all">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="assigned">Assigned</option>
+            <option value="delivering">Delivering</option>
+            <option value="delivered">Delivered</option>
+            <option value="failed">Failed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
           <div className="divider" />
           <span className="results-count">Total <b>{filteredOrders.length}</b> orders</span>
         </div>
@@ -206,7 +307,11 @@ export default function OrdersPage() {
             <LoadingSpinner size={32} />
           </div>
         ) : (
-          <DataTable data={filteredOrders} columns={columns} />
+          <DataTable 
+            data={filteredOrders} 
+            columns={columns} 
+            onRowClick={(order) => setViewingOrder(order as Order)}
+          />
         )}
       </section>
 
@@ -256,6 +361,30 @@ export default function OrdersPage() {
           color: var(--color-text-dim);
         }
 
+        .order-details-view {
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-lg);
+          padding: var(--space-sm) 0;
+        }
+        .detail-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding-bottom: var(--space-md);
+          border-bottom: 1px solid var(--color-border);
+        }
+        .detail-row:last-child {
+          border-bottom: none;
+        }
+        .detail-label {
+          color: var(--color-text-dim);
+          font: var(--font-label-md);
+        }
+        .detail-value {
+          color: var(--color-text);
+          font-weight: 500;
+        }
         .filters-bar {
           display: flex;
           justify-content: space-between;
@@ -278,6 +407,22 @@ export default function OrdersPage() {
           display: grid;
           grid-template-columns: 1fr 1fr;
           gap: var(--space-lg);
+        }
+
+        .select-filter {
+          background: var(--color-surface-low);
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-default);
+          color: var(--color-text);
+          padding: 8px 12px;
+          font: var(--font-label-md);
+          outline: none;
+          cursor: pointer;
+          transition: border-color 0.2s;
+        }
+
+        .select-filter:focus {
+          border-color: var(--color-primary);
         }
 
         @media (max-width: 600px) {

@@ -9,17 +9,25 @@ import {
   AlertTriangle,
   Clock,
   ArrowRight,
-  Loader2
+  Loader2,
+  MoreVertical,
+  Navigation,
+  CheckCircle,
+  MapPin
 } from 'lucide-react';
+import { Vehicle } from '@/types';
 import { StatCard } from '@/components/ui/StatCard';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { Dropdown } from '@/components/ui/Dropdown';
 import { useVehicles } from '@/hooks/use-vehicles';
 import { useDrivers } from '@/hooks/use-drivers';
 import { useOrders } from '@/hooks/use-orders';
 import { formatDistanceToNow } from 'date-fns';
+import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { vehicles, isLoading: vehiclesLoading } = useVehicles();
   const { drivers, isLoading: driversLoading } = useDrivers();
   const { orders, isLoading: ordersLoading } = useOrders();
@@ -48,28 +56,32 @@ export default function DashboardPage() {
       value: vehicles.length, 
       icon: Truck, 
       trend: { value: 12, isUp: true }, 
-      color: '#6366f1' 
+      color: '#6366f1',
+      path: '/vehicles'
     },
     { 
       label: 'Active Drivers', 
       value: drivers.filter(d => d.status === 'available').length, 
       icon: Users, 
       trend: { value: 5, isUp: true }, 
-      color: '#0ea5e9' 
+      color: '#0ea5e9',
+      path: '/drivers'
     },
     { 
       label: 'Pending Orders', 
       value: orders.filter(o => o.status === 'pending').length, 
       icon: ClipboardList, 
       trend: { value: 2, isUp: false }, 
-      color: '#f59e0b' 
+      color: '#f59e0b',
+      path: '/orders'
     },
     { 
       label: 'Today Revenue', 
       value: currency.format(todayRevenue), 
       icon: TrendingUp, 
       trend: { value: 8, isUp: true }, 
-      color: '#10b981' 
+      color: '#10b981',
+      path: '/reports'
     },
   ];
 
@@ -77,11 +89,27 @@ export default function DashboardPage() {
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5);
 
-  const alerts = [
-    { type: 'speed', message: 'Vehicle VN-102 exceeding speed limit (85km/h)', time: '2 mins ago' },
-    { type: 'route', message: 'Vehicle VN-045 diverted from planned route', time: '15 mins ago' },
-    { type: 'stop', message: 'Vehicle VN-088 unplanned stop > 30 mins', time: '40 mins ago' },
-  ];
+  const initialAlerts = React.useMemo(() => [
+    { id: 1, type: 'speed', message: 'Vehicle VN-102 exceeding speed limit (85km/h)', time: '2 mins ago', plate: 'VN-102' },
+    { id: 2, type: 'route', message: 'Vehicle VN-045 diverted from planned route', time: '15 mins ago', plate: 'VN-045' },
+    { id: 3, type: 'stop', message: 'Vehicle VN-088 unplanned stop > 30 mins', time: '40 mins ago', plate: 'VN-088' },
+  ], []);
+
+  const [activeAlerts, setActiveAlerts] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    if (vehicles.length > 0) {
+      const enhancedAlerts = initialAlerts.map(alert => {
+        const vehicle = vehicles.find((v: Vehicle) => v.plateNumber.includes(alert.plate));
+        return { ...alert, vehicleId: vehicle?.id };
+      });
+      setActiveAlerts(enhancedAlerts);
+    }
+  }, [vehicles, initialAlerts]);
+
+  const dismissAlert = (id: number) => {
+    setActiveAlerts(prev => prev.filter(alert => alert.id !== id));
+  };
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-64"><Loader2 className="animate-spin" size={32} /></div>;
@@ -94,14 +122,22 @@ export default function DashboardPage() {
           <h1>Dashboard Overview</h1>
           <p className="text-dim">Welcome back, here&apos;s what&apos;s happening with your fleet today.</p>
         </div>
-        <Button variant="primary" icon={<TrendingUp size={18} />}>
+        <Button 
+          variant="primary" 
+          icon={<TrendingUp size={18} />}
+          href="/reports"
+        >
           View Reports
         </Button>
       </header>
 
       <section className="stats-grid">
         {stats.map((stat, idx) => (
-          <StatCard key={idx} {...stat} />
+          <StatCard 
+            key={idx} 
+            {...stat} 
+            href={stat.path}
+          />
         ))}
       </section>
 
@@ -109,11 +145,21 @@ export default function DashboardPage() {
         <section className="card recent-activity">
           <div className="card-header">
             <h3>Recent Orders</h3>
-            <Button variant="ghost" size="sm">View All <ArrowRight size={14} /></Button>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              href="/orders"
+            >
+              View All <ArrowRight size={14} />
+            </Button>
           </div>
           <div className="activity-list">
             {recentOrders.map((order) => (
-              <div key={order.id} className="activity-item">
+              <div 
+                key={order.id} 
+                className="activity-item clickable"
+                onClick={() => router.push(`/dispatch?orderId=${order.id}`)}
+              >
                 <div className="activity-icon">
                   <ClipboardList size={18} />
                 </div>
@@ -141,19 +187,38 @@ export default function DashboardPage() {
             <Badge variant="danger">Live</Badge>
           </div>
           <div className="alerts-list">
-            {alerts.map((alert, idx) => (
-              <div key={idx} className={`alert-item alert-${alert.type}`}>
-                <div className="alert-content">
-                  <div className="alert-header">
-                    <AlertTriangle size={16} />
-                    <span className="alert-type">{alert.type.toUpperCase()}</span>
+            {activeAlerts.length === 0 ? (
+              <div className="text-dim text-center py-8">No active alerts</div>
+            ) : (
+              activeAlerts.map((alert) => (
+                <div key={alert.id} className={`alert-item alert-${alert.type}`}>
+                  <div className="alert-content">
+                    <div className="alert-header">
+                      <AlertTriangle size={16} />
+                      <span className="alert-type">{alert.type.toUpperCase()}</span>
+                    </div>
+                    <p className="alert-message">{alert.message}</p>
+                    <span className="alert-time"><Clock size={12} /> {alert.time}</span>
                   </div>
-                  <p className="alert-message">{alert.message}</p>
-                  <span className="alert-time"><Clock size={12} /> {alert.time}</span>
+                  <Dropdown align="right" trigger={
+                    <Button variant="secondary" size="sm">
+                      Action
+                    </Button>
+                  }>
+                    <button className="dropdown-item" onClick={() => router.push(`/dispatch${alert.vehicleId ? `?vehicleId=${alert.vehicleId}` : ''}`)}>
+                      <Navigation size={16} /> Track Location
+                    </button>
+                    <button className="dropdown-item" onClick={() => router.push(`/vehicles?search=${alert.plate}`)}>
+                      <AlertTriangle size={16} /> View Vehicle
+                    </button>
+                    <div className="dropdown-divider" />
+                    <button className="dropdown-item" onClick={() => dismissAlert(alert.id)}>
+                      <CheckCircle size={16} /> Dismiss Alert
+                    </button>
+                  </Dropdown>
                 </div>
-                <Button variant="secondary" size="sm">Action</Button>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </section>
       </div>
@@ -163,6 +228,17 @@ export default function DashboardPage() {
           display: flex;
           flex-direction: column;
           gap: var(--space-xl);
+        }
+
+        .clickable {
+          cursor: pointer;
+          transition: transform var(--transition-fast), background var(--transition-fast);
+        }
+
+        .clickable:hover {
+          background: var(--color-surface-high);
+          transform: translateY(-2px);
+          border-color: var(--color-primary-light);
         }
 
         .page-header {

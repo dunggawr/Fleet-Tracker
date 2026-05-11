@@ -25,13 +25,22 @@ export function useDrivers() {
     },
   });
 
+  const deleteDriverMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/drivers/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['drivers'] });
+    },
+  });
+
   return {
     drivers: driversQuery.data || [],
     isLoading: driversQuery.isLoading,
     error: driversQuery.error,
     registerDriver: registerDriverMutation.mutateAsync,
     updateDriver: updateDriverMutation.mutateAsync,
+    deleteDriver: deleteDriverMutation.mutateAsync,
     isRegistering: registerDriverMutation.isPending,
     isUpdating: updateDriverMutation.isPending,
+    isDeleting: deleteDriverMutation.isPending,
   };
 }

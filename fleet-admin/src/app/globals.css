@@ -133,7 +133,7 @@ a:hover { color: var(--color-primary); }
   border-radius: var(--radius-default);
   font: var(--font-body-md);
   font-weight: 500;
-  cursor: pointer;
+  cursor: pointer !important;
   transition: all var(--transition-fast);
 }
 
@@ -163,6 +163,22 @@ a:hover { color: var(--color-primary); }
 }
 .btn-danger:hover {
   background: rgba(239, 68, 68, 0.1);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-text-muted);
+  border: 1px solid transparent;
+}
+.btn-ghost:hover {
+  background: var(--color-surface-high);
+  color: var(--color-text);
+  border-color: var(--color-outline-variant);
+}
+
+.btn-icon {
+  padding: 8px;
+  border-radius: var(--radius-full);
 }
 
 .btn-sm {

@@ -17,6 +17,22 @@ export function useOrders() {
     },
   });
 
+  const updateOrderMutation = useMutation({
+    mutationFn: ({ id, ...data }: Partial<Order> & { id: string }) => 
+      api.patch<Order>(`/orders/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+    },
+  });
+
+  const cancelOrderMutation = useMutation({
+    mutationFn: (id: string) => 
+      api.post<Order>(`/orders/${id}/cancel`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+    },
+  });
+
   const assignOrderMutation = useMutation({
     mutationFn: ({ orderId, vehicleId }: { orderId: string; vehicleId: string }) => 
       api.post<Order>(`/orders/${orderId}/assign`, { vehicleId }),
@@ -31,7 +47,11 @@ export function useOrders() {
     error: ordersQuery.error,
     createOrder: createOrderMutation.mutateAsync,
     assignOrder: assignOrderMutation.mutateAsync,
+    updateOrder: updateOrderMutation.mutateAsync,
+    cancelOrder: cancelOrderMutation.mutateAsync,
     isCreating: createOrderMutation.isPending,
     isAssigning: assignOrderMutation.isPending,
+    isUpdating: updateOrderMutation.isPending,
+    isCancelling: cancelOrderMutation.isPending,
   };
 }

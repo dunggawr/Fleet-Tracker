@@ -7,9 +7,12 @@ import {
   User as UserIcon,
   ChevronDown,
   Globe,
-  LogOut
+  LogOut,
+  Settings,
+  Shield
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
+import { Dropdown } from '@/components/ui/Dropdown';
 
 export function Header() {
   const { user, logout } = useAuth();
@@ -26,31 +29,51 @@ export function Header() {
       </div>
 
       <div className="header-actions">
-        <button className="action-btn" aria-label="Language">
-          <Globe size={20} />
-          <span>EN</span>
-        </button>
+        <Dropdown 
+          align="right"
+          trigger={
+            <button className="action-btn" aria-label="Language">
+              <Globe size={20} />
+              <span>EN</span>
+            </button>
+          }
+        >
+          <button className="dropdown-item" onClick={() => console.log('Set language: EN')}>English (US)</button>
+          <button className="dropdown-item" onClick={() => console.log('Set language: VN')}>Tiếng Việt</button>
+        </Dropdown>
         
-        <button className="action-btn notification-btn" aria-label="Notifications">
+        <button className="action-btn notification-btn" aria-label="Notifications" onClick={() => console.log('Open Notifications')}>
           <Bell size={20} />
           <span className="notification-badge">3</span>
         </button>
 
         <div className="user-profile-group">
-          <div className="user-profile">
-            <div className="avatar">
-              <UserIcon size={20} />
-            </div>
-            <div className="user-info">
-              <span className="user-name">{user?.fullName || 'Admin User'}</span>
-              <span className="user-role">{user?.role || 'Fleet Manager'}</span>
-            </div>
-            <ChevronDown size={16} className="dropdown-icon" />
-          </div>
-          
-          <button className="logout-btn" onClick={logout} title="Logout">
-            <LogOut size={18} />
-          </button>
+          <Dropdown
+            align="right"
+            trigger={
+              <div className="user-profile">
+                <div className="avatar">
+                  <UserIcon size={20} />
+                </div>
+                <div className="user-info">
+                  <span className="user-name">{user?.fullName || 'Admin User'}</span>
+                  <span className="user-role">{user?.role || 'Fleet Manager'}</span>
+                </div>
+                <ChevronDown size={16} className="dropdown-icon" />
+              </div>
+            }
+          >
+            <button className="dropdown-item" onClick={() => console.log('Go to profile')}>
+              <UserIcon size={18} /> Profile Settings
+            </button>
+            <button className="dropdown-item" onClick={() => console.log('Go to system config')}>
+              <Settings size={18} /> System Config
+            </button>
+            <div className="dropdown-divider" />
+            <button className="dropdown-item danger" onClick={logout}>
+              <LogOut size={18} /> Logout
+            </button>
+          </Dropdown>
         </div>
       </div>
 
