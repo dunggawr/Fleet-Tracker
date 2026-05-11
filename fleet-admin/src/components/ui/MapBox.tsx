@@ -4,7 +4,7 @@ import React, { useMemo, useEffect, useState } from 'react';
 import { Map, Marker, Source, Layer, NavigationControl, FullscreenControl } from 'react-map-gl/mapbox';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { MapPin, AlertTriangle } from 'lucide-react';
+import { MapPin, AlertTriangle, Search, X, Loader2 } from 'lucide-react';
 
 // Mapbox token from environment variables
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
@@ -40,6 +40,8 @@ interface MapBoxProps {
   selectedMarkerId?: string | null;
   className?: string;
   onClick?: (coord: Coordinate) => void;
+  showSearch?: boolean;
+  onSearchSelect?: (coord: Coordinate, address: string) => void;
 }
 
 /**
@@ -76,7 +78,9 @@ export function MapBox({
   zoom = 12, 
   selectedMarkerId = null,
   className = "",
-  onClick
+  onClick,
+  showSearch = false,
+  onSearchSelect
 }: MapBoxProps) {
   const mapRef = React.useRef<any>(null);
   const [webGLSupported, setWebGLSupported] = useState(true);
@@ -85,6 +89,12 @@ export function MapBox({
     longitude: 105.8542,
     zoom: zoom
   });
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showResults, setShowResults] = useState(false);
 
   useEffect(() => {
     console.log('MapBox Initialized. Token:', MAPBOX_TOKEN ? 'Present (Starts with ' + MAPBOX_TOKEN.substring(0, 10) + '...)' : 'Missing');
@@ -148,6 +158,56 @@ export function MapBox({
         lng: evt.lngLat.lng
       });
     }
+  };
+
+  const handleSearch = async (query: string) => {
+    setSearchQuery(query);
+    if (query.length < 3) {
+      setSearchResults([]);
+      setShowResults(false);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&limit=5`
+      );
+      const data = await response.json();
+      setSearchResults(data.features || []);
+      setShowResults(true);
+    } catch (error) {
+      console.error('Geocoding error:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const selectSearchResult = (feature: any) => {
+    const [lng, lat] = feature.center;
+    const address = feature.place_name;
+
+    setViewState(prev => ({
+      ...prev,
+      latitude: lat,
+      longitude: lng,
+      zoom: 15
+    }));
+
+    if (mapRef.current) {
+      mapRef.current.flyTo({
+        center: [lng, lat],
+        zoom: 15,
+        essential: true
+      });
+    }
+
+    if (onSearchSelect) {
+      onSearchSelect({ lat, lng }, address);
+    }
+
+    setSearchQuery(address);
+    setShowResults(false);
   };
 
   return (
@@ -237,6 +297,39 @@ export function MapBox({
         ))}
       </Map>
 
+      {showSearch && (
+        <div className="map-search-overlay">
+          <div className="search-container">
+            <div className="search-input-wrapper">
+              {isSearching ? <Loader2 size={18} className="animate-spin" /> : <Search size={18} />}
+              <input 
+                type="text" 
+                placeholder="Search address or place..." 
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+                onFocus={() => searchQuery.length >= 3 && setShowResults(true)}
+              />
+              {searchQuery && (
+                <button onClick={() => { setSearchQuery(''); setSearchResults([]); setShowResults(false); }}>
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+
+            {showResults && searchResults.length > 0 && (
+              <ul className="search-results">
+                {searchResults.map((result: any) => (
+                  <li key={result.id} onClick={() => selectSearchResult(result)}>
+                    <MapPin size={14} />
+                    <span>{result.place_name}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
+
       {!webGLSupported && (
         <div className="token-error">
           <div className="error-content">
@@ -325,6 +418,103 @@ export function MapBox({
         .error-content p {
           color: var(--color-text-dim);
           font-size: 14px;
+        }
+
+        .map-search-overlay {
+          position: absolute;
+          top: 12px;
+          left: 12px;
+          z-index: 10;
+          width: 320px;
+          max-width: calc(100% - 24px);
+        }
+
+        .search-container {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .search-input-wrapper {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 8px 12px;
+          background: rgba(15, 23, 42, 0.9);
+          backdrop-filter: blur(8px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 8px;
+          color: white;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .search-input-wrapper input {
+          flex: 1;
+          background: transparent;
+          border: none;
+          color: white;
+          font-size: 14px;
+          outline: none;
+        }
+
+        .search-input-wrapper input::placeholder {
+          color: rgba(255, 255, 255, 0.5);
+        }
+
+        .search-input-wrapper button {
+          background: transparent;
+          border: none;
+          color: rgba(255, 255, 255, 0.5);
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+        }
+
+        .search-input-wrapper button:hover {
+          color: white;
+        }
+
+        .search-results {
+          list-style: none;
+          padding: 4px;
+          margin: 0;
+          background: rgba(15, 23, 42, 0.95);
+          backdrop-filter: blur(12px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 8px;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+          max-height: 200px;
+          overflow-y: auto;
+        }
+
+        .search-results li {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          padding: 8px 12px;
+          color: rgba(255, 255, 255, 0.8);
+          font-size: 13px;
+          cursor: pointer;
+          border-radius: 6px;
+          transition: background 0.2s;
+        }
+
+        .search-results li:hover {
+          background: rgba(99, 102, 241, 0.3);
+          color: white;
+        }
+
+        .search-results li span {
+          line-height: 1.4;
+        }
+
+        .animate-spin {
+          animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
       `}</style>
     </div>

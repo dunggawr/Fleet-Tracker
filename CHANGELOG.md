@@ -1,3 +1,26 @@
+## [2026-05-11] - Interactive Order Dispatch & Driver Management (Phase 12)
+### Added
+- **Frontend (Admin Dashboard)**:
+    - Triển khai chức năng **Interactive Order Creation**:
+        - Giao diện split-view (Map + Form) cho phép chọn vị trí pickup/delivery trực tiếp trên bản đồ.
+        - Hỗ trợ nút "Pick on Map" để lấy tọa độ Lat/Lng chính xác, thay thế dữ liệu hardcoded.
+        - Hiển thị Marker màu sắc khác nhau (Tím cho Pickup, Xanh cho Delivery) để dễ nhận diện.
+    - Hoàn thiện tính năng **Edit Driver**:
+        - Nâng cấp modal đăng ký để hỗ trợ cả tạo mới và cập nhật thông tin tài xế.
+        - Đồng bộ hóa dữ liệu tài xế từ bảng vào form chỉnh sửa một cách mượt mà.
+    - Cập nhật component `Modal`: Hỗ trợ prop `className` và các kích thước linh hoạt (`xl`).
+    - Nâng cấp component `MapBox`: Thêm sự kiện `onClick` để hỗ trợ chọn vị trí tương tác.
+
+### Fixed
+- **Backend (API)**:
+    - Sửa lỗi nghiêm trọng `column "reset_code" does not exist`: Triển khai migration bổ sung cột `reset_code` và `reset_code_expiry` cho bảng `users`.
+- **Frontend (Admin Dashboard)**:
+    - Khắc phục lỗi TypeScript build liên quan đến `ModalProps` và `className`.
+    - Đảm bảo dự án đạt trạng thái "Production Ready" với bản build thành công 100%.
+
+### Dev Ops
+- Tạo nhánh mới `feat/driver-edit-order-map-sync` và đẩy toàn bộ thay đổi lên GitHub.
+
 ## [2026-05-11] - Driver App Web Support & Platform Abstraction
 ### Added
 - **Mobile (Driver App)**:

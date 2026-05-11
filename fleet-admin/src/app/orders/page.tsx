@@ -102,6 +102,18 @@ export default function OrdersPage() {
     }
   };
 
+  const handleSearchSelect = (coord: {lat: number, lng: number}, address: string) => {
+    if (selectionMode === 'pickup') {
+      setPickupCoord(coord);
+      setValue('pickupAddress', address);
+      setSelectionMode('none');
+    } else if (selectionMode === 'delivery') {
+      setDeliveryCoord(coord);
+      setValue('deliveryAddress', address);
+      setSelectionMode('none');
+    }
+  };
+
   const markers: MapMarker[] = React.useMemo(() => {
     const list: MapMarker[] = [];
     if (pickupCoord) {
@@ -332,6 +344,8 @@ export default function OrdersPage() {
             <MapBox 
               markers={markers}
               onClick={handleMapClick}
+              showSearch={selectionMode !== 'none'}
+              onSearchSelect={handleSearchSelect}
               zoom={13}
               className="rounded-lg shadow-inner"
             />

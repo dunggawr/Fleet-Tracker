@@ -4,8 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [2026-05-11]
 ### Added
-- Proactive session refresh before WebSocket connection/reconnection in `socket.ts`.
-- Server-side filtering and pagination support in `VehiclesPage`.
+- **Address Search**: Integrated Mapbox Geocoding API into `MapBox` component for easy location lookup.
+- **Smart Fly-to**: Automatic map centering and smooth animation when searching or selecting vehicles.
+- **Map Aesthetics**: Updated tracking and replay maps to use `streets-v12` style for consistent, rich visuals.
+
+### Fixed
+- **Dispatch Search**: Fixed the non-functional dummy search bar on the Dispatch screen.
+- **Tracking View**: Fixed vehicle icons and popups potentially being cut off by adding auto-focus logic.
+- **Syntax Fix**: Resolved a critical build-breaking syntax error in `RouteReplayMap.tsx`.
 
 ### Optimized
 - `useDispatch` hook now fetches `available` vehicles directly from the server to ensure data consistency.

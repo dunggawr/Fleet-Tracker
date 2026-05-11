@@ -22,6 +22,20 @@ interface RouteReplayMapProps {
 }
 
 export default function RouteReplayMap({ history, currentIndex }: RouteReplayMapProps) {
+  const mapRef = React.useRef<any>(null);
+
+  const currentPoint = history[currentIndex];
+
+  // Auto-center on current point as it moves
+  React.useEffect(() => {
+    if (currentPoint && mapRef.current) {
+      mapRef.current.flyTo({
+        center: [currentPoint.longitude, currentPoint.latitude],
+        duration: 500, // Faster for replay
+        essential: true
+      });
+    }
+  }, [currentPoint]);
   if (!MAPBOX_TOKEN) {
     return (
       <div style={{
@@ -41,8 +55,6 @@ export default function RouteReplayMap({ history, currentIndex }: RouteReplayMap
       lat: history[Math.floor(history.length / 2)].latitude,
     }
     : { lng: 106.660172, lat: 10.762622 };
-
-  const currentPoint = history[currentIndex];
 
   const geoJson = useMemo(() => {
     return {
@@ -70,6 +82,7 @@ export default function RouteReplayMap({ history, currentIndex }: RouteReplayMap
 
   return (
     <Map
+      ref={mapRef}
       mapboxAccessToken={MAPBOX_TOKEN}
       initialViewState={{
         longitude: center.lng,
@@ -77,7 +90,7 @@ export default function RouteReplayMap({ history, currentIndex }: RouteReplayMap
         zoom: 12,
       }}
       style={{ width: '100%', height: '100%' }}
-      mapStyle="mapbox://styles/mapbox/dark-v11"
+      mapStyle="mapbox://styles/mapbox/streets-v12"
     >
       <NavigationControl position="top-right" />
       <FullscreenControl position="top-right" />

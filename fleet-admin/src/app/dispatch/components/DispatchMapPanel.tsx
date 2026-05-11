@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/Button';
 import { 
   Truck, 
   Package, 
-  Navigation, 
   Users 
 } from 'lucide-react';
 import { Order, Vehicle } from '@/types';
@@ -99,10 +98,6 @@ export function DispatchMapPanel({
     <main className="dispatch-map-area">
       <div className="map-container-inner">
         <div className="map-overlay-top">
-          <div className="map-search card">
-            <Navigation size={18} />
-            <input type="text" placeholder="Search map location..." />
-          </div>
           {/* Legend khi đang trong Smart Suggest mode */}
           {selectedOrderData && suggestedVehicles.length > 0 && (
             <div className="map-legend card">
@@ -124,6 +119,7 @@ export function DispatchMapPanel({
             lines={routeLines}
             zoom={13} 
             selectedMarkerId={selectedMarkerId} 
+            showSearch={true}
           />
         </div>
 

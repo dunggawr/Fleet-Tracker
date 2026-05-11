@@ -39,6 +39,19 @@ export default function LiveTrackingMap({
   selectedVehicle,
   onVehicleSelect,
 }: LiveTrackingMapProps) {
+  const mapRef = useRef<any>(null);
+
+  // Auto-center on selected vehicle
+  useEffect(() => {
+    if (selectedVehicle && mapRef.current) {
+      mapRef.current.flyTo({
+        center: [selectedVehicle.longitude, selectedVehicle.latitude],
+        zoom: 15,
+        duration: 1500,
+        essential: true
+      });
+    }
+  }, [selectedVehicle?.vehicleId]);
   if (!MAPBOX_TOKEN) {
     return (
       <div style={{
@@ -90,6 +103,7 @@ export default function LiveTrackingMap({
 
   return (
     <Map
+      ref={mapRef}
       mapboxAccessToken={MAPBOX_TOKEN}
       initialViewState={{
         longitude: center.lng,
@@ -97,7 +111,7 @@ export default function LiveTrackingMap({
         zoom: 12,
       }}
       style={{ width: '100%', height: '100%' }}
-      mapStyle="mapbox://styles/mapbox/dark-v11"
+      mapStyle="mapbox://styles/mapbox/streets-v12"
     >
       <NavigationControl position="top-right" />
       <FullscreenControl position="top-right" />
