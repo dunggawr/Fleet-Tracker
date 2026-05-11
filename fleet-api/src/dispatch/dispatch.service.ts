@@ -95,13 +95,29 @@ export class DispatchService {
 
       const vehicle = await queryRunner.manager.findOne(Vehicle, {
         where: { id: vehicleId },
-        relations: ['driver'],
         lock: { mode: 'pessimistic_write' },
       });
 
       if (!vehicle) {
         throw new NotFoundException(`Vehicle with ID ${vehicleId} not found`);
       }
+
+      if (!vehicle.driverId) {
+        throw new BadRequestException('Vehicle has no driver assigned');
+      }
+
+      // Fetch driver with lock separately to avoid "FOR UPDATE cannot be applied to the nullable side of an outer join"
+      const driver = await queryRunner.manager.findOne(Driver, {
+        where: { id: vehicle.driverId },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!driver) {
+        throw new NotFoundException(`Driver for vehicle ${vehicleId} not found`);
+      }
+
+      // Attach driver to vehicle object for compatibility with existing logic
+      vehicle.driver = driver;
 
       if (vehicle.status !== VehicleStatus.AVAILABLE) {
         throw new BadRequestException('Vehicle is not available');
@@ -170,13 +186,29 @@ export class DispatchService {
 
       const vehicle = await queryRunner.manager.findOne(Vehicle, {
         where: { id: vehicleId },
-        relations: ['driver'],
         lock: { mode: 'pessimistic_write' },
       });
 
       if (!vehicle) {
         throw new NotFoundException(`Vehicle with ID ${vehicleId} not found`);
       }
+
+      if (!vehicle.driverId) {
+        throw new BadRequestException('Vehicle has no driver assigned');
+      }
+
+      // Fetch driver with lock separately to avoid "FOR UPDATE cannot be applied to the nullable side of an outer join"
+      const driver = await queryRunner.manager.findOne(Driver, {
+        where: { id: vehicle.driverId },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!driver) {
+        throw new NotFoundException(`Driver for vehicle ${vehicleId} not found`);
+      }
+
+      // Attach driver to vehicle object for compatibility with existing logic
+      vehicle.driver = driver;
 
       if (vehicle.status !== VehicleStatus.AVAILABLE) {
         throw new BadRequestException('Vehicle is not available');
