@@ -1,6 +1,7 @@
 // ===== WebSocket Client =====
 
 import { io, Socket } from 'socket.io-client';
+import { api } from './api';
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
 
@@ -13,13 +14,29 @@ export function getSocket(): Socket {
       transports: ['websocket'],
       withCredentials: true, // Send cookies with handshake
     });
+
+    // Active refresh session on reconnect
+    socket.io.on('reconnect_attempt', async () => {
+      console.log('Socket: Reconnect attempt, refreshing session...');
+      try {
+        await api.refreshSession();
+      } catch (error) {
+        console.error('Socket: Failed to refresh session on reconnect', error);
+      }
+    });
   }
   return socket;
 }
 
-export function connectSocket() {
+export async function connectSocket() {
   const s = getSocket();
   if (!s.connected) {
+    // Proactive refresh before initial connection
+    try {
+      await api.refreshSession();
+    } catch (error) {
+      console.error('Socket: Pre-connect session refresh failed', error);
+    }
     s.connect();
   }
   return s;

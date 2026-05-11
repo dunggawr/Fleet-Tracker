@@ -8,10 +8,13 @@ export function useVehicles(queryParams?: Record<string, any>) {
   const vehiclesQuery = useQuery({
     queryKey: ['vehicles', queryParams],
     queryFn: async () => {
-      const res = await api.get<Vehicle[]>('/vehicles', { params: queryParams });
-      return Array.isArray(res) ? res : ((res as any).data || []);
+      return await api.get<any>('/vehicles', { params: queryParams });
     },
   });
+
+  const queryData = vehiclesQuery.data;
+  const vehicles = Array.isArray(queryData) ? queryData : (queryData?.data || []);
+  const total = Array.isArray(queryData) ? queryData.length : (queryData?.total || 0);
 
   const createVehicleMutation = useMutation({
     mutationFn: (data: Partial<Vehicle>) => api.post<Vehicle>('/vehicles', data),
@@ -36,7 +39,11 @@ export function useVehicles(queryParams?: Record<string, any>) {
   });
 
   return {
-    vehicles: vehiclesQuery.data || [],
+    vehicles,
+    total,
+    page: queryData?.page || 1,
+    limit: queryData?.limit || 10,
+    totalPages: queryData?.totalPages || 1,
     isLoading: vehiclesQuery.isLoading,
     error: vehiclesQuery.error,
     createVehicle: createVehicleMutation.mutateAsync,

@@ -31,7 +31,13 @@ export class VehiclesService {
       );
     }
 
-    const vehicle = this.vehicleRepository.create(createVehicleDto);
+    const vehicle = this.vehicleRepository.create({
+      ...createVehicleDto,
+      lastKnownLocation: {
+        type: 'Point',
+        coordinates: [106.6353, 10.7838], // [lng, lat] — Warehouse location
+      },
+    });
     return await this.vehicleRepository.save(vehicle);
   }
 

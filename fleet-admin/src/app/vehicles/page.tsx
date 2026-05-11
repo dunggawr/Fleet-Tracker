@@ -35,24 +35,59 @@ const vehicleSchema = z.object({
   type: z.enum(['small', 'medium', 'large']),
   status: z.enum(['available', 'delivering', 'maintenance']),
   maxCapacityKg: z.number().min(100, 'Minimum capacity is 100kg'),
-  driverId: z.string().uuid().optional().nullable(),
+  driverId: z.string().uuid().or(z.literal('')).optional().nullable(),
 });
 
 type VehicleFormValues = z.infer<typeof vehicleSchema>;
 
 export default function VehiclesPage() {
   const router = useRouter();
-  const { vehicles, isLoading, createVehicle, updateVehicle, deleteVehicle, isCreating, isUpdating, isDeleting } = useVehicles();
-  const { drivers } = useDrivers();
+  const [page, setPage] = React.useState(1);
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [debouncedSearch, setDebouncedSearch] = React.useState('');
   const [typeFilter, setTypeFilter] = React.useState<string>('all');
   const [statusFilter, setStatusFilter] = React.useState<string>('all');
+
+  const { 
+    vehicles, 
+    total, 
+    totalPages,
+    isLoading, 
+    createVehicle, 
+    updateVehicle, 
+    deleteVehicle, 
+    isCreating, 
+    isUpdating, 
+    isDeleting 
+  } = useVehicles({
+    page,
+    limit: 10,
+    search: debouncedSearch || undefined,
+    type: typeFilter === 'all' ? undefined : typeFilter,
+    status: statusFilter === 'all' ? undefined : statusFilter,
+  });
+
+  const { drivers } = useDrivers();
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [isAssignModalOpen, setIsAssignModalOpen] = React.useState(false);
   const [selectedVehicle, setSelectedVehicle] = React.useState<Vehicle | null>(null);
   const [vehicleToAssign, setVehicleToAssign] = React.useState<Vehicle | null>(null);
   const [assignedDriverId, setAssignedDriverId] = React.useState('');
   const [vehicleToDelete, setVehicleToDelete] = React.useState<Vehicle | null>(null);
+
+  // Debounce search
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(1); // Reset to first page on search
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Reset page when filters change
+  React.useEffect(() => {
+    setPage(1);
+  }, [typeFilter, statusFilter]);
   const isEditing = Boolean(selectedVehicle);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<VehicleFormValues>({
@@ -116,15 +151,24 @@ export default function VehiclesPage() {
 
   const onSubmit = async (data: VehicleFormValues) => {
     try {
-      const payload = {
-        ...data,
-        driverId: data.driverId || undefined,
-      };
-
       if (selectedVehicle) {
+        const payload = {
+          ...data,
+          driverId: data.driverId || undefined,
+        };
         await updateVehicle({ id: selectedVehicle.id, ...payload });
       } else {
+        // For creation, the backend is strict: only allows these fields
+        const payload = {
+          plateNumber: data.plateNumber,
+          type: data.type,
+          maxCapacityKg: data.maxCapacityKg,
+        };
         await createVehicle(payload);
+        
+        // Note: If a driver was selected in the form, it won't be assigned 
+        // during creation because the backend POST /vehicles doesn't support it.
+        // The user would need to assign it via the Edit or Assign Driver action.
       }
       closeModal();
     } catch (err) {
@@ -147,15 +191,8 @@ export default function VehiclesPage() {
     }
   };
 
-  const filteredVehicles = vehicles.filter((v: Vehicle) => {
-    const matchesSearch = v.plateNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      v.driver?.fullName?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesType = typeFilter === 'all' || v.type === typeFilter;
-    const matchesStatus = statusFilter === 'all' || v.status === statusFilter;
-    
-    return matchesSearch && matchesType && matchesStatus;
-  });
+  // Server-side filtered vehicles
+  const filteredVehicles = vehicles;
 
   const columns = [
     { header: 'Plate Number', accessor: 'plateNumber' as keyof Vehicle },
@@ -345,7 +382,7 @@ export default function VehiclesPage() {
             <option value="maintenance">Maintenance</option>
           </select>
           <div className="divider" />
-          <span className="results-count">Showing <b>{filteredVehicles.length}</b> vehicles</span>
+          <span className="results-count">Total <b>{total}</b> vehicles</span>
         </div>
       </section>
 
@@ -355,11 +392,37 @@ export default function VehiclesPage() {
             <LoadingSpinner size={32} />
           </div>
         ) : (
-          <DataTable 
-            data={filteredVehicles} 
-            columns={columns} 
-            onRowClick={(vehicle) => openEditModal(vehicle as Vehicle)}
-          />
+          <>
+            <DataTable 
+              data={filteredVehicles} 
+              columns={columns} 
+              onRowClick={(vehicle) => openEditModal(vehicle as Vehicle)}
+            />
+            
+            {totalPages > 1 && (
+              <div className="pagination">
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  disabled={page === 1}
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                >
+                  Previous
+                </Button>
+                <span className="page-info">
+                  Page <b>{page}</b> of <b>{totalPages}</b>
+                </span>
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  disabled={page === totalPages}
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </section>
 
@@ -465,6 +528,21 @@ export default function VehiclesPage() {
         }
         .capitalize {
           text-transform: capitalize;
+        }
+
+        .pagination {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: var(--space-md);
+          margin-top: var(--space-lg);
+          padding: var(--space-md);
+          border-top: 1px solid var(--color-border);
+        }
+
+        .page-info {
+          font: var(--font-label-sm);
+          color: var(--color-text-dim);
         }
       `}</style>
     </div>

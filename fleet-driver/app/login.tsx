@@ -56,9 +56,10 @@ export default function LoginScreen() {
       // Unwrap NestJS ResponseInterceptor format { data, statusCode }
       const payload = data?.data ?? data;
       const accessToken = payload?.accessToken ?? payload?.access_token;
+      const refreshToken = payload?.refreshToken ?? payload?.refresh_token;
       const { user } = payload;
 
-      if (!accessToken || !user) {
+      if (!accessToken || !refreshToken || !user) {
         throw new Error('Phản hồi không hợp lệ từ máy chủ');
       }
 
@@ -73,7 +74,8 @@ export default function LoginScreen() {
           fullName: user.fullName,
           role: user.role,
         },
-        accessToken
+        accessToken,
+        refreshToken,
       );
 
       router.replace('/(tabs)');

@@ -53,8 +53,10 @@ describe('DispatchService', () => {
         addSelect: jest.fn().mockReturnThis(),
         innerJoin: jest.fn().mockReturnThis(),
         orderBy: jest.fn().mockReturnThis(),
+        setParameters: jest.fn().mockReturnThis(),
         limit: jest.fn().mockReturnThis(),
         getMany: jest.fn().mockResolvedValue([]),
+        getRawAndEntities: jest.fn().mockResolvedValue({ entities: [], raw: [] }),
       }),
     };
 
@@ -115,13 +117,21 @@ describe('DispatchService', () => {
         id: 'o1',
         status: OrderStatus.PENDING,
         weightKg: 100,
+        pickupLocation: { type: 'Point', coordinates: [106.6, 10.7] },
       });
-      const mockVehicles = [{ id: 'v1' }];
-      vehicleRepo.createQueryBuilder().getMany.mockResolvedValue(mockVehicles);
+      const mockVehicles = [{ id: 'v1', plateNumber: '51G-12345', type: 'TRUCK' }];
+      const mockRaw = [{ v_id: 'v1', distance: 5000 }];
+      
+      vehicleRepo.createQueryBuilder().getRawAndEntities.mockResolvedValue({
+        entities: mockVehicles,
+        raw: mockRaw
+      });
 
       const result = await service.suggestVehicles('o1');
 
-      expect(result).toEqual(mockVehicles);
+      expect(result).toBeDefined();
+      expect(result.length).toBe(1);
+      expect(result[0].vehicle.id).toBe('v1');
       expect(vehicleRepo.createQueryBuilder).toHaveBeenCalled();
     });
   });

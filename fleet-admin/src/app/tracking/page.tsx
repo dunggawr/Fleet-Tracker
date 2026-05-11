@@ -61,10 +61,10 @@ export default function LiveTrackingPage() {
   const [isConnected, setIsConnected] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<VehiclePosition | null>(null);
   const [filter, setFilter] = useState<'all' | 'active' | 'idle' | 'offline'>('all');
-  const socketRef = useRef<ReturnType<typeof connectSocket> | null>(null);
+  const socketRef = useRef<any>(null); // Use any or Socket if imported
 
-  const initSocket = useCallback(() => {
-    const socket = connectSocket();
+  const initSocket = useCallback(async () => {
+    const socket = await connectSocket();
     socketRef.current = socket;
 
     socket.on('connect', () => {
@@ -135,10 +135,13 @@ export default function LiveTrackingPage() {
   useEffect(() => {
     const loadVehicles = async () => {
       try {
-        const [vehiclesData, driversData] = await Promise.all([
-          api.get<any[]>('/vehicles', { params: { status: 'ACTIVE' } }),
-          api.get<any[]>('/drivers', { params: { status: 'ACTIVE' } }),
+        const [vehiclesDataResponse, driversDataResponse] = await Promise.all([
+          api.get<any>('/vehicles'),
+          api.get<any>('/drivers'),
         ]);
+
+        const vehiclesData = Array.isArray(vehiclesDataResponse) ? vehiclesDataResponse : (vehiclesDataResponse as any).data || [];
+        const driversData = Array.isArray(driversDataResponse) ? driversDataResponse : (driversDataResponse as any).data || [];
 
         // Build initial positions from DB data (no GPS yet)
         const initial: VehiclePosition[] = vehiclesData.map((v: any) => {

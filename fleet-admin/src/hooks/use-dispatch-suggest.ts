@@ -10,7 +10,7 @@ import { DispatchSuggestion } from '@/types';
 export function useDispatchSuggest(orderId: string | null) {
   return useQuery<DispatchSuggestion[]>({
     queryKey: ['dispatch', 'suggest', orderId],
-    queryFn: () => api.post<DispatchSuggestion[]>('/dispatch/suggest', { orderId }),
+    queryFn: () => api.get<DispatchSuggestion[]>(`/dispatch/suggest/${orderId}`),
     enabled: !!orderId,
     staleTime: 30_000, // 30s — fresh enough for dispatch decisions
     retry: 1,

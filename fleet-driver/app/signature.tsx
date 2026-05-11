@@ -3,19 +3,16 @@ import { StyleSheet, View, Text, TouchableOpacity, ActivityIndicator } from 'rea
 import SignatureScreen, { SignatureViewRef } from 'react-native-signature-canvas';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { X, Check, RotateCcw } from 'lucide-react-native';
-import { useAuthStore } from '@/store/useAuthStore';
 import { useTripStore, TripStatus, OrderStatus } from '@/store/useTripStore';
 import Toast from 'react-native-toast-message';
 import { cacheDirectory, writeAsStringAsync, EncodingType, deleteAsync } from 'expo-file-system/legacy';
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001/api';
+import { authFetch } from '@/lib/authFetch';
 
 export default function SignatureCapture() {
   const [isUploading, setIsUploading] = useState(false);
   const signatureRef = useRef<SignatureViewRef>(null);
   const router = useRouter();
   const { orderId, tripId, photoUrl } = useLocalSearchParams();
-  const { token } = useAuthStore();
   const { updateTripStatus, updateOrderStatus, activeTrip } = useTripStore();
 
   const handleSignature = async (signature: string) => {
@@ -41,10 +38,9 @@ export default function SignatureCapture() {
         type: 'image/png',
       });
 
-      const uploadRes = await fetch(`${API_URL}/upload?folder=signatures`, {
+      const uploadRes = await authFetch('/upload?folder=signatures', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
         },
         body: formData,

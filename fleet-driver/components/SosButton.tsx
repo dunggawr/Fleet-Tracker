@@ -4,9 +4,8 @@ import { AlertTriangle, Phone, X, ShieldAlert } from 'lucide-react-native';
 import * as Linking from 'expo-linking';
 import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
-import { socketService } from '../lib/socket';
 import Toast from 'react-native-toast-message';
-import { useAuthStore } from '../store/useAuthStore';
+import { authFetch } from '../lib/authFetch';
 
 interface SosButtonProps {
   tripId?: string;
@@ -29,16 +28,10 @@ export const SosButton: React.FC<SosButtonProps> = ({ tripId }) => {
       }
 
       const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-      const token = useAuthStore.getState()?.token;
-      if (!token) throw new Error('Authentication token not found');
-
-      const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001/api';
-      
-      const response = await fetch(`${API_URL}/trips/${tripId}/incident`, {
+      const response = await authFetch(`/trips/${tripId}/incident`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           message: description || 'SOS Alert Triggered',

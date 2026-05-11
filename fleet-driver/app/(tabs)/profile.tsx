@@ -24,11 +24,10 @@ import {
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001/api';
+import { authFetch } from '@/lib/authFetch';
 
 export default function ProfileScreen() {
-  const { user, logout, token } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const { tripHistory, activeTrip } = useTripStore();
   const router = useRouter();
   
@@ -68,11 +67,10 @@ export default function ProfileScreen() {
 
     setIsChanging(true);
     try {
-      const response = await fetch(`${API_URL}/auth/change-password`, {
+      const response = await authFetch('/auth/change-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           oldPassword,
