@@ -150,4 +150,117 @@ export class AuthService {
       where: { id: payload.sub, isActive: true },
     });
   }
+
+  async changePassword(
+    userId: string,
+    oldPassword: string,
+    newPassword: string,
+  ): Promise<{ message: string }> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId, isActive: true },
+      select: ['id', 'passwordHash'],
+    });
+
+    if (!user || !user.passwordHash) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // Verify old password
+    const isPasswordValid = await bcrypt.compare(oldPassword, user.passwordHash);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Old password is incorrect');
+    }
+
+    // Check if new password is same as old password
+    const isSamePassword = await bcrypt.compare(newPassword, user.passwordHash);
+    if (isSamePassword) {
+      throw new UnauthorizedException('New password must be different from old password');
+    }
+
+    // Hash and save new password
+    const salt = await bcrypt.genSalt();
+    const passwordHash = await bcrypt.hash(newPassword, salt);
+
+    await this.userRepository.update(userId, {
+      passwordHash,
+      refreshTokenHash: null, // Invalidate existing tokens
+    });
+
+    return { message: 'Password changed successfully' };
+  }
+
+  async forgotPassword(email: string): Promise<{ message: string; resetCode: string }> {
+    const user = await this.userRepository.findOne({
+      where: { email, isActive: true },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Email not found');
+    }
+
+    // Generate 6-digit reset code
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Set expiry to 15 minutes from now
+    const expiryTime = new Date();
+    expiryTime.setMinutes(expiryTime.getMinutes() + 15);
+
+    // Store reset code in user (hashed)
+    const salt = await bcrypt.genSalt();
+    const resetCodeHash = await bcrypt.hash(resetCode, salt);
+
+    await this.userRepository.update(user.id, {
+      resetCode: resetCodeHash,
+      resetCodeExpiry: expiryTime,
+    });
+
+    // In production, send via email. For now, return it for demo
+    console.log(`[PASSWORD RESET] Email: ${email}, Code: ${resetCode}, Expires: ${expiryTime}`);
+
+    return {
+      message: 'Reset code sent to email (check console for demo)',
+      resetCode, // Remove in production - only for demo
+    };
+  }
+
+  async resetPassword(
+    email: string,
+    resetCode: string,
+    newPassword: string,
+  ): Promise<{ message: string }> {
+    // Find user by email with reset code info
+    const user = await this.userRepository.findOne({
+      where: { email, isActive: true },
+      select: ['id', 'resetCode', 'resetCodeExpiry', 'passwordHash'],
+    });
+
+    if (!user || !user.resetCode || !user.resetCodeExpiry) {
+      throw new UnauthorizedException('Invalid reset code or user not found');
+    }
+
+    // Check if reset code has expired
+    if (new Date() > user.resetCodeExpiry) {
+      throw new UnauthorizedException('Reset code has expired');
+    }
+
+    // Verify reset code
+    const isCodeValid = await bcrypt.compare(resetCode, user.resetCode);
+    if (!isCodeValid) {
+      throw new UnauthorizedException('Invalid reset code');
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt();
+    const passwordHash = await bcrypt.hash(newPassword, salt);
+
+    // Update password and clear reset code
+    await this.userRepository.update(user.id, {
+      passwordHash,
+      resetCode: null,
+      resetCodeExpiry: null,
+      refreshTokenHash: null, // Invalidate existing tokens
+    });
+
+    return { message: 'Password reset successfully' };
+  }
 }

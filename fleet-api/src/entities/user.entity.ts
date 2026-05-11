@@ -38,6 +38,22 @@ export class User {
   })
   refreshTokenHash?: string | null;
 
+  @Column({
+    name: 'reset_code',
+    type: 'varchar',
+    nullable: true,
+    select: false,
+  })
+  resetCode?: string | null;
+
+  @Column({
+    name: 'reset_code_expiry',
+    type: 'timestamp',
+    nullable: true,
+    select: false,
+  })
+  resetCodeExpiry?: Date | null;
+
   @Column({ name: 'is_active', default: true })
   isActive: boolean;
 

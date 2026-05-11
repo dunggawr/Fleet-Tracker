@@ -95,33 +95,35 @@ export default function FleetPerformancePage() {
             isEmpty={!data?.performanceTrend?.length}
             height={400}
           >
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data?.performanceTrend}>
-                <defs>
-                  <linearGradient id="colorTrips" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
-                  </linearGradient>
-                  <linearGradient id="colorDist" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
-                <XAxis dataKey="date" stroke="var(--color-text-muted)" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="var(--color-text-muted)" fontSize={12} tickLine={false} axisLine={false} />
-                <Tooltip 
-                  contentStyle={{ 
-                    background: 'var(--color-surface)', 
-                    border: '1px solid var(--color-border)',
-                    borderRadius: '8px'
-                  }} 
-                />
-                <Legend />
-                <Area type="monotone" dataKey="trips" stroke="#6366f1" fillOpacity={1} fill="url(#colorTrips)" />
-                <Area type="monotone" dataKey="distance" stroke="#10b981" fillOpacity={1} fill="url(#colorDist)" />
-              </AreaChart>
-            </ResponsiveContainer>
+            <div style={{ width: '100%', height: '100%', minWidth: 0 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={data?.performanceTrend}>
+                  <defs>
+                    <linearGradient id="colorTrips" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorDist" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+                  <XAxis dataKey="date" stroke="var(--color-text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="var(--color-text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      background: 'var(--color-surface)', 
+                      border: '1px solid var(--color-border)',
+                      borderRadius: '8px'
+                    }} 
+                  />
+                  <Legend />
+                  <Area type="monotone" dataKey="trips" stroke="#6366f1" fillOpacity={1} fill="url(#colorTrips)" />
+                  <Area type="monotone" dataKey="distance" stroke="#10b981" fillOpacity={1} fill="url(#colorDist)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           </ReportChartWrapper>
         </div>
 
@@ -132,26 +134,28 @@ export default function FleetPerformancePage() {
             isLoading={isLoading}
             isEmpty={!data?.statusDistribution?.length}
           >
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={data?.statusDistribution}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="count"
-                  nameKey="status"
-                >
-                  {(data?.statusDistribution || []).map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend iconType="circle" />
-              </PieChart>
-            </ResponsiveContainer>
+            <div style={{ width: '100%', height: '100%', minWidth: 0 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={data?.statusDistribution}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="count"
+                    nameKey="status"
+                  >
+                    {(data?.statusDistribution || []).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend iconType="circle" />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </ReportChartWrapper>
         </div>
 
@@ -163,21 +167,23 @@ export default function FleetPerformancePage() {
             isEmpty={!data?.tripsByVehicle?.length}
             height={300}
           >
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data?.tripsByVehicle}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
-                <XAxis dataKey="vehiclePlate" stroke="var(--color-text-muted)" fontSize={12} />
-                <YAxis stroke="var(--color-text-muted)" fontSize={12} />
-                <Tooltip 
-                  contentStyle={{ 
-                    background: 'var(--color-surface)', 
-                    border: '1px solid var(--color-border)',
-                    borderRadius: '8px'
-                  }} 
-                />
-                <Bar dataKey="count" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div style={{ width: '100%', height: '100%', minWidth: 0 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data?.tripsByVehicle}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+                  <XAxis dataKey="vehiclePlate" stroke="var(--color-text-muted)" fontSize={12} />
+                  <YAxis stroke="var(--color-text-muted)" fontSize={12} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      background: 'var(--color-surface)', 
+                      border: '1px solid var(--color-border)',
+                      borderRadius: '8px'
+                    }} 
+                  />
+                  <Bar dataKey="count" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </ReportChartWrapper>
         </div>
       </div>

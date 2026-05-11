@@ -1,35 +1,130 @@
-'use client';
-
-import React from 'react';
-import { Package, Truck, Users, Navigation } from 'lucide-react';
+import { MapBox } from '@/components/ui/MapBox';
+import type { MapMarker, MapLine } from '@/components/ui/MapBox';
 import { Button } from '@/components/ui/Button';
+import { 
+  Truck, 
+  Package, 
+  Navigation, 
+  Users 
+} from 'lucide-react';
+import { Order, Vehicle } from '@/types';
 
 interface DispatchMapPanelProps {
   clusterView: boolean;
   onToggleClusterView: () => void;
+  selectedMarkerId?: string | null;
+  orders: Order[];
+  vehicles: Vehicle[];
+  // Dữ liệu để vẽ route line khi có suggestion
+  selectedOrderData?: Order | null;
+  suggestedVehicles?: Vehicle[];
 }
 
-export function DispatchMapPanel({ clusterView, onToggleClusterView }: DispatchMapPanelProps) {
+/** Lấy tọa độ [lng, lat] từ GeoPoint hoặc GeoJSON coordinates */
+function getCoords(loc: unknown, fallback: [number, number]): [number, number] {
+  if (!loc) return fallback;
+  const l = loc as Record<string, unknown>;
+  // GeoJSON format: { type: 'Point', coordinates: [lng, lat] }
+  if (Array.isArray(l.coordinates)) {
+    const [lng, lat] = l.coordinates as number[];
+    if (typeof lat === 'number' && typeof lng === 'number') return [lng, lat];
+  }
+  // Simple { lat, lng } format
+  if (typeof l.lat === 'number' && typeof l.lng === 'number') {
+    return [l.lng as number, l.lat as number];
+  }
+  return fallback;
+}
+
+export function DispatchMapPanel({ 
+  clusterView, 
+  onToggleClusterView,
+  selectedMarkerId,
+  orders,
+  vehicles,
+  selectedOrderData,
+  suggestedVehicles = [],
+}: DispatchMapPanelProps) {
+  
+  // ===== Vehicle markers =====
+  const vehicleMarkers: MapMarker[] = vehicles.map(v => {
+    const [lng, lat] = getCoords(v.lastKnownLocation, [105.83, 21.02]);
+    const isSuggested = suggestedVehicles.some(sv => sv.id === v.id);
+    return {
+      id: v.id,
+      lat,
+      lng,
+      label: v.plateNumber,
+      color: isSuggested ? 'var(--color-success)' : 'var(--color-primary-light)',
+      icon: <Truck size={18} />,
+    };
+  });
+
+  // ===== Order markers =====
+  const orderMarkers: MapMarker[] = orders.map(o => {
+    const [lng, lat] = getCoords(o.pickupLocation, [105.86, 21.04]);
+    const isSelected = selectedMarkerId === o.id;
+    return {
+      id: o.id,
+      lat,
+      lng,
+      label: `Order ${o.id.split('-')[0]}`,
+      color: isSelected ? 'var(--color-primary)' : 'var(--color-warning)',
+      icon: <Package size={18} />,
+    };
+  });
+
+  // ===== Route lines: vẽ đường từ top-3 xe gợi ý → điểm pickup của đơn hàng =====
+  // SPEC: Khi chọn đơn hàng, hiển thị các xe phù hợp trên map (visual feedback)
+  const routeLines: MapLine[] = [];
+  if (selectedOrderData) {
+    const [orderLng, orderLat] = getCoords(selectedOrderData.pickupLocation, [105.86, 21.04]);
+    suggestedVehicles.slice(0, 3).forEach((vehicle, idx) => {
+      const [vLng, vLat] = getCoords(vehicle.lastKnownLocation, [105.83, 21.02]);
+      routeLines.push({
+        id: `route-${vehicle.id}`,
+        from: { lat: vLat, lng: vLng },
+        to: { lat: orderLat, lng: orderLng },
+        // Xe gợi ý đầu tiên → đường sáng hơn
+        color: idx === 0 ? 'var(--color-success)' : 'rgba(99,102,241,0.4)',
+        width: idx === 0 ? 3 : 1.5,
+        dashed: idx > 0,
+      });
+    });
+  }
+
+  const allMarkers = [...vehicleMarkers, ...orderMarkers];
+
   return (
     <main className="dispatch-map-area">
-      <div className="map-placeholder">
+      <div className="map-container-inner">
         <div className="map-overlay-top">
           <div className="map-search card">
             <Navigation size={18} />
             <input type="text" placeholder="Search map location..." />
           </div>
+          {/* Legend khi đang trong Smart Suggest mode */}
+          {selectedOrderData && suggestedVehicles.length > 0 && (
+            <div className="map-legend card">
+              <div className="legend-item">
+                <span className="legend-dot" style={{ background: 'var(--color-success)' }} />
+                <span>Xe gợi ý (gần nhất)</span>
+              </div>
+              <div className="legend-item">
+                <span className="legend-dot" style={{ background: 'var(--color-warning)' }} />
+                <span>Điểm lấy hàng</span>
+              </div>
+            </div>
+          )}
         </div>
 
-        <div className="mock-map">
-          <div className="map-pin vehicle-pin" style={{ top: '30%', left: '40%' }}>
-            <Truck size={20} />
-            <div className="pin-label">VN-102</div>
-          </div>
-          <div className="map-pin order-pin" style={{ top: '50%', left: '60%' }}>
-            <Package size={20} />
-            <div className="pin-label">ORD-8289</div>
-          </div>
-          <div className="map-grid-pattern" />
+        <div className="real-map-wrapper">
+          <MapBox 
+            markers={allMarkers}
+            lines={routeLines}
+            zoom={13} 
+            selectedMarkerId={selectedMarkerId} 
+          />
         </div>
 
         <div className="map-overlay-bottom">
@@ -53,13 +148,20 @@ export function DispatchMapPanel({ clusterView, onToggleClusterView }: DispatchM
           border-radius: var(--radius-md);
           overflow: hidden;
           border: 1px solid var(--color-border);
+          height: 100%;
+          min-height: 500px;
         }
 
-        .map-placeholder {
+        .map-container-inner {
           width: 100%;
           height: 100%;
-          display: flex;
-          flex-direction: column;
+          position: relative;
+        }
+
+        .real-map-wrapper {
+          position: absolute;
+          inset: 0;
+          z-index: 1;
         }
 
         .map-overlay-top {
@@ -68,6 +170,9 @@ export function DispatchMapPanel({ clusterView, onToggleClusterView }: DispatchM
           left: var(--space-lg);
           right: var(--space-lg);
           z-index: 10;
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-sm);
         }
 
         .map-search {
@@ -88,39 +193,34 @@ export function DispatchMapPanel({ clusterView, onToggleClusterView }: DispatchM
           font-size: 14px;
         }
 
-        .mock-map {
-          flex: 1;
-          position: relative;
-          background: radial-gradient(circle, #1a1a1a 1px, transparent 1px);
-          background-size: 30px 30px;
-        }
-
-        .map-pin {
-          position: absolute;
+        .map-legend {
           display: flex;
-          flex-direction: column;
+          gap: var(--space-md);
+          padding: 8px var(--space-md);
+          max-width: fit-content;
+          background: rgba(18, 33, 49, 0.9);
+          backdrop-filter: blur(10px);
+          font-size: 12px;
+          color: var(--color-text-dim);
+          animation: fadeIn 0.2s ease;
+        }
+
+        .legend-item {
+          display: flex;
           align-items: center;
-          gap: 4px;
-          animation: pulse-glow 2s infinite;
+          gap: 6px;
         }
 
-        .vehicle-pin { color: var(--color-primary-light); }
-        .order-pin { color: var(--color-warning); }
-
-        .pin-label {
-          background: rgba(0, 0, 0, 0.8);
-          padding: 2px 6px;
-          border-radius: 4px;
-          font-size: 10px;
-          font-weight: 700;
-          color: white;
-          white-space: nowrap;
+        .legend-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          flex-shrink: 0;
         }
 
-        @keyframes pulse-glow {
-          0% { filter: drop-shadow(0 0 2px currentColor); }
-          50% { filter: drop-shadow(0 0 10px currentColor); }
-          100% { filter: drop-shadow(0 0 2px currentColor); }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-4px); }
+          to { opacity: 1; transform: translateY(0); }
         }
 
         .map-overlay-bottom {

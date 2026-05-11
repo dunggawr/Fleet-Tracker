@@ -1,3 +1,19 @@
+## [2026-05-11] - Admin Dashboard Polishing & Build Stability (Phase 11)
+### Added
+- **Frontend (Admin Dashboard)**:
+    - Cải thiện trải nghiệm người dùng với hiệu ứng tương tác (scale, hover states) cho toàn bộ hệ thống `Button`.
+    - Tích hợp Menu Dropdown cho các hành động nhanh (Action) trong bảng điều khiển Live Alerts.
+    - Hoàn thiện điều hướng cho các nút "View Reports" và "View All" trên Dashboard.
+
+### Fixed
+- **Frontend (Admin Dashboard)**:
+    - Khắc phục triệt để lỗi Recharts cảnh báo "negative width/height" bằng cơ chế `min-width: 0` trên các container biểu đồ.
+    - Giải quyết các lỗi TypeScript build nghiêm trọng:
+        - Implicit `any` type trong logic lọc phương tiện của Dashboard Page.
+        - Lỗi truy cập `props` của React component trong `Dropdown.tsx`.
+- **General**:
+    - Đảm bảo dự án đạt trạng thái "Production Ready" với lệnh build thành công.
+
 ## [2026-05-10] - Driver App Polishing & SOS Integration (Phase 10)
 ### Added
 - **Mobile (Driver App)**:

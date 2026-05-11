@@ -6,6 +6,7 @@ import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
 import { socketService } from '../lib/socket';
 import Toast from 'react-native-toast-message';
+import { useAuthStore } from '../store/useAuthStore';
 
 interface SosButtonProps {
   tripId?: string;
@@ -23,13 +24,34 @@ export const SosButton: React.FC<SosButtonProps> = ({ tripId }) => {
     
     setIsSending(true);
     try {
-      // Mock API call to alert dispatch
+      if (!tripId) {
+        throw new Error('No active trip to report incident for');
+      }
+
       const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      const token = useAuthStore.getState()?.token;
+      if (!token) throw new Error('Authentication token not found');
+
+      const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001/api';
       
-      await socketService.sendSosAlert(tripId, description, {
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude
+      const response = await fetch(`${API_URL}/trips/${tripId}/incident`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          message: description || 'SOS Alert Triggered',
+          severity: 'critical',
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to report incident');
+      }
 
       Toast.show({
         type: 'success',

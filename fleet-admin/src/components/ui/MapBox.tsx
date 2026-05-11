@@ -1,7 +1,13 @@
 'use client';
 
-import React from 'react';
-import { MapPin, Navigation } from 'lucide-react';
+import React, { useMemo, useEffect, useState } from 'react';
+import { Map, Marker, Source, Layer, NavigationControl, FullscreenControl } from 'react-map-gl/mapbox';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import { MapPin, AlertTriangle } from 'lucide-react';
+
+// Mapbox token from environment variables
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
 interface Coordinate {
   lat: number;
@@ -17,168 +23,273 @@ export interface MapMarker {
   icon?: React.ReactNode;
 }
 
+export interface MapLine {
+  id: string;
+  from: { lat: number; lng: number };
+  to: { lat: number; lng: number };
+  color?: string;
+  width?: number;
+  dashed?: boolean;
+}
+
 interface MapBoxProps {
   path?: Coordinate[];
   markers?: MapMarker[];
+  lines?: MapLine[];
   zoom?: number;
+  selectedMarkerId?: string | null;
   className?: string;
 }
 
 /**
- * MapBox Placeholder Component
- * This is a visual placeholder for the interactive map.
- * In a production environment, this would use react-map-gl or leaflet.
+ * Interactive MapBox Component
+ * Uses react-map-gl for real-time fleet tracking and trip visualization.
  */
 export function MapBox({ 
   path = [], 
   markers = [], 
+  lines = [],
   zoom = 12, 
+  selectedMarkerId = null,
   className = "" 
 }: MapBoxProps) {
+  const mapRef = React.useRef<any>(null);
+  const [webGLSupported, setWebGLSupported] = useState(true);
+  const [viewState, setViewState] = useState({
+    latitude: 21.0285,
+    longitude: 105.8542,
+    zoom: zoom
+  });
+
+  useEffect(() => {
+    console.log('MapBox Initialized. Token:', MAPBOX_TOKEN ? 'Present (Starts with ' + MAPBOX_TOKEN.substring(0, 10) + '...)' : 'Missing');
+    console.log('Markers count:', markers.length);
+    
+    if (!mapboxgl.supported()) {
+      console.error('WebGL not supported by browser');
+      setWebGLSupported(false);
+    }
+  }, []);
+
+  // Update initial view state when markers or path change for the first time
+  useEffect(() => {
+    if (markers.length > 0) {
+      setViewState(prev => ({
+        ...prev,
+        latitude: markers[0].lat,
+        longitude: markers[0].lng
+      }));
+    } else if (path.length > 0) {
+      setViewState(prev => ({
+        ...prev,
+        latitude: path[0].lat,
+        longitude: path[0].lng
+      }));
+    }
+  }, [markers.length > 0, path.length > 0]); // Trigger when data arrives
+
+  // Fly to selected marker
+  useEffect(() => {
+    if (selectedMarkerId && mapRef.current) {
+      const selectedMarker = markers.find(m => m.id === selectedMarkerId);
+      if (selectedMarker) {
+        mapRef.current.flyTo({
+          center: [selectedMarker.lng, selectedMarker.lat],
+          zoom: Math.max(viewState.zoom, 14),
+          duration: 2000,
+          essential: true
+        });
+      }
+    }
+  }, [selectedMarkerId]);
+
+  // Create GeoJSON for path rendering
+  const routeData: any = useMemo(() => {
+    if (path.length < 2) return null;
+    return {
+      type: 'Feature',
+      properties: {},
+      geometry: {
+        type: 'LineString',
+        coordinates: path.map(p => [p.lng, p.lat])
+      }
+    };
+  }, [path]);
+
   return (
-    <div className={`map-container ${className}`}>
-      <div className="map-grid-overlay" />
-      
-      {/* Simulate a path */}
-      <svg className="path-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
-        <polyline
-          points="20,80 40,60 60,70 80,20"
-          fill="none"
-          stroke="var(--color-primary)"
-          strokeWidth="0.5"
-          strokeDasharray="2,1"
-          className="animated-path"
-        />
-      </svg>
+    <div className={`map-wrapper ${className}`}>
+      <Map
+        {...viewState}
+        ref={mapRef}
+        onMove={evt => setViewState(evt.viewState)}
+        mapboxAccessToken={MAPBOX_TOKEN}
+        mapLib={mapboxgl}
+        mapStyle="mapbox://styles/mapbox/streets-v12"
+        style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}
+      >
+        <NavigationControl position="top-right" />
+        <FullscreenControl position="top-right" />
 
-      {/* Markers */}
-      <div className="marker marker-start" style={{ left: '20%', top: '80%' }}>
-        <div className="marker-dot" style={{ background: 'var(--color-primary)' }} />
-        <div className="marker-label">Start</div>
-      </div>
-      
-      <div className="marker marker-end" style={{ left: '80%', top: '20%' }}>
-        <div className="marker-dot" style={{ background: 'var(--color-danger)' }} />
-        <div className="marker-label">End</div>
-      </div>
+        {/* Path Layer (trip route) */}
+        {routeData && (
+          <Source id="trip-route" type="geojson" data={routeData}>
+            <Layer
+              id="route-line"
+              type="line"
+              paint={{
+                'line-color': '#6366f1',
+                'line-width': 4,
+                'line-opacity': 0.8
+              }}
+              layout={{
+                'line-join': 'round',
+                'line-cap': 'round'
+              }}
+            />
+          </Source>
+        )}
 
-      <div className="map-controls">
-        <div className="control-btn">+</div>
-        <div className="control-btn">-</div>
-      </div>
+        {/* Dispatch suggestion route lines (vehicle → order pickup) */}
+        {lines.map((line) => {
+          const geojson: any = {
+            type: 'Feature',
+            properties: {},
+            geometry: {
+              type: 'LineString',
+              coordinates: [
+                [line.from.lng, line.from.lat],
+                [line.to.lng, line.to.lat],
+              ],
+            },
+          };
+          const dashArray = line.dashed ? [4, 3] : [1];
+          return (
+            <Source key={line.id} id={line.id} type="geojson" data={geojson}>
+              <Layer
+                id={`line-${line.id}`}
+                type="line"
+                paint={{
+                  'line-color': line.color || '#6366f1',
+                  'line-width': line.width ?? 2,
+                  'line-opacity': 0.75,
+                  'line-dasharray': dashArray,
+                }}
+                layout={{ 'line-join': 'round', 'line-cap': 'round' }}
+              />
+            </Source>
+          );
+        })}
 
-      <div className="map-status">
-        <Navigation size={12} className="text-primary animate-pulse" />
-        <span>Live Preview Mode</span>
-      </div>
+        {/* Markers */}
+        {markers.map((marker) => (
+          <Marker
+            key={marker.id}
+            latitude={marker.lat}
+            longitude={marker.lng}
+            anchor="bottom"
+          >
+            <div className={`custom-marker ${selectedMarkerId === marker.id ? 'is-selected' : ''}`}>
+              {marker.label && (
+                <div className="marker-tooltip">
+                  {marker.label}
+                </div>
+              )}
+              <div className="marker-icon" style={{ color: marker.color || 'var(--color-primary)' }}>
+                {marker.icon || <MapPin size={selectedMarkerId === marker.id ? 32 : 24} fill="currentColor" stroke="white" strokeWidth={1} />}
+              </div>
+            </div>
+          </Marker>
+        ))}
+      </Map>
+
+      {!webGLSupported && (
+        <div className="token-error">
+          <div className="error-content">
+            <AlertTriangle color="var(--color-danger)" size={32} />
+            <h3>WebGL Not Supported</h3>
+            <p>Your browser or hardware does not support WebGL, which is required for the map.</p>
+          </div>
+        </div>
+      )}
+
+      {!MAPBOX_TOKEN && (
+        <div className="token-error">
+          <div className="error-content">
+            <h3>Mapbox Token Missing</h3>
+            <p>Please provide NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN in .env.local</p>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
-        .map-container {
+        .map-wrapper {
           position: relative;
-          background: #0f172a;
-          background-image: 
-            linear-gradient(rgba(30, 41, 59, 0.5) 1px, transparent 1px),
-            linear-gradient(90px, rgba(30, 41, 59, 0.5) 1px, transparent 1px);
-          background-size: 20px 20px;
-          min-height: 300px;
           width: 100%;
-          overflow: hidden;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+          height: 100%;
+          min-height: 300px;
           border-radius: inherit;
+          overflow: hidden;
+          background: #0f172a;
         }
 
-        .map-grid-overlay {
-          position: absolute;
-          inset: 0;
-          background: radial-gradient(circle at center, transparent 0%, rgba(15, 23, 42, 0.8) 100%);
+        .custom-marker {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          cursor: pointer;
+        }
+
+        .marker-tooltip {
+          background: rgba(15, 23, 42, 0.95);
+          color: white;
+          font-size: 10px;
+          font-weight: 500;
+          padding: 2px 8px;
+          border-radius: 4px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          margin-bottom: 4px;
+          white-space: nowrap;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
           pointer-events: none;
         }
 
-        .path-svg {
+        .marker-icon {
+          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+          transition: transform 0.2s ease;
+        }
+
+        .marker-icon:hover {
+          transform: scale(1.1);
+        }
+
+        .token-error {
           position: absolute;
           inset: 0;
-          width: 100%;
-          height: 100%;
-          opacity: 0.6;
-        }
-
-        .animated-path {
-          stroke-dashoffset: 100;
-          animation: dash 20s linear infinite;
-        }
-
-        @keyframes dash {
-          to {
-            stroke-dashoffset: 0;
-          }
-        }
-
-        .marker {
-          position: absolute;
-          transform: translate(-50%, -100%);
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 4px;
-          z-index: 10;
-        }
-
-        .marker-dot {
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
-          border: 2px solid white;
-          box-shadow: 0 0 10px rgba(0,0,0,0.5);
-        }
-
-        .marker-label {
-          font-size: 10px;
-          color: white;
-          background: rgba(15, 23, 42, 0.8);
-          padding: 2px 6px;
-          border-radius: 4px;
-          white-space: nowrap;
-          border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .map-controls {
-          position: absolute;
-          top: 10px;
-          right: 10px;
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-
-        .control-btn {
-          width: 24px;
-          height: 24px;
-          background: rgba(30, 41, 59, 0.9);
-          border: 1px solid rgba(255,255,255,0.1);
-          color: white;
           display: flex;
           align-items: center;
           justify-content: center;
-          border-radius: 4px;
-          cursor: pointer;
-          font-size: 16px;
+          background: rgba(15, 23, 42, 0.8);
+          backdrop-filter: blur(4px);
+          z-index: 100;
         }
 
-        .map-status {
-          position: absolute;
-          bottom: 10px;
-          left: 10px;
-          background: rgba(15, 23, 42, 0.9);
-          padding: 4px 8px;
-          border-radius: 20px;
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 11px;
-          color: #94a3b8;
-          border: 1px solid rgba(255,255,255,0.1);
+        .error-content {
+          text-align: center;
+          padding: 24px;
+          background: var(--color-surface);
+          border: 1px solid var(--color-danger);
+          border-radius: 12px;
+          color: white;
+        }
+
+        .error-content h3 {
+          color: var(--color-danger);
+          margin-bottom: 8px;
+        }
+
+        .error-content p {
+          color: var(--color-text-dim);
+          font-size: 14px;
         }
       `}</style>
     </div>

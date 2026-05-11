@@ -7,7 +7,10 @@ import {
   Filter, 
   Edit2, 
   Trash2, 
-  Eye 
+  Eye,
+  MoreVertical,
+  Navigation,
+  UserPlus
 } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
 import { Badge } from '@/components/ui/Badge';
@@ -15,6 +18,7 @@ import { SearchInput } from '@/components/ui/SearchInput';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Button } from '@/components/ui/Button';
+import { Dropdown } from '@/components/ui/Dropdown';
 
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
@@ -22,22 +26,32 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useVehicles } from '@/hooks/use-vehicles';
+import { useDrivers } from '@/hooks/use-drivers';
 import { Vehicle } from '@/types';
+import { useRouter } from 'next/navigation';
 
 const vehicleSchema = z.object({
   plateNumber: z.string().min(1, 'Plate number is required'),
   type: z.enum(['small', 'medium', 'large']),
   status: z.enum(['available', 'delivering', 'maintenance']),
   maxCapacityKg: z.number().min(100, 'Minimum capacity is 100kg'),
+  driverId: z.string().uuid().optional().nullable(),
 });
 
 type VehicleFormValues = z.infer<typeof vehicleSchema>;
 
 export default function VehiclesPage() {
+  const router = useRouter();
   const { vehicles, isLoading, createVehicle, updateVehicle, deleteVehicle, isCreating, isUpdating, isDeleting } = useVehicles();
+  const { drivers } = useDrivers();
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [typeFilter, setTypeFilter] = React.useState<string>('all');
+  const [statusFilter, setStatusFilter] = React.useState<string>('all');
   const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [isAssignModalOpen, setIsAssignModalOpen] = React.useState(false);
   const [selectedVehicle, setSelectedVehicle] = React.useState<Vehicle | null>(null);
+  const [vehicleToAssign, setVehicleToAssign] = React.useState<Vehicle | null>(null);
+  const [assignedDriverId, setAssignedDriverId] = React.useState('');
   const [vehicleToDelete, setVehicleToDelete] = React.useState<Vehicle | null>(null);
   const isEditing = Boolean(selectedVehicle);
 
@@ -47,12 +61,26 @@ export default function VehiclesPage() {
       status: 'available',
       type: 'medium',
       maxCapacityKg: 1000,
+      driverId: '',
     }
   });
 
+  const sortedDrivers = React.useMemo(() => {
+    return [...drivers].sort((left, right) => {
+      if (left.status === right.status) {
+        return left.fullName.localeCompare(right.fullName);
+      }
+
+      if (left.status === 'available') return -1;
+      if (right.status === 'available') return 1;
+
+      return left.fullName.localeCompare(right.fullName);
+    });
+  }, [drivers]);
+
   const openCreateModal = () => {
     setSelectedVehicle(null);
-    reset({ plateNumber: '', type: 'medium', status: 'available', maxCapacityKg: 1000 });
+    reset({ plateNumber: '', type: 'medium', status: 'available', maxCapacityKg: 1000, driverId: '' });
     setIsModalOpen(true);
   };
 
@@ -63,8 +91,15 @@ export default function VehiclesPage() {
       type: vehicle.type,
       status: vehicle.status,
       maxCapacityKg: vehicle.maxCapacityKg || 1000,
+      driverId: vehicle.driverId || '',
     });
     setIsModalOpen(true);
+  };
+
+  const openAssignModal = (vehicle: Vehicle) => {
+    setVehicleToAssign(vehicle);
+    setAssignedDriverId(vehicle.driverId || '');
+    setIsAssignModalOpen(true);
   };
 
   const closeModal = () => {
@@ -73,12 +108,23 @@ export default function VehiclesPage() {
     reset();
   };
 
+  const closeAssignModal = () => {
+    setIsAssignModalOpen(false);
+    setVehicleToAssign(null);
+    setAssignedDriverId('');
+  };
+
   const onSubmit = async (data: VehicleFormValues) => {
     try {
+      const payload = {
+        ...data,
+        driverId: data.driverId || undefined,
+      };
+
       if (selectedVehicle) {
-        await updateVehicle({ id: selectedVehicle.id, ...data });
+        await updateVehicle({ id: selectedVehicle.id, ...payload });
       } else {
-        await createVehicle(data);
+        await createVehicle(payload);
       }
       closeModal();
     } catch (err) {
@@ -86,10 +132,30 @@ export default function VehiclesPage() {
     }
   };
 
-  const filteredVehicles = vehicles.filter(v => 
-    v.plateNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    v.driver?.fullName?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const onAssignDriver = async () => {
+    try {
+      if (!vehicleToAssign) return;
+
+      await updateVehicle({
+        id: vehicleToAssign.id,
+        driverId: assignedDriverId || undefined,
+      });
+
+      closeAssignModal();
+    } catch (err) {
+      console.error('Failed to assign driver:', err);
+    }
+  };
+
+  const filteredVehicles = vehicles.filter((v: Vehicle) => {
+    const matchesSearch = v.plateNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      v.driver?.fullName?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesType = typeFilter === 'all' || v.type === typeFilter;
+    const matchesStatus = statusFilter === 'all' || v.status === statusFilter;
+    
+    return matchesSearch && matchesType && matchesStatus;
+  });
 
   const columns = [
     { header: 'Plate Number', accessor: 'plateNumber' as keyof Vehicle },
@@ -110,11 +176,23 @@ export default function VehiclesPage() {
     {
       header: 'Actions',
       accessor: (v: Vehicle) => (
-        <div className="action-buttons">
-          <Button variant="ghost" size="sm" icon={<Eye size={16} />} aria-label={`View ${v.plateNumber}`} />
-          <Button variant="ghost" size="sm" icon={<Edit2 size={16} />} aria-label={`Edit ${v.plateNumber}`} onClick={() => openEditModal(v)} />
-          <Button variant="ghost" size="sm" icon={<Trash2 size={16} />} className="text-danger" aria-label={`Delete ${v.plateNumber}`} onClick={() => setVehicleToDelete(v)} />
-        </div>
+        <Dropdown align="right" trigger={
+          <Button variant="ghost" size="sm" icon={<MoreVertical size={16} />} />
+        }>
+            <button className="dropdown-item" onClick={() => openAssignModal(v)}>
+              <UserPlus size={16} /> {v.driver ? 'Change Driver' : 'Assign Driver'}
+            </button>
+          <button className="dropdown-item" onClick={() => router.push(`/dispatch?vehicleId=${v.id}`)}>
+            <Navigation size={16} /> Track Vehicle
+          </button>
+          <button className="dropdown-item" onClick={() => openEditModal(v)}>
+            <Edit2 size={16} /> Edit Details
+          </button>
+          <div className="dropdown-divider" />
+          <button className="dropdown-item danger" onClick={() => setVehicleToDelete(v)}>
+            <Trash2 size={16} /> Delete Vehicle
+          </button>
+        </Dropdown>
       )
     }
   ];
@@ -174,8 +252,54 @@ export default function VehiclesPage() {
               </select>
               {errors.status && <p className="error-text">{errors.status.message}</p>}
             </div>
+            <div className="form-group">
+              <label className="label">Assigned Driver</label>
+              <select className="select" {...register('driverId')}>
+                <option value="">Unassigned</option>
+                {sortedDrivers.map((driver) => (
+                  <option key={driver.id} value={driver.id}>
+                    {driver.fullName} ({driver.status.replace('_', ' ')})
+                  </option>
+                ))}
+              </select>
+              {errors.driverId && <p className="error-text">Invalid driver selection</p>}
+            </div>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        isOpen={isAssignModalOpen}
+        onClose={closeAssignModal}
+        title={vehicleToAssign ? `${vehicleToAssign.plateNumber} - Assign Driver` : 'Assign Driver'}
+        size="sm"
+        footer={(
+          <>
+            <Button variant="secondary" onClick={closeAssignModal}>Cancel</Button>
+            <Button variant="primary" onClick={onAssignDriver} isLoading={isUpdating}>Save Assignment</Button>
+          </>
+        )}
+      >
+        <div className="form-grid">
+          <div className="form-group">
+            <label className="label">Select Driver</label>
+            <select
+              className="select"
+              value={assignedDriverId}
+              onChange={(e) => setAssignedDriverId(e.target.value)}
+            >
+              <option value="">Unassigned</option>
+              {sortedDrivers.map((driver) => (
+                <option key={driver.id} value={driver.id}>
+                  {driver.fullName} ({driver.status.replace('_', ' ')})
+                </option>
+              ))}
+            </select>
+          </div>
+          <p className="text-dim">
+            This will update the vehicle&apos;s assigned driver without changing other vehicle details.
+          </p>
+        </div>
       </Modal>
 
       <ConfirmDialog
@@ -200,7 +324,26 @@ export default function VehiclesPage() {
           onChange={(e) => setSearchQuery(e.target.value)}
         />
         <div className="filter-actions">
-          <Button variant="secondary" size="md" icon={<Filter size={18} />}>Filters</Button>
+          <select 
+            className="select-filter" 
+            value={typeFilter} 
+            onChange={(e) => setTypeFilter(e.target.value)}
+          >
+            <option value="all">All Types</option>
+            <option value="small">Small</option>
+            <option value="medium">Medium</option>
+            <option value="large">Large</option>
+          </select>
+          <select 
+            className="select-filter" 
+            value={statusFilter} 
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="all">All Status</option>
+            <option value="available">Available</option>
+            <option value="delivering">Delivering</option>
+            <option value="maintenance">Maintenance</option>
+          </select>
           <div className="divider" />
           <span className="results-count">Showing <b>{filteredVehicles.length}</b> vehicles</span>
         </div>
@@ -212,7 +355,11 @@ export default function VehiclesPage() {
             <LoadingSpinner size={32} />
           </div>
         ) : (
-          <DataTable data={filteredVehicles} columns={columns} />
+          <DataTable 
+            data={filteredVehicles} 
+            columns={columns} 
+            onRowClick={(vehicle) => openEditModal(vehicle as Vehicle)}
+          />
         )}
       </section>
 
@@ -292,6 +439,22 @@ export default function VehiclesPage() {
         }
 
         .select:focus {
+          border-color: var(--color-primary);
+        }
+
+        .select-filter {
+          background: var(--color-surface-low);
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-default);
+          color: var(--color-text);
+          padding: 8px 12px;
+          font: var(--font-label-md);
+          outline: none;
+          cursor: pointer;
+          transition: border-color 0.2s;
+        }
+
+        .select-filter:focus {
           border-color: var(--color-primary);
         }
 

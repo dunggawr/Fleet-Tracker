@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { MapPin, ChevronRight } from 'lucide-react';
+import { MapPin, ChevronRight, Layers } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { SearchInput } from '@/components/ui/SearchInput';
@@ -12,6 +12,10 @@ export interface DispatchOrderGroup {
   key: string;
   label: string;
   orders: Order[];
+  /** True khi nhóm này do API /dispatch/cluster tạo ra (PostGIS ST_DWithin 3km) */
+  isClusterGroup?: boolean;
+  /** Tọa độ trung tâm của cluster (từ API) */
+  centroid?: { lat: number; lng: number };
 }
 
 interface DispatchOrdersSidebarProps {
@@ -46,53 +50,69 @@ export function DispatchOrdersSidebar({
           <div className="flex items-center justify-center h-32">
             <LoadingSpinner size={24} />
           </div>
-        ) : groups.length === 0 ? (
-          <div className="text-center py-8 text-dim">No pending orders</div>
         ) : (
           <>
-            <div className="dispatch-search">
-              <SearchInput
-                placeholder="Search pending orders..."
-                value={searchQuery}
-                onChange={(event) => onSearchQueryChange(event.target.value)}
-              />
-            </div>
-            {groups.map((group) => (
-              <div key={group.key} className="cluster-group">
-                {clusterView && (
-                  <div className="cluster-header">
-                    <span>{group.label}</span>
-                    <Badge variant="neutral">{group.orders.length}</Badge>
-                  </div>
-                )}
-                {group.orders.map((order) => (
-                  <div
-                    key={order.id}
-                    className={`dispatch-card ${selectedOrder === order.id ? 'selected' : ''}`}
-                    onClick={() => onSelectOrder(order.id)}
-                  >
-                    <div className="card-header">
-                      <span className="order-id">{order.id.split('-')[0]}</span>
-                      <span className="order-weight">{order.weightKg}kg</span>
-                    </div>
-                    <div className="order-route">
-                      <div className="point">
-                        <MapPin size={12} className="text-primary" />
-                        <span>{order.pickupAddress}</span>
-                      </div>
-                      <ChevronRight size={14} className="text-dim" />
-                      <div className="point">
-                        <MapPin size={12} className="text-success" />
-                        <span>{order.deliveryAddress}</span>
-                      </div>
-                    </div>
-                    <div className="card-footer">
-                      <Button variant="ghost" size="sm">Details</Button>
-                    </div>
-                  </div>
-                ))}
+            {(pendingOrderCount > 0 || searchQuery) && (
+              <div className="dispatch-search">
+                <SearchInput
+                  placeholder="Search pending orders..."
+                  value={searchQuery}
+                  onChange={(event) => onSearchQueryChange(event.target.value)}
+                />
               </div>
-            ))}
+            )}
+            
+            {groups.length === 0 ? (
+              <div className="text-center py-8 text-dim">
+                {searchQuery ? (
+                  <>No orders matching "<strong>{searchQuery}</strong>"</>
+                ) : (
+                  'No pending orders'
+                )}
+              </div>
+            ) : (
+              groups.map((group) => (
+                <div key={group.key} className="cluster-group">
+                  {clusterView && (
+                    <div className="cluster-header">
+                      <div className="cluster-header-left">
+                        {group.isClusterGroup && <Layers size={12} className="cluster-icon" />}
+                        <span>{group.label}</span>
+                      </div>
+                      <Badge variant={group.isClusterGroup ? 'warning' : 'neutral'}>
+                        {group.orders.length}
+                      </Badge>
+                    </div>
+                  )}
+                  {group.orders.map((order) => (
+                    <div
+                      key={order.id}
+                      className={`dispatch-card ${selectedOrder === order.id ? 'selected' : ''}`}
+                      onClick={() => onSelectOrder(order.id)}
+                    >
+                      <div className="card-header">
+                        <span className="order-id">{order.id.split('-')[0]}</span>
+                        <span className="order-weight">{order.weightKg}kg</span>
+                      </div>
+                      <div className="order-route">
+                        <div className="point">
+                          <MapPin size={12} className="text-primary" />
+                          <span>{order.pickupAddress}</span>
+                        </div>
+                        <ChevronRight size={14} className="text-dim" />
+                        <div className="point">
+                          <MapPin size={12} className="text-success" />
+                          <span>{order.deliveryAddress}</span>
+                        </div>
+                      </div>
+                      <div className="card-footer">
+                        <Button variant="ghost" size="sm">Details</Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))
+            )}
           </>
         )}
       </div>
@@ -120,6 +140,16 @@ export function DispatchOrdersSidebar({
           color: var(--color-text-muted);
           text-transform: uppercase;
           letter-spacing: 0.05em;
+        }
+
+        .cluster-header-left {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+        }
+
+        .cluster-icon {
+          color: var(--color-warning);
         }
 
         .dispatch-card {

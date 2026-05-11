@@ -1,5 +1,5 @@
-import React from 'react';
-import { StyleSheet, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, TouchableOpacity, Image, ScrollView, Alert, TextInput, Modal, ActivityIndicator } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useTripStore } from '@/store/useTripStore';
@@ -17,14 +17,96 @@ import {
   Trophy,
   Activity,
   Clock,
-  Map
+  Map,
+  Lock,
+  X,
+  Check
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import Toast from 'react-native-toast-message';
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 export default function ProfileScreen() {
-  const { user, logout } = useAuthStore();
+  const { user, logout, token } = useAuthStore();
   const { tripHistory, activeTrip } = useTripStore();
   const router = useRouter();
+  
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isChanging, setIsChanging] = useState(false);
+
+  const handleChangePassword = async () => {
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      Toast.show({
+        type: 'error',
+        text1: 'Lỗi',
+        text2: 'Vui lòng nhập đầy đủ mật khẩu',
+      });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      Toast.show({
+        type: 'error',
+        text1: 'Lỗi',
+        text2: 'Mật khẩu mới không khớp',
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      Toast.show({
+        type: 'error',
+        text1: 'Lỗi',
+        text2: 'Mật khẩu mới phải ít nhất 6 ký tự',
+      });
+      return;
+    }
+
+    setIsChanging(true);
+    try {
+      const response = await fetch(`${API_URL}/auth/change-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          oldPassword,
+          newPassword,
+        }),
+      });
+
+      const data = await response.json();
+      const result = data?.data ?? data;
+
+      if (!response.ok) {
+        throw new Error(result?.message || 'Đổi mật khẩu thất bại');
+      }
+
+      Toast.show({
+        type: 'success',
+        text1: 'Thành công',
+        text2: 'Mật khẩu đã được đổi',
+      });
+
+      setShowPasswordModal(false);
+      setOldPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      Toast.show({
+        type: 'error',
+        text1: 'Lỗi',
+        text2: error.message || 'Đổi mật khẩu thất bại',
+      });
+    } finally {
+      setIsChanging(false);
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -194,6 +276,17 @@ export default function ProfileScreen() {
             <ChevronRight size={20} color="#475569" />
           </TouchableOpacity>
           
+          <TouchableOpacity 
+            style={[styles.menuItem, styles.borderTop]}
+            onPress={() => setShowPasswordModal(true)}
+          >
+            <View style={styles.menuItemLeft}>
+              <Lock size={20} color="#94a3b8" />
+              <Text style={styles.menuItemText}>Change Password</Text>
+            </View>
+            <ChevronRight size={20} color="#475569" />
+          </TouchableOpacity>
+          
           <TouchableOpacity style={[styles.menuItem, styles.borderTop]}>
             <View style={styles.menuItemLeft}>
               <Info size={20} color="#94a3b8" />
@@ -210,6 +303,99 @@ export default function ProfileScreen() {
       </TouchableOpacity>
       
       <Text style={styles.versionText}>Version 1.0.2 (Build 20240510)</Text>
+
+      <Modal
+        visible={showPasswordModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => !isChanging && setShowPasswordModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Change Password</Text>
+              <TouchableOpacity 
+                onPress={() => !isChanging && setShowPasswordModal(false)}
+                disabled={isChanging}
+              >
+                <X size={24} color="#e2e8f0" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Current Password</Text>
+              <View style={styles.passwordInputContainer}>
+                <Lock size={16} color="#94a3b8" />
+                <TextInput
+                  style={styles.passwordInput}
+                  placeholder="Enter current password"
+                  placeholderTextColor="#64748b"
+                  secureTextEntry={true}
+                  value={oldPassword}
+                  onChangeText={setOldPassword}
+                  editable={!isChanging}
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>New Password</Text>
+              <View style={styles.passwordInputContainer}>
+                <Lock size={16} color="#94a3b8" />
+                <TextInput
+                  style={styles.passwordInput}
+                  placeholder="Enter new password (min 6 chars)"
+                  placeholderTextColor="#64748b"
+                  secureTextEntry={true}
+                  value={newPassword}
+                  onChangeText={setNewPassword}
+                  editable={!isChanging}
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Confirm Password</Text>
+              <View style={styles.passwordInputContainer}>
+                <Lock size={16} color="#94a3b8" />
+                <TextInput
+                  style={styles.passwordInput}
+                  placeholder="Confirm new password"
+                  placeholderTextColor="#64748b"
+                  secureTextEntry={true}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  editable={!isChanging}
+                />
+              </View>
+            </View>
+
+            <View style={styles.modalButtonContainer}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setShowPasswordModal(false)}
+                disabled={isChanging}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.confirmButton, isChanging && styles.disabledButton]}
+                onPress={handleChangePassword}
+                disabled={isChanging}
+              >
+                {isChanging ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <>
+                    <Check size={16} color="#fff" />
+                    <Text style={styles.confirmButtonText}>Update Password</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -422,5 +608,93 @@ const styles = StyleSheet.create({
     padding: 20,
     textAlign: 'center',
     fontStyle: 'italic',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#1e293b',
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+    padding: 25,
+    maxHeight: '90%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 25,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    color: '#94a3b8',
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  passwordInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0f172a',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.2)',
+    gap: 10,
+  },
+  passwordInput: {
+    flex: 1,
+    color: '#fff',
+    fontSize: 14,
+    paddingVertical: 12,
+  },
+  modalButtonContainer: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 30,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+  },
+  cancelButton: {
+    backgroundColor: '#334155',
+    borderWidth: 1,
+    borderColor: '#475569',
+  },
+  cancelButtonText: {
+    color: '#e2e8f0',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  confirmButton: {
+    backgroundColor: '#6366f1',
+  },
+  confirmButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
 });

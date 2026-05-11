@@ -11,13 +11,17 @@ import { TripOrder } from '../entities/trip-order.entity';
 import { Order, OrderStatus } from '../entities/order.entity';
 import { Vehicle, VehicleStatus } from '../entities/vehicle.entity';
 import { Driver, DriverStatus } from '../entities/driver.entity';
+import { Alert, AlertType, AlertSeverity } from '../entities/alert.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ReportIncidentDto } from './dto/trip.dto';
 
 @Injectable()
 export class TripsService {
   constructor(
     @InjectRepository(Trip)
     private tripRepository: Repository<Trip>,
+    @InjectRepository(Alert)
+    private alertRepository: Repository<Alert>,
     private dataSource: DataSource,
     private eventEmitter: EventEmitter2,
   ) {}
@@ -223,5 +227,41 @@ export class TripsService {
         `Invalid transition from ${current} to ${next}`,
       );
     }
+  }
+
+  async reportIncident(tripId: string, dto: ReportIncidentDto, userId: string) {
+    const trip = await this.tripRepository.findOne({
+      where: { id: tripId },
+      relations: ['driver'],
+    });
+
+    if (!trip) {
+      throw new NotFoundException(`Trip with ID ${tripId} not found`);
+    }
+
+    if (trip.driver && trip.driver.userId !== userId) {
+      throw new ForbiddenException('You can only report incidents for your assigned trips');
+    }
+
+    const alert = this.alertRepository.create({
+      tripId,
+      vehicleId: trip.vehicleId,
+      driverId: trip.driverId,
+      type: AlertType.INCIDENT,
+      severity: dto.severity || AlertSeverity.HIGH,
+      message: dto.message,
+      location: dto.latitude && dto.longitude ? {
+        type: 'Point',
+        coordinates: [dto.longitude, dto.latitude]
+      } : null,
+      isResolved: false
+    });
+
+    const savedAlert = await this.alertRepository.save(alert);
+
+    // Emit event so the gateway can push socket messages
+    this.eventEmitter.emit('alert.created', savedAlert);
+
+    return savedAlert;
   }
 }
