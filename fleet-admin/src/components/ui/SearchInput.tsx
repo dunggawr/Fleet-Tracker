@@ -9,12 +9,18 @@ interface SearchInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 export function SearchInput({ label, className = '', ...props }: SearchInputProps) {
   return (
-    <div className="flex flex-col gap-1.5 w-full">
-      {label && <label className="text-xs font-medium text-text-muted">{label}</label>}
-      <div className="flex items-center gap-2 w-full px-3.5 py-2.5 bg-surface-low border border-outline-variant rounded-md transition-all duration-150 focus-within:border-primary focus-within:ring-3 focus-within:ring-primary/15">
+    <div className="flex flex-col gap-sm w-full">
+      {label && <label className="text-xs font-semibold text-text-dim uppercase tracking-wider">{label}</label>}
+      <div className={`
+        flex items-center gap-md w-full px-lg py-md 
+        bg-surface-low border border-outline-variant rounded-default 
+        transition-all duration-200 shadow-sm
+        focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10
+        ${className}
+      `}>
         <Search size={18} className="text-text-dim flex-none" />
         <input 
-          className={`w-full bg-transparent text-text text-sm outline-none placeholder:text-text-dim ${className}`} 
+          className="w-full bg-transparent text-text text-sm outline-none placeholder:text-text-dim/50" 
           {...props} 
         />
       </div>

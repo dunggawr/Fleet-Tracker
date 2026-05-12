@@ -97,7 +97,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-xl">
       <header className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-text">Dashboard Overview</h1>
@@ -112,7 +112,7 @@ export default function DashboardPage() {
         </Button>
       </header>
 
-      <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+      <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-lg">
         {stats.map((stat, idx) => (
           <StatCard 
             key={idx} 
@@ -122,8 +122,8 @@ export default function DashboardPage() {
         ))}
       </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6">
-        <section className="bg-surface p-6 rounded-xl border border-border shadow-md">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-lg">
+        <section className="bg-surface p-lg rounded-xl border border-border shadow-md">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-semibold text-text">Recent Orders</h3>
             <Button 
@@ -134,11 +134,11 @@ export default function DashboardPage() {
               View All <ArrowRight size={14} className="ml-1" />
             </Button>
           </div>
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-md">
             {recentOrders.map((order) => (
               <div 
                 key={order.id} 
-                className="flex items-center gap-4 p-4 bg-surface-low rounded-lg border border-border cursor-pointer transition-all hover:bg-surface-high hover:-translate-y-0.5 hover:border-primary-light"
+                className="flex items-center gap-lg p-lg bg-surface-low rounded-lg border border-border cursor-pointer transition-all hover:bg-surface-high hover:-translate-y-0.5 hover:border-primary-light"
                 onClick={() => router.push(`/dispatch?orderId=${order.id}`)}
               >
                 <div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center text-primary-light">
@@ -162,12 +162,12 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <section className="bg-surface p-6 rounded-xl border border-border shadow-md">
+        <section className="bg-surface p-lg rounded-xl border border-border shadow-md">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-semibold text-text">Live Alerts</h3>
             <Badge variant="danger" className="animate-pulse">Live</Badge>
           </div>
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-md">
             {alerts.length === 0 ? (
               <div className="text-text-dim text-center py-8 bg-surface-low rounded-lg border border-dashed border-border">
                 No active alerts
@@ -177,7 +177,7 @@ export default function DashboardPage() {
                 <div 
                   key={alert.id} 
                   className={`
-                    flex justify-between items-center p-4 bg-surface-low rounded-lg border-l-4 
+                    flex justify-between items-center p-lg bg-surface-low rounded-lg border-l-4 
                     ${alert.type === 'speed_violation' ? 'border-l-danger' : 
                       alert.type === 'route_deviation' ? 'border-l-warning' : 
                       alert.type === 'abnormal_stop' ? 'border-l-[#f97316]' : 'border-l-danger'}

@@ -53,7 +53,7 @@ export function DispatchOrdersSidebar({
         ) : (
           <>
             {(pendingOrderCount > 0 || searchQuery) && (
-              <div className="sticky top-0 bg-surface pb-sm -mt-md pt-md z-10">
+              <div className="sticky top-0 bg-surface pb-md -mt-md pt-md z-10">
                 <SearchInput
                   placeholder="Search pending orders..."
                   value={searchQuery}
@@ -72,7 +72,7 @@ export function DispatchOrdersSidebar({
               </div>
             ) : (
               groups.map((group) => (
-                <div key={group.key} className="flex flex-col gap-sm">
+                <div key={group.key} className="flex flex-col gap-md">
                   {clusterView && (
                     <div className="flex justify-between items-center text-[10px] text-text-muted uppercase tracking-widest font-medium">
                       <div className="flex items-center gap-1.5">

@@ -38,23 +38,23 @@ export function Modal({
       onClick={onClose}
     >
       <div 
-        className={`bg-surface border border-border rounded-lg flex flex-col max-h-[90vh] w-full shadow-xl animate-in fade-in zoom-in-95 slide-in-from-bottom-4 duration-200 ${sizeClasses[size]} ${className}`} 
+        className={`bg-surface border border-border/50 rounded-xl flex flex-col max-h-[90vh] w-full shadow-lg animate-in fade-in zoom-in-95 slide-in-from-bottom-8 duration-300 ease-out ${sizeClasses[size]} ${className}`} 
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
       >
-        <header className="p-lg border-b border-border flex justify-between items-center">
-          <h3 id="modal-title" className="text-h3 m-0 font-bold">{title}</h3>
+        <header className="px-xl py-lg border-b border-border flex justify-between items-center bg-surface-low/50 rounded-t-xl">
+          <h3 id="modal-title" className="text-xl font-bold tracking-tight">{title}</h3>
           <Button variant="ghost" size="sm" icon={<X size={20} />} onClick={onClose} aria-label="Close modal" />
         </header>
         
-        <div className="p-lg overflow-y-auto">
+        <div className="p-xl overflow-y-auto">
           {children}
         </div>
 
         {footer && (
-          <footer className="p-lg border-t border-border flex justify-end gap-md bg-surface-low rounded-b-lg">
+          <footer className="px-xl py-lg border-t border-border flex justify-end gap-lg bg-surface-low/50 rounded-b-xl">
             {footer}
           </footer>
         )}

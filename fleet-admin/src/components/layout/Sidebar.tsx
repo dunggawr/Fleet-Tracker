@@ -40,7 +40,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   return (
     <aside 
       className="fixed left-0 top-0 h-screen bg-surface border-r border-border flex flex-col transition-all duration-200 z-100"
-      style={{ width: collapsed ? '80px' : '260px' }}
+      style={{ width: collapsed ? 'var(--width-sidebar-collapsed)' : 'var(--width-sidebar)' }}
     >
       <div className={`h-header border-b border-border flex items-center justify-between px-lg ${collapsed ? "justify-center px-md" : ""}`}>
         <div className="flex items-center gap-sm">
@@ -72,7 +72,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
             <Link
               key={item.name}
               href={item.href}
-              className={`flex items-center gap-md p-3 px-md text-text-muted no-underline rounded-default transition-all relative font-medium text-body-md hover:bg-surface-high hover:text-text ${isActive ? "bg-primary/10 text-primary-light" : ""} ${collapsed ? "justify-center p-3" : ""}`}
+              className={`flex items-center gap-md p-md text-text-muted no-underline rounded-default transition-all relative font-medium text-body-md hover:bg-surface-high hover:text-text ${isActive ? "bg-primary/10 text-primary-light" : ""} ${collapsed ? "justify-center" : ""}`}
               title={collapsed ? item.name : undefined}
             >
               <Icon size={20} />
@@ -86,7 +86,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       <div className="p-lg px-sm border-t border-border flex flex-col gap-xs">
         <Link
           href="/settings"
-          className={`flex items-center gap-md p-3 px-md text-text-muted no-underline rounded-default transition-all relative font-medium text-body-md hover:bg-surface-high hover:text-text ${pathname.startsWith("/settings") ? "bg-primary/10 text-primary-light" : ""} ${collapsed ? "justify-center p-3" : ""}`}
+          className={`flex items-center gap-md p-md text-text-muted no-underline rounded-default transition-all relative font-medium text-body-md hover:bg-surface-high hover:text-text ${pathname.startsWith("/settings") ? "bg-primary/10 text-primary-light" : ""} ${collapsed ? "justify-center" : ""}`}
         >
           <Settings size={20} />
           {!collapsed && <span>Settings</span>}
@@ -95,7 +95,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
           )}
         </Link>
         <button 
-          className={`flex items-center gap-md p-3 px-md text-danger opacity-80 no-underline rounded-default transition-all relative font-medium text-body-md hover:bg-danger/10 hover:opacity-100 bg-transparent border-none w-full cursor-pointer ${collapsed ? "justify-center p-3" : ""}`} 
+          className={`flex items-center gap-md p-md py-lg text-danger opacity-80 no-underline rounded-default transition-all relative font-medium text-body-md hover:bg-danger/10 hover:opacity-100 bg-transparent border-none w-full cursor-pointer ${collapsed ? "justify-center" : ""}`} 
           onClick={logout}
         >
           <LogOut size={20} />

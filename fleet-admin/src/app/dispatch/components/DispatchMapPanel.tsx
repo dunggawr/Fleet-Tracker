@@ -124,7 +124,7 @@ export function DispatchMapPanel({
         </div>
 
         <div className="absolute bottom-lg right-lg z-10">
-          <div className="flex gap-xs p-sm glass rounded-md shadow-lg">
+          <div className="flex gap-sm p-md glass rounded-md shadow-lg">
             <Button variant="secondary" size="sm" icon={<Users size={14} />} onClick={onToggleClusterView}>
               {clusterView ? 'Cluster View' : 'List View'}
             </Button>

@@ -173,7 +173,7 @@ export default function OrdersPage() {
     { 
       header: 'Order ID', 
       accessor: (o: Order) => (
-        <div className="flex items-center gap-(--space-sm) text-primary-light font-semibold">
+        <div className="flex items-center gap-sm text-primary-light font-semibold">
           <Package size={16} />
           <span>{o.id.split('-')[0]}</span>
         </div>
@@ -182,15 +182,15 @@ export default function OrdersPage() {
     { 
       header: 'Route', 
       accessor: (o: Order) => (
-        <div className="flex items-center gap-(--space-md)">
-          <div className="flex items-center gap-1.5 text-sm max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap">
-            <MapPin size={12} className="text-primary" />
-            <span>{o.pickupAddress}</span>
+        <div className="flex items-center gap-lg">
+          <div className="flex items-center gap-md text-sm max-w-[180px] overflow-hidden text-ellipsis whitespace-nowrap">
+            <MapPin size={14} className="text-primary-light" />
+            <span className="font-medium">{o.pickupAddress}</span>
           </div>
-          <ChevronRight size={14} className="text-dim" />
-          <div className="flex items-center gap-1.5 text-sm max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap">
-            <MapPin size={12} className="text-success" />
-            <span>{o.deliveryAddress}</span>
+          <ChevronRight size={16} className="text-dim" />
+          <div className="flex items-center gap-md text-sm max-w-[180px] overflow-hidden text-ellipsis whitespace-nowrap">
+            <MapPin size={14} className="text-tertiary-light" />
+            <span className="font-medium">{o.deliveryAddress}</span>
           </div>
         </div>
       )
@@ -239,11 +239,11 @@ export default function OrdersPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-(--space-xl)">
+    <div className="flex flex-col gap-2xl">
       <header className="flex justify-between items-center">
-        <div>
+        <div className="space-y-1">
           <h1>Order Management</h1>
-          <p className="text-dim">Create, track and manage delivery orders for your fleet.</p>
+          <p className="text-dim text-sm">Create, track and manage delivery orders for your fleet.</p>
         </div>
         <Button variant="primary" icon={<Plus size={18} />} onClick={() => {
           setPickupCoord(null);
@@ -268,11 +268,11 @@ export default function OrdersPage() {
           </>
         )}
       >
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-(--space-xl) min-h-[450px]">
-          <form className="flex flex-col gap-(--space-xl)" onSubmit={handleSubmit(onSubmit)}>
-            <div className="flex flex-col gap-(--space-md)">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-xl min-h-[450px]">
+          <form className="flex flex-col gap-xl" onSubmit={handleSubmit(onSubmit)}>
+            <div className="flex flex-col gap-md">
               <h3 className="text-xs font-bold text-dim uppercase tracking-wider border-b border-border pb-1">General Info</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-(--space-md)">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-md">
                 <Input 
                   label="Weight (kg)" 
                   type="number"
@@ -289,10 +289,10 @@ export default function OrdersPage() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-(--space-md)">
-              <h3 className="text-xs font-bold text-dim uppercase tracking-wider border-b border-border pb-1">Route Selection</h3>
-              <div className="flex flex-col gap-(--space-md)">
-                <div className={`flex items-end gap-(--space-sm) p-(--space-sm) rounded-default transition-colors ${selectionMode === 'pickup' ? 'bg-primary-faint outline outline-primary' : ''}`}>
+            <div className="flex flex-col gap-lg">
+              <h3 className="text-xs font-bold text-dim uppercase tracking-wider border-b border-border pb-2">Route Selection</h3>
+              <div className="flex flex-col gap-lg">
+                <div className={`flex items-end gap-md p-md rounded-default transition-all duration-200 ${selectionMode === 'pickup' ? 'bg-primary/10 ring-1 ring-primary shadow-glow' : 'bg-surface-low'}`}>
                   <Input 
                     label="Pickup Address" 
                     placeholder="Click map to select location" 
@@ -312,7 +312,7 @@ export default function OrdersPage() {
                   </Button>
                 </div>
 
-                <div className={`flex items-end gap-(--space-sm) p-(--space-sm) rounded-default transition-colors ${selectionMode === 'delivery' ? 'bg-primary-faint outline outline-primary' : ''}`}>
+                <div className={`flex items-end gap-md p-md rounded-default transition-all duration-200 ${selectionMode === 'delivery' ? 'bg-primary/10 ring-1 ring-primary shadow-glow' : 'bg-surface-low'}`}>
                   <Input 
                     label="Delivery Address" 
                     placeholder="Click map to select location" 
@@ -335,8 +335,8 @@ export default function OrdersPage() {
             </div>
 
             {selectionMode !== 'none' && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-warning-faint text-warning rounded-default text-xs animate-pulse">
-                <LocateFixed size={14} />
+              <div className="flex items-center gap-md px-lg py-md bg-warning/10 text-warning rounded-default text-xs font-medium border border-warning/20 animate-pulse">
+                <LocateFixed size={16} />
                 <span>Click anywhere on the map to set <b>{selectionMode}</b> location</span>
               </div>
             )}
@@ -361,32 +361,32 @@ export default function OrdersPage() {
         title={`Order Details - ${viewingOrder?.id.split('-')[0]}`}
       >
         {viewingOrder && (
-          <div className="flex flex-col gap-(--space-lg) py-(--space-sm)">
-            <div className="flex justify-between items-center pb-(--space-md) border-b border-border">
-              <span className="text-dim font-(--font-label-md)">Status</span>
+          <div className="flex flex-col gap-lg py-sm">
+            <div className="flex justify-between items-center pb-lg border-b border-border">
+              <span className="text-xs font-bold text-dim uppercase tracking-wider">Status</span>
               <Badge variant={getStatusVariant(viewingOrder.status)}>
                 {viewingOrder.status.replace('_', ' ')}
               </Badge>
             </div>
-            <div className="flex justify-between items-center pb-(--space-md) border-b border-border">
-              <span className="text-dim font-(--font-label-md)">Pickup</span>
-              <span className="text-text font-medium">{viewingOrder.pickupAddress}</span>
+            <div className="flex justify-between items-center pb-lg border-b border-border">
+              <span className="text-xs font-bold text-dim uppercase tracking-wider">Pickup</span>
+              <span className="text-sm font-semibold text-right max-w-[60%]">{viewingOrder.pickupAddress}</span>
             </div>
-            <div className="flex justify-between items-center pb-(--space-md) border-b border-border">
-              <span className="text-dim font-(--font-label-md)">Delivery</span>
-              <span className="text-text font-medium">{viewingOrder.deliveryAddress}</span>
+            <div className="flex justify-between items-center pb-lg border-b border-border">
+              <span className="text-xs font-bold text-dim uppercase tracking-wider">Delivery</span>
+              <span className="text-sm font-semibold text-right max-w-[60%]">{viewingOrder.deliveryAddress}</span>
             </div>
-            <div className="flex justify-between items-center pb-(--space-md) border-b border-border">
-              <span className="text-dim font-(--font-label-md)">Weight</span>
-              <span className="text-text font-medium">{viewingOrder.weightKg} kg</span>
+            <div className="flex justify-between items-center pb-lg border-b border-border">
+              <span className="text-xs font-bold text-dim uppercase tracking-wider">Weight</span>
+              <span className="text-sm font-semibold">{viewingOrder.weightKg} kg</span>
             </div>
-            <div className="flex justify-between items-center pb-(--space-md) border-b border-border">
-              <span className="text-dim font-(--font-label-md)">Description</span>
-              <span className="text-text font-medium">{viewingOrder.description || 'N/A'}</span>
+            <div className="flex justify-between items-center pb-lg border-b border-border">
+              <span className="text-xs font-bold text-dim uppercase tracking-wider">Description</span>
+              <span className="text-sm font-semibold">{viewingOrder.description || 'N/A'}</span>
             </div>
-            <div className="flex justify-between items-center pb-(--space-md) border-b border-border last:border-b-0">
-              <span className="text-dim font-(--font-label-md)">Created At</span>
-              <span className="text-text font-medium">{format(new Date(viewingOrder.createdAt), 'PPPP p')}</span>
+            <div className="flex justify-between items-center pb-lg border-b border-border last:border-b-0 last:pb-0">
+              <span className="text-xs font-bold text-dim uppercase tracking-wider">Created At</span>
+              <span className="text-sm font-semibold">{format(new Date(viewingOrder.createdAt), 'PPPP p')}</span>
             </div>
           </div>
         )}
@@ -403,29 +403,32 @@ export default function OrdersPage() {
         onConfirm={handleCancelOrder}
       />
 
-      <section className="card flex justify-between items-center px-(--space-lg) py-(--space-md)">
+      <section className="card flex justify-between items-center px-xl py-lg gap-xl shadow-glow/5 border-primary/10">
         <SearchInput
           placeholder="Search by ID or address..."
           value={searchQuery}
-          className="flex-1 max-w-[400px]"
+          className="flex-1 max-w-[480px]"
           onChange={(e) => setSearchQuery(e.target.value)}
         />
-        <div className="flex items-center gap-3">
-          <select 
-            className="bg-surface-low border border-border rounded-default text-text px-3 py-2 font-(--font-label-md) outline-none cursor-pointer transition-colors focus:border-primary" 
-            value={statusFilter} 
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="all">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="assigned">Assigned</option>
-            <option value="delivering">Delivering</option>
-            <option value="delivered">Delivered</option>
-            <option value="failed">Failed</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
-          <div className="w-px h-6 bg-border" />
-          <span className="text-xs text-dim">Total <b>{filteredOrders.length}</b> orders</span>
+        <div className="flex items-center gap-lg">
+          <div className="flex items-center gap-md">
+            <Filter size={16} className="text-dim" />
+            <select 
+              className="bg-surface-low border border-border rounded-default text-text px-lg py-md font-medium text-sm outline-none cursor-pointer transition-all focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm" 
+              value={statusFilter} 
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="assigned">Assigned</option>
+              <option value="delivering">Delivering</option>
+              <option value="delivered">Delivered</option>
+              <option value="failed">Failed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+          <div className="w-px h-8 bg-border" />
+          <span className="text-xs text-dim font-medium">Total <b className="text-text">{filteredOrders.length}</b> orders</span>
         </div>
       </section>
 

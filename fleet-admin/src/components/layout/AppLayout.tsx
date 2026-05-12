@@ -50,10 +50,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <Sidebar collapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
       <div 
         className="flex-1 flex flex-col transition-all duration-200"
-        style={{ marginLeft: isSidebarCollapsed ? '80px' : '260px' }}
+        style={{ marginLeft: isSidebarCollapsed ? 'var(--width-sidebar-collapsed)' : 'var(--width-sidebar)' }}
       >
         <Header />
-        <main className="p-lg flex-1 overflow-y-auto">
+        <main className="p-lg md:p-xl flex-1 overflow-y-auto">
           {children}
         </main>
       </div>

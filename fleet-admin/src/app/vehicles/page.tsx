@@ -235,7 +235,7 @@ export default function VehiclesPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-xl">
       <header className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-text">Vehicle Management</h1>
@@ -363,7 +363,7 @@ export default function VehiclesPage() {
         }}
       />
 
-      <section className="flex flex-col md:flex-row justify-between items-center gap-4 p-4 md:px-6 md:py-4 bg-surface rounded-xl border border-border">
+      <section className="flex flex-col md:flex-row justify-between items-center gap-lg p-lg bg-surface rounded-xl border border-border">
         <div className="w-full md:flex-1 md:max-w-[400px]">
           <SearchInput
             placeholder="Search by plate number or driver..."
@@ -411,7 +411,7 @@ export default function VehiclesPage() {
             />
             
             {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-4 mt-6 p-4 border-t border-border bg-surface-low/30">
+              <div className="flex items-center justify-center gap-lg mt-lg p-lg border-t border-border bg-surface-low/30">
                 <Button 
                   variant="secondary" 
                   size="sm" 

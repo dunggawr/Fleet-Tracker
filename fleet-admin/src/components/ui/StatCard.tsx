@@ -17,7 +17,7 @@ interface StatCardProps {
 export function StatCard({ label, value, icon: Icon, trend, color = 'var(--color-primary)', onClick, href }: StatCardProps) {
   const content = (
     <div className={`
-      flex flex-col gap-4 p-6 
+      flex flex-col gap-lg p-lg 
       bg-surface border border-border rounded-xl 
       transition-all duration-200 group
       ${(onClick || href) ? 'cursor-pointer hover:-translate-y-0.5 hover:border-primary-light' : ''}

@@ -112,8 +112,8 @@ export default function RouteReplayPage({ params }: { params: { vehicleId: strin
   };
 
   return (
-    <div className="h-full flex flex-col gap-4 p-5 bg-background min-h-0">
-      <div className="flex items-center justify-between shrink-0 bg-surface p-4 px-5 rounded-xl border border-border">
+    <div className="h-full flex flex-col gap-lg p-lg bg-background min-h-0">
+      <div className="flex items-center justify-between shrink-0 bg-surface p-md px-lg rounded-xl border border-border shadow-sm">
         <div className="flex items-center gap-4">
           <Link href="/tracking" className="flex items-center justify-center w-9 h-9 rounded-lg bg-surface-highest text-text-dim no-underline transition-all hover:bg-surface-high hover:text-text">
             <ArrowLeft size={20} />
@@ -154,7 +154,7 @@ export default function RouteReplayPage({ params }: { params: { vehicleId: strin
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col gap-4 min-h-0">
+      <div className="flex-1 flex flex-col gap-lg min-h-0">
         <div className="flex-1 rounded-xl overflow-hidden border border-border relative">
           {error ? (
             <div className="flex items-center justify-center h-full text-error bg-surface p-5 text-center">
@@ -165,7 +165,7 @@ export default function RouteReplayPage({ params }: { params: { vehicleId: strin
           )}
         </div>
 
-        <div className="bg-surface p-4 px-6 rounded-xl border border-border shrink-0 shadow-lg">
+        <div className="bg-surface p-md px-lg rounded-xl border border-border shrink-0 shadow-lg">
           <div className="flex justify-between items-center mb-3">
             <div className="flex items-center gap-4">
               <span className="text-[13px] text-text-muted">{history.length} điểm dữ liệu</span>
