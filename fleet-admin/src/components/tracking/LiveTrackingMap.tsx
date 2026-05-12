@@ -28,10 +28,28 @@ interface LiveTrackingMapProps {
   onVehicleSelect: (vehicle: VehiclePosition | null) => void;
 }
 
-const STATUS_COLORS = {
-  active: '#22c55e',
-  idle: '#f59e0b',
-  offline: '#6b7280',
+const STATUS_CONFIG = {
+  active: {
+    color: 'var(--color-success)',
+    bgClass: 'bg-success',
+    textClass: 'text-success',
+    lightBgClass: 'bg-success/20',
+    label: 'Đang chạy'
+  },
+  idle: {
+    color: 'var(--color-warning)',
+    bgClass: 'bg-warning',
+    textClass: 'text-warning',
+    lightBgClass: 'bg-warning/20',
+    label: 'Chờ'
+  },
+  offline: {
+    color: 'var(--color-text-dim)',
+    bgClass: 'bg-text-dim',
+    textClass: 'text-text-dim',
+    lightBgClass: 'bg-text-dim/20',
+    label: 'Offline'
+  },
 };
 
 export default function LiveTrackingMap({
@@ -54,40 +72,37 @@ export default function LiveTrackingMap({
   }, [selectedVehicle?.vehicleId]);
   if (!MAPBOX_TOKEN) {
     return (
-      <div style={{
-        width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center', gap: 12,
-        background: '#0f172a', color: '#94a3b8',
-      }}>
-        <Activity size={40} color="#6366f1" />
-        <p style={{ fontWeight: 600, color: '#f8fafc', margin: 0 }}>Mapbox token chưa được cấu hình</p>
-        <p style={{ fontSize: 13, margin: 0 }}>
-          Thêm <code style={{ color: '#818cf8', background: '#1e293b', padding: '2px 6px', borderRadius: 4 }}>
+      <div className="w-full h-full flex flex-col items-center justify-center gap-3 bg-background text-text-dim">
+        <Activity size={40} className="text-primary" />
+        <p className="font-semibold text-text m-0">Mapbox token chưa được cấu hình</p>
+        <p className="text-[13px] m-0 text-center px-4">
+          Thêm <code className="text-primary-light bg-surface-highest px-1.5 py-0.5 rounded text-xs font-mono">
             NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN
           </code> vào file <strong>.env.local</strong>
         </p>
+        
         {/* Simulated vehicle list as fallback */}
-        <div style={{ marginTop: 20, width: '90%', maxWidth: 400 }}>
-          {vehicles.map(v => (
-            <div key={v.vehicleId} style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '10px 14px', background: '#1e293b', borderRadius: 8,
-              marginBottom: 8, border: '1px solid #334155', cursor: 'pointer',
-              borderLeft: `3px solid ${STATUS_COLORS[v.status]}`,
-            }} onClick={() => onVehicleSelect(v)}>
-              <Truck size={16} color={STATUS_COLORS[v.status]} />
-              <div style={{ flex: 1 }}>
-                <div style={{ color: '#f8fafc', fontWeight: 600, fontSize: 13 }}>{v.licensePlate}</div>
-                <div style={{ color: '#94a3b8', fontSize: 12 }}>{v.driverName}</div>
+        <div className="mt-5 w-[90%] max-w-[400px] flex flex-col gap-2">
+          {vehicles.map(v => {
+            const config = STATUS_CONFIG[v.status];
+            return (
+              <div 
+                key={v.vehicleId} 
+                className="flex items-center gap-3 p-3 px-3.5 bg-surface rounded-lg border border-border cursor-pointer transition-colors hover:bg-surface-high border-l-[3px]"
+                style={{ borderLeftColor: config.color }}
+                onClick={() => onVehicleSelect(v)}
+              >
+                <Truck size={16} className={config.textClass} />
+                <div className="flex-1 overflow-hidden">
+                  <div className="text-text font-semibold text-[13px] truncate">{v.licensePlate}</div>
+                  <div className="text-text-dim text-[12px] truncate">{v.driverName}</div>
+                </div>
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-semibold whitespace-nowrap ${config.lightBgClass} ${config.textClass}`}>
+                  {config.label}
+                </span>
               </div>
-              <span style={{
-                fontSize: 11, background: STATUS_COLORS[v.status] + '20',
-                color: STATUS_COLORS[v.status], padding: '2px 8px', borderRadius: 10, fontWeight: 600,
-              }}>
-                {v.status === 'active' ? 'Đang chạy' : v.status === 'idle' ? 'Chờ' : 'Offline'}
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     );
@@ -102,97 +117,98 @@ export default function LiveTrackingMap({
     : { lng: 106.660172, lat: 10.762622 };
 
   return (
-    <Map
-      ref={mapRef}
-      mapboxAccessToken={MAPBOX_TOKEN}
-      initialViewState={{
-        longitude: center.lng,
-        latitude: center.lat,
-        zoom: 12,
-      }}
-      style={{ width: '100%', height: '100%' }}
-      mapStyle="mapbox://styles/mapbox/streets-v12"
-    >
-      <NavigationControl position="top-right" />
-      <FullscreenControl position="top-right" />
+    <div className="w-full h-full relative overflow-hidden bg-background">
+      <Map
+        ref={mapRef}
+        mapboxAccessToken={MAPBOX_TOKEN}
+        initialViewState={{
+          longitude: center.lng,
+          latitude: center.lat,
+          zoom: 12,
+        }}
+        style={{ width: '100%', height: '100%' }}
+        mapStyle="mapbox://styles/mapbox/streets-v12"
+      >
+        <NavigationControl position="top-right" />
+        <FullscreenControl position="top-right" />
 
-      {vehicles.map(vehicle => (
-        <React.Fragment key={vehicle.vehicleId}>
-          <Marker
-            longitude={vehicle.longitude}
-            latitude={vehicle.latitude}
-            anchor="center"
-            onClick={(e) => {
-              e.originalEvent.stopPropagation();
-              onVehicleSelect(
-                selectedVehicle?.vehicleId === vehicle.vehicleId ? null : vehicle
-              );
-            }}
-          >
-            <div
-              title={`${vehicle.licensePlate} - ${vehicle.driverName}`}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: '50%',
-                background: STATUS_COLORS[vehicle.status],
-                border: `3px solid ${selectedVehicle?.vehicleId === vehicle.vehicleId ? '#6366f1' : 'white'}`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                boxShadow: `0 2px 12px ${STATUS_COLORS[vehicle.status]}66`,
-                transform: selectedVehicle?.vehicleId === vehicle.vehicleId ? 'scale(1.3)' : 'scale(1)',
-                transition: 'transform 0.2s, border-color 0.2s',
-                rotate: `${vehicle.heading}deg`,
-              }}
-            >
-              <Truck size={16} color="white" />
-            </div>
-          </Marker>
-
-          {selectedVehicle?.vehicleId === vehicle.vehicleId && (
-            <Popup
+        {vehicles.map(vehicle => (
+          <React.Fragment key={vehicle.vehicleId}>
+            <Marker
               longitude={vehicle.longitude}
               latitude={vehicle.latitude}
-              anchor="bottom"
-              offset={24}
-              closeButton={true}
-              onClose={() => onVehicleSelect(null)}
-              style={{ zIndex: 10 }}
+              anchor="center"
+              onClick={(e) => {
+                e.originalEvent.stopPropagation();
+                onVehicleSelect(
+                  selectedVehicle?.vehicleId === vehicle.vehicleId ? null : vehicle
+                );
+              }}
             >
-              <div style={{
-                padding: '12px', minWidth: 200, background: '#1e293b',
-                color: '#f8fafc', borderRadius: 8,
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <Truck size={16} color={STATUS_COLORS[vehicle.status]} />
-                  <strong style={{ fontSize: 14 }}>{vehicle.licensePlate}</strong>
-                  <span style={{
-                    fontSize: 11, background: STATUS_COLORS[vehicle.status] + '30',
-                    color: STATUS_COLORS[vehicle.status], padding: '2px 8px', borderRadius: 10, fontWeight: 600,
-                  }}>
-                    {vehicle.status === 'active' ? 'Đang chạy' : vehicle.status === 'idle' ? 'Chờ' : 'Offline'}
-                  </span>
-                </div>
-                <div style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.8 }}>
-                  <div><strong style={{ color: '#e2e8f0' }}>Tài xế:</strong> {vehicle.driverName}</div>
-                  <div><strong style={{ color: '#e2e8f0' }}>Tốc độ:</strong> {vehicle.speed.toFixed(0)} km/h</div>
-                  {vehicle.ordersCount !== undefined && (
-                    <div><strong style={{ color: '#e2e8f0' }}>Đơn hàng:</strong> {vehicle.ordersCount} đơn</div>
-                  )}
-                  {vehicle.currentTripId && (
-                    <div>
-                      <strong style={{ color: '#e2e8f0' }}>Chuyến:</strong>{' '}
-                      <span style={{ color: '#818cf8' }}>#{vehicle.currentTripId.slice(0, 8)}</span>
-                    </div>
-                  )}
-                </div>
+              <div
+                title={`${vehicle.licensePlate} - ${vehicle.driverName}`}
+                className={`
+                  w-9 h-9 rounded-full flex items-center justify-center cursor-pointer 
+                  transition-all duration-200 shadow-lg border-[3px]
+                  ${STATUS_CONFIG[vehicle.status].bgClass}
+                  ${selectedVehicle?.vehicleId === vehicle.vehicleId ? 'scale-125 border-primary z-10' : 'scale-100 border-white'}
+                `}
+                style={{ 
+                  boxShadow: `0 0 12px ${STATUS_CONFIG[vehicle.status].color}66`,
+                  transform: `rotate(${vehicle.heading}deg)`
+                }}
+              >
+                <Truck size={16} className="text-white" />
               </div>
-            </Popup>
-          )}
-        </React.Fragment>
-      ))}
-    </Map>
+            </Marker>
+
+            {selectedVehicle?.vehicleId === vehicle.vehicleId && (
+              <Popup
+                longitude={vehicle.longitude}
+                latitude={vehicle.latitude}
+                anchor="bottom"
+                offset={24}
+                closeButton={true}
+                onClose={() => onVehicleSelect(null)}
+                maxWidth="300px"
+              >
+                <div className="p-3 min-w-[200px] bg-surface-high text-text rounded-lg border border-border shadow-2xl">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Truck size={16} className={STATUS_CONFIG[vehicle.status].textClass} />
+                    <strong className="text-sm font-bold truncate">{vehicle.licensePlate}</strong>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap ml-auto ${STATUS_CONFIG[vehicle.status].lightBgClass} ${STATUS_CONFIG[vehicle.status].textClass}`}>
+                      {STATUS_CONFIG[vehicle.status].label}
+                    </span>
+                  </div>
+                  
+                  <div className="text-[12px] text-text-muted space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-text-dim">Tài xế:</span>
+                      <span className="font-medium text-text">{vehicle.driverName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-text-dim">Tốc độ:</span>
+                      <span className="font-medium text-text">{vehicle.speed.toFixed(0)} km/h</span>
+                    </div>
+                    {vehicle.ordersCount !== undefined && (
+                      <div className="flex justify-between">
+                        <span className="text-text-dim">Đơn hàng:</span>
+                        <span className="font-medium text-text">{vehicle.ordersCount} đơn</span>
+                      </div>
+                    )}
+                    {vehicle.currentTripId && (
+                      <div className="flex justify-between">
+                        <span className="text-text-dim">Mã chuyến:</span>
+                        <span className="font-medium text-primary-light">#{vehicle.currentTripId.slice(0, 8)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Popup>
+            )}
+          </React.Fragment>
+        ))}
+      </Map>
+    </div>
   );
 }

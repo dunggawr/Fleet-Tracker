@@ -40,12 +40,12 @@ export function DispatchOrdersSidebar({
   groups,
 }: DispatchOrdersSidebarProps) {
   return (
-    <aside className="dispatch-sidebar orders-list">
-      <div className="sidebar-header">
-        <h3>Pending Orders</h3>
+    <aside className="flex flex-col glass rounded-md overflow-hidden h-full">
+      <div className="p-md border-b border-border flex-none flex justify-between items-center">
+        <h3 className="font-semibold">Pending Orders</h3>
         <Badge variant="warning">{pendingOrderCount}</Badge>
       </div>
-      <div className="sidebar-content">
+      <div className="flex-1 overflow-y-auto min-h-0 p-md flex flex-col gap-md">
         {isLoading ? (
           <div className="flex items-center justify-center h-32">
             <LoadingSpinner size={24} />
@@ -53,7 +53,7 @@ export function DispatchOrdersSidebar({
         ) : (
           <>
             {(pendingOrderCount > 0 || searchQuery) && (
-              <div className="dispatch-search">
+              <div className="sticky top-0 bg-surface pb-sm -mt-md pt-md z-10">
                 <SearchInput
                   placeholder="Search pending orders..."
                   value={searchQuery}
@@ -63,7 +63,7 @@ export function DispatchOrdersSidebar({
             )}
             
             {groups.length === 0 ? (
-              <div className="text-center py-8 text-dim">
+              <div className="text-center py-8 text-text-dim">
                 {searchQuery ? (
                   <>No orders matching "<strong>{searchQuery}</strong>"</>
                 ) : (
@@ -72,11 +72,11 @@ export function DispatchOrdersSidebar({
               </div>
             ) : (
               groups.map((group) => (
-                <div key={group.key} className="cluster-group">
+                <div key={group.key} className="flex flex-col gap-sm">
                   {clusterView && (
-                    <div className="cluster-header">
-                      <div className="cluster-header-left">
-                        {group.isClusterGroup && <Layers size={12} className="cluster-icon" />}
+                    <div className="flex justify-between items-center text-[10px] text-text-muted uppercase tracking-widest font-medium">
+                      <div className="flex items-center gap-1.5">
+                        {group.isClusterGroup && <Layers size={12} className="text-warning" />}
                         <span>{group.label}</span>
                       </div>
                       <Badge variant={group.isClusterGroup ? 'warning' : 'neutral'}>
@@ -87,25 +87,25 @@ export function DispatchOrdersSidebar({
                   {group.orders.map((order) => (
                     <div
                       key={order.id}
-                      className={`dispatch-card ${selectedOrder === order.id ? 'selected' : ''}`}
+                      className={`bg-surface-low border border-border rounded-default p-md cursor-pointer transition-all duration-150 ease-out hover:border-primary-light hover:bg-surface-high ${selectedOrder === order.id ? 'border-primary bg-primary/5 shadow-[0_0_0_1px_var(--color-primary)]' : ''}`}
                       onClick={() => onSelectOrder(order.id)}
                     >
-                      <div className="card-header">
-                        <span className="order-id">{order.id.split('-')[0]}</span>
-                        <span className="order-weight">{order.weightKg}kg</span>
+                      <div className="flex justify-between items-center mb-sm">
+                        <span className="font-bold text-primary-light">{order.id.split('-')[0]}</span>
+                        <span className="text-[12px] text-text-dim">{order.weightKg}kg</span>
                       </div>
-                      <div className="order-route">
-                        <div className="point">
-                          <MapPin size={12} className="text-primary" />
-                          <span>{order.pickupAddress}</span>
+                      <div className="flex items-center gap-sm mb-sm overflow-hidden">
+                        <div className="flex items-center gap-1 text-[12px] text-text min-w-0">
+                          <MapPin size={12} className="text-primary flex-none" />
+                          <span className="truncate">{order.pickupAddress}</span>
                         </div>
-                        <ChevronRight size={14} className="text-dim" />
-                        <div className="point">
-                          <MapPin size={12} className="text-success" />
-                          <span>{order.deliveryAddress}</span>
+                        <ChevronRight size={14} className="text-text-dim flex-none" />
+                        <div className="flex items-center gap-1 text-[12px] text-text min-w-0">
+                          <MapPin size={12} className="text-success flex-none" />
+                          <span className="truncate">{order.deliveryAddress}</span>
                         </div>
                       </div>
-                      <div className="card-footer">
+                      <div className="flex justify-between items-center mt-sm border-t border-border pt-sm">
                         <Button variant="ghost" size="sm">Details</Button>
                       </div>
                     </div>
@@ -116,127 +116,6 @@ export function DispatchOrdersSidebar({
           </>
         )}
       </div>
-
-      <style jsx>{`
-        .dispatch-sidebar {
-          display: flex;
-          flex-direction: column;
-          background: var(--color-surface);
-          border: 1px solid var(--color-border);
-          border-radius: var(--radius-md);
-          overflow: hidden;
-          height: 100%;
-        }
-
-        .sidebar-header {
-          padding: var(--space-md);
-          border-bottom: 1px solid var(--color-border);
-          flex-shrink: 0;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .sidebar-content {
-          flex: 1;
-          overflow-y: auto;
-          min-height: 0;
-          padding: var(--space-md);
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-md);
-        }
-
-        .dispatch-search {
-          position: sticky;
-          top: 0;
-          background: var(--color-surface);
-          padding-bottom: var(--space-sm);
-          margin-top: calc(var(--space-md) * -1);
-          padding-top: var(--space-md);
-          z-index: 10;
-        }
-
-        .dispatch-search :global(.search-input-group) {
-          width: 100%;
-        }
-
-        .cluster-group {
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-sm);
-        }
-
-        .cluster-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          font: var(--font-label-sm);
-          color: var(--color-text-muted);
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-        }
-
-        .cluster-header-left {
-          display: flex;
-          align-items: center;
-          gap: 5px;
-        }
-
-        .cluster-icon {
-          color: var(--color-warning);
-        }
-
-        .dispatch-card {
-          background: var(--color-surface-low);
-          border: 1px solid var(--color-border);
-          border-radius: var(--radius-default);
-          padding: var(--space-md);
-          cursor: pointer;
-          transition: all var(--transition-fast);
-        }
-
-        .dispatch-card:hover {
-          border-color: var(--color-primary-light);
-          background: var(--color-surface-high);
-        }
-
-        .dispatch-card.selected {
-          border-color: var(--color-primary);
-          background: rgba(99, 102, 241, 0.05);
-          box-shadow: 0 0 0 1px var(--color-primary);
-        }
-
-        .card-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: var(--space-sm);
-        }
-
-        .order-id { font-weight: 700; color: var(--color-primary-light); }
-        .order-weight { font-size: 12px; color: var(--color-text-dim); }
-
-        .order-route {
-          display: flex;
-          align-items: center;
-          gap: var(--space-sm);
-          margin-bottom: var(--space-sm);
-        }
-
-        .point { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--color-text); }
-
-        .card-footer {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-top: var(--space-sm);
-          border-top: 1px solid var(--color-border);
-          padding-top: var(--space-sm);
-        }
-
-        .customer-name { font-size: 12px; font-weight: 500; }
-      `}</style>
     </aside>
   );
 }

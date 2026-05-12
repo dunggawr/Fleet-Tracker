@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { api } from '@/lib/api';
-import { Navigation, Play, Pause, ArrowLeft, Calendar, Clock, FastForward, Rewind } from 'lucide-react';
+import { Navigation, Play, Pause, ArrowLeft, Calendar, Clock } from 'lucide-react';
 import { format, subHours, parseISO } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -11,8 +11,8 @@ import Link from 'next/link';
 const RouteReplayMap = dynamic(() => import('@/components/tracking/RouteReplayMap'), {
   ssr: false,
   loading: () => (
-    <div className="map-loading">
-      <div className="map-loading-spinner" />
+    <div className="flex flex-col items-center justify-center h-full gap-3 text-text-dim">
+      <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
       <span>Đang tải bản đồ...</span>
     </div>
   ),
@@ -112,68 +112,76 @@ export default function RouteReplayPage({ params }: { params: { vehicleId: strin
   };
 
   return (
-    <div className="replay-page">
-      <div className="replay-header">
-        <div className="title-section">
-          <Link href="/tracking" className="back-btn">
+    <div className="h-full flex flex-col gap-4 p-5 bg-background min-h-0">
+      <div className="flex items-center justify-between shrink-0 bg-surface p-4 px-5 rounded-xl border border-border">
+        <div className="flex items-center gap-4">
+          <Link href="/tracking" className="flex items-center justify-center w-9 h-9 rounded-lg bg-surface-highest text-text-dim no-underline transition-all hover:bg-surface-high hover:text-text">
             <ArrowLeft size={20} />
           </Link>
-          <div className="tracking-title">
-            <Navigation size={24} />
-            <h1>Lịch sử di chuyển - Xe #{params.vehicleId.slice(0, 8)}</h1>
+          <div className="flex items-center gap-3 text-text">
+            <Navigation size={24} className="text-primary" />
+            <h1 className="text-xl font-bold m-0">Lịch sử di chuyển - Xe #{params.vehicleId.slice(0, 8)}</h1>
           </div>
         </div>
 
-        <div className="filter-section">
-          <div className="time-input">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 bg-surface-highest p-2 px-3 rounded-lg border border-border text-text-dim">
             <Calendar size={16} />
             <input
               type="datetime-local"
               value={fromTime}
               onChange={e => setFromTime(e.target.value)}
+              className="bg-transparent border-none text-text outline-none text-sm"
             />
           </div>
-          <span className="to-text">đến</span>
-          <div className="time-input">
+          <span className="text-text-muted text-sm">đến</span>
+          <div className="flex items-center gap-2 bg-surface-highest p-2 px-3 rounded-lg border border-border text-text-dim">
             <Clock size={16} />
             <input
               type="datetime-local"
               value={toTime}
               onChange={e => setToTime(e.target.value)}
+              className="bg-transparent border-none text-text outline-none text-sm"
             />
           </div>
-          <button className="search-btn" onClick={fetchHistory} disabled={isLoading}>
+          <button 
+            className="bg-primary text-white border-none p-2 px-5 rounded-lg font-semibold cursor-pointer transition-colors hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed" 
+            onClick={fetchHistory} 
+            disabled={isLoading}
+          >
             {isLoading ? 'Đang tải...' : 'Xem'}
           </button>
         </div>
       </div>
 
-      <div className="replay-body">
-        <div className="map-wrapper">
+      <div className="flex-1 flex flex-col gap-4 min-h-0">
+        <div className="flex-1 rounded-xl overflow-hidden border border-border relative">
           {error ? (
-            <div className="error-message">{error}</div>
+            <div className="flex items-center justify-center h-full text-error bg-surface p-5 text-center">
+              {error}
+            </div>
           ) : (
             <RouteReplayMap history={history} currentIndex={currentIndex} />
           )}
         </div>
 
-        <div className="playback-controls">
-          <div className="controls-header">
-            <div className="controls-info">
-              <span className="points-count">{history.length} điểm dữ liệu</span>
+        <div className="bg-surface p-4 px-6 rounded-xl border border-border shrink-0 shadow-lg">
+          <div className="flex justify-between items-center mb-3">
+            <div className="flex items-center gap-4">
+              <span className="text-[13px] text-text-muted">{history.length} điểm dữ liệu</span>
               {history[currentIndex] && (
-                <span className="current-time">
+                <span className="text-sm font-semibold text-text font-mono bg-surface-highest p-1 px-3 rounded-full">
                   {formatDateTime(history[currentIndex].recordedAt)} - {history[currentIndex].speedKmh.toFixed(1)} km/h
                 </span>
               )}
             </div>
             
-            <div className="speed-controls">
-              <span className="speed-label">Tốc độ:</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[13px] text-text-muted">Tốc độ:</span>
               {[1, 2, 4, 8].map(s => (
                 <button
                   key={s}
-                  className={`speed-btn ${speed === s ? 'active' : ''}`}
+                  className={`bg-surface-highest border p-1 px-2.5 rounded-md text-[12px] font-semibold cursor-pointer transition-all hover:bg-surface-high active:scale-95 ${speed === s ? 'bg-primary text-white border-primary' : 'border-border text-text-dim'}`}
                   onClick={() => setSpeed(s)}
                 >
                   {s}x
@@ -182,9 +190,13 @@ export default function RouteReplayPage({ params }: { params: { vehicleId: strin
             </div>
           </div>
 
-          <div className="slider-container">
-            <button className="play-btn" onClick={togglePlay} disabled={history.length === 0}>
-              {isPlaying ? <Pause fill="currentColor" /> : <Play fill="currentColor" />}
+          <div className="flex items-center gap-4">
+            <button 
+              className="w-10 h-10 rounded-full border-none bg-primary text-white flex items-center justify-center cursor-pointer transition-all hover:bg-primary-hover hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-glow" 
+              onClick={togglePlay} 
+              disabled={history.length === 0}
+            >
+              {isPlaying ? <Pause fill="currentColor" size={20} /> : <Play fill="currentColor" size={20} />}
             </button>
             
             <input
@@ -193,264 +205,12 @@ export default function RouteReplayPage({ params }: { params: { vehicleId: strin
               max={Math.max(0, history.length - 1)}
               value={currentIndex}
               onChange={handleSliderChange}
-              className="progress-slider"
+              className="flex-1 h-1.5 appearance-none bg-surface-highest rounded-full outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-md"
               disabled={history.length === 0}
             />
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        .replay-page {
-          height: 100%;
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-          padding: 20px;
-          background: var(--bg-secondary);
-          min-height: 0;
-        }
-
-        .replay-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          flex-shrink: 0;
-          background: var(--bg-card);
-          padding: 16px 20px;
-          border-radius: 12px;
-          border: 1px solid var(--border-color);
-        }
-
-        .title-section {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-        }
-
-        .back-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 36px;
-          height: 36px;
-          border-radius: 8px;
-          background: var(--bg-secondary);
-          color: var(--text-secondary);
-          text-decoration: none;
-          transition: all 0.2s;
-        }
-
-        .back-btn:hover {
-          background: var(--bg-hover);
-          color: var(--text-primary);
-        }
-
-        .tracking-title {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          color: var(--text-primary);
-        }
-
-        .tracking-title h1 {
-          font-size: 1.25rem;
-          font-weight: 700;
-          margin: 0;
-        }
-
-        .filter-section {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .time-input {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          background: var(--bg-secondary);
-          padding: 8px 12px;
-          border-radius: 8px;
-          border: 1px solid var(--border-color);
-          color: var(--text-secondary);
-        }
-
-        .time-input input {
-          background: transparent;
-          border: none;
-          color: var(--text-primary);
-          outline: none;
-          font-size: 14px;
-        }
-
-        .to-text {
-          color: var(--text-muted);
-          font-size: 14px;
-        }
-
-        .search-btn {
-          background: var(--accent-primary);
-          color: white;
-          border: none;
-          padding: 8px 20px;
-          border-radius: 8px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: background 0.2s;
-        }
-
-        .search-btn:hover {
-          background: var(--accent-hover);
-        }
-
-        .search-btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        .replay-body {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-          min-height: 0;
-        }
-
-        .map-wrapper {
-          flex: 1;
-          border-radius: 12px;
-          overflow: hidden;
-          border: 1px solid var(--border-color);
-          position: relative;
-        }
-
-        .error-message {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          height: 100%;
-          color: #ef4444;
-          background: var(--bg-card);
-          padding: 20px;
-        }
-
-        .playback-controls {
-          background: var(--bg-card);
-          padding: 16px 24px;
-          border-radius: 12px;
-          border: 1px solid var(--border-color);
-          flex-shrink: 0;
-        }
-
-        .controls-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 12px;
-        }
-
-        .controls-info {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-        }
-
-        .points-count {
-          font-size: 13px;
-          color: var(--text-muted);
-        }
-
-        .current-time {
-          font-size: 14px;
-          font-weight: 600;
-          color: var(--text-primary);
-          font-family: monospace;
-          background: var(--bg-secondary);
-          padding: 4px 12px;
-          border-radius: 20px;
-        }
-
-        .speed-controls {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .speed-label {
-          font-size: 13px;
-          color: var(--text-muted);
-        }
-
-        .speed-btn {
-          background: var(--bg-secondary);
-          border: 1px solid var(--border-color);
-          color: var(--text-secondary);
-          padding: 4px 10px;
-          border-radius: 6px;
-          font-size: 12px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .speed-btn.active {
-          background: var(--accent-primary);
-          color: white;
-          border-color: var(--accent-primary);
-        }
-
-        .slider-container {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-        }
-
-        .play-btn {
-          width: 40px;
-          height: 40px;
-          border-radius: 50%;
-          border: none;
-          background: var(--accent-primary);
-          color: white;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: background 0.2s, transform 0.1s;
-        }
-
-        .play-btn:hover:not(:disabled) {
-          background: var(--accent-hover);
-          transform: scale(1.05);
-        }
-
-        .play-btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        .progress-slider {
-          flex: 1;
-          height: 6px;
-          -webkit-appearance: none;
-          background: var(--bg-secondary);
-          border-radius: 3px;
-          outline: none;
-        }
-
-        .progress-slider::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          appearance: none;
-          width: 16px;
-          height: 16px;
-          border-radius: 50%;
-          background: var(--accent-primary);
-          cursor: pointer;
-          border: 2px solid white;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-        }
-      `}</style>
     </div>
   );
 }

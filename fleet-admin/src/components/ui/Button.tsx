@@ -23,75 +23,41 @@ export function Button({
   type = 'button',
   ...props 
 }: ButtonProps) {
+  const variants = {
+    primary: 'bg-primary text-white hover:brightness-110 hover:shadow-[0_4px_12px_rgba(99,102,241,0.3)]',
+    secondary: 'bg-transparent text-text border border-outline-variant hover:bg-surface-high hover:border-outline',
+    danger: 'bg-transparent text-danger border border-danger/30 hover:bg-danger/10',
+    ghost: 'bg-transparent text-text-muted hover:bg-surface-high hover:text-text hover:border-outline-variant',
+  };
+
+  const sizes = {
+    sm: 'px-3 py-1.5 text-xs',
+    md: 'px-5 py-2.5 text-sm',
+    lg: 'px-7 py-3.5 text-base',
+  };
+
+  const baseClasses = `
+    inline-flex items-center justify-center gap-2 
+    rounded-md font-medium transition-all duration-200 
+    active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none
+    ${fullWidth ? 'w-full' : ''}
+    ${variants[variant]}
+    ${sizes[size]}
+    ${className}
+  `;
+
   const content = (
     <>
-      {isLoading && <span className="spinner-sm" />}
-      {!isLoading && icon && <span className="btn-icon">{icon}</span>}
+      {isLoading && <span className="w-3.5 h-3.5 border-2 border-white/20 border-t-current rounded-full animate-spin" />}
+      {!isLoading && icon && <span className="flex items-center">{icon}</span>}
       <span>{children}</span>
     </>
   );
 
-  const baseClassName = `btn btn-${variant} btn-${size} ${fullWidth ? 'full-width' : ''} ${className} ${isLoading ? 'loading' : ''}`;
-
-  const styles = (
-    <style jsx>{`
-      .btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        text-decoration: none;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
-        overflow: hidden;
-      }
-      
-      .btn:active {
-        transform: scale(0.98);
-      }
-
-      .btn-primary:hover {
-        filter: brightness(1.1);
-        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-      }
-
-      .btn-secondary:hover {
-        background: rgba(255, 255, 255, 0.05);
-      }
-
-      .btn-ghost:hover {
-        background: rgba(255, 255, 255, 0.03);
-      }
-
-      .btn-icon {
-        display: flex;
-        align-items: center;
-      }
-
-      .full-width {
-        width: 100%;
-      }
-
-      .spinner-sm {
-        width: 14px;
-        height: 14px;
-        border: 2px solid rgba(255, 255, 255, 0.2);
-        border-top-color: currentColor;
-        border-radius: 50%;
-        animation: spin 0.6s linear infinite;
-      }
-
-      @keyframes spin {
-        to { transform: rotate(360deg); }
-      }
-    `}</style>
-  );
-
   if (href) {
     return (
-      <Link href={href} className={baseClassName} {...(props as any)}>
+      <Link href={href} className={baseClasses} {...(props as any)}>
         {content}
-        {styles}
       </Link>
     );
   }
@@ -99,12 +65,11 @@ export function Button({
   return (
     <button 
       type={type}
-      className={baseClassName}
+      className={baseClasses}
       disabled={isLoading || props.disabled}
       {...props}
     >
       {content}
-      {styles}
     </button>
   );
 }

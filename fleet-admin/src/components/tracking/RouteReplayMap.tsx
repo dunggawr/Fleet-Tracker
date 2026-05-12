@@ -38,13 +38,9 @@ export default function RouteReplayMap({ history, currentIndex }: RouteReplayMap
   }, [currentPoint]);
   if (!MAPBOX_TOKEN) {
     return (
-      <div style={{
-        width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center', gap: 12,
-        background: '#0f172a', color: '#94a3b8',
-      }}>
-        <Activity size={40} color="#6366f1" />
-        <p style={{ fontWeight: 600, color: '#f8fafc', margin: 0 }}>Mapbox token chưa được cấu hình</p>
+      <div className="w-full h-full flex flex-col items-center justify-center gap-3 bg-background text-text-dim">
+        <Activity size={40} className="text-primary" />
+        <p className="font-semibold text-text m-0">Mapbox token chưa được cấu hình</p>
       </div>
     );
   }
@@ -81,77 +77,70 @@ export default function RouteReplayMap({ history, currentIndex }: RouteReplayMap
   }, [history, currentIndex]);
 
   return (
-    <Map
-      ref={mapRef}
-      mapboxAccessToken={MAPBOX_TOKEN}
-      initialViewState={{
-        longitude: center.lng,
-        latitude: center.lat,
-        zoom: 12,
-      }}
-      style={{ width: '100%', height: '100%' }}
-      mapStyle="mapbox://styles/mapbox/streets-v12"
-    >
-      <NavigationControl position="top-right" />
-      <FullscreenControl position="top-right" />
+    <div className="w-full h-full relative overflow-hidden bg-background">
+      <Map
+        ref={mapRef}
+        mapboxAccessToken={MAPBOX_TOKEN}
+        initialViewState={{
+          longitude: center.lng,
+          latitude: center.lat,
+          zoom: 12,
+        }}
+        style={{ width: '100%', height: '100%' }}
+        mapStyle="mapbox://styles/mapbox/streets-v12"
+      >
+        <NavigationControl position="top-right" />
+        <FullscreenControl position="top-right" />
 
-      {/* Full Route Line (Grayed out) */}
-      {history.length > 0 && (
-        <Source type="geojson" data={geoJson}>
-          <Layer
-            id="route-bg"
-            type="line"
-            paint={{
-              'line-color': '#475569',
-              'line-width': 4,
-              'line-opacity': 0.5,
-              'line-dasharray': [2, 2],
-            }}
-          />
-        </Source>
-      )}
+        {/* Full Route Line (Grayed out) */}
+        {history.length > 0 && (
+          <Source type="geojson" data={geoJson}>
+            <Layer
+              id="route-bg"
+              type="line"
+              paint={{
+                'line-color': '#475569',
+                'line-width': 4,
+                'line-opacity': 0.4,
+                'line-dasharray': [2, 2],
+              }}
+            />
+          </Source>
+        )}
 
-      {/* Traveled Route Line (Blue) */}
-      {pastGeoJson && (
-        <Source type="geojson" data={pastGeoJson}>
-          <Layer
-            id="route-active"
-            type="line"
-            paint={{
-              'line-color': '#6366f1',
-              'line-width': 5,
-              'line-opacity': 0.9,
-            }}
-          />
-        </Source>
-      )}
+        {/* Traveled Route Line (Primary Color) */}
+        {pastGeoJson && (
+          <Source type="geojson" data={pastGeoJson}>
+            <Layer
+              id="route-active"
+              type="line"
+              paint={{
+                'line-color': '#6366f1', // --color-primary
+                'line-width': 5,
+                'line-opacity': 0.9,
+              }}
+            />
+          </Source>
+        )}
 
-      {currentPoint && (
-        <Marker
-          longitude={currentPoint.longitude}
-          latitude={currentPoint.latitude}
-          anchor="center"
-        >
-          <div
-            title={`Speed: ${currentPoint.speedKmh}km/h`}
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: '50%',
-              background: '#22c55e',
-              border: '3px solid white',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 2px 12px rgba(34,197,94,0.4)',
-              rotate: `${currentPoint.heading || 0}deg`,
-              transition: 'all 0.3s linear',
-            }}
+        {currentPoint && (
+          <Marker
+            longitude={currentPoint.longitude}
+            latitude={currentPoint.latitude}
+            anchor="center"
           >
-            <Truck size={16} color="white" />
-          </div>
-        </Marker>
-      )}
-    </Map>
+            <div
+              title={`Speed: ${currentPoint.speedKmh}km/h`}
+              className="w-9 h-9 rounded-full bg-success flex items-center justify-center border-[3px] border-white shadow-[0_2px_12px_rgba(34,197,94,0.4)] transition-all duration-300"
+              style={{
+                transform: `rotate(${currentPoint.heading || 0}deg)`,
+              }}
+            >
+              <Truck size={16} className="text-white" />
+            </div>
+          </Marker>
+        )}
+      </Map>
+    </div>
   );
 }

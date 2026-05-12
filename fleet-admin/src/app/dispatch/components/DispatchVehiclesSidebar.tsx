@@ -64,33 +64,33 @@ export function DispatchVehiclesSidebar({
     return (
       <div
         key={vehicle.id}
-        className={`dispatch-card vehicle-card ${isSelected ? 'selected' : ''} ${!capacity.ok ? 'over-capacity' : ''}`}
+        className={`bg-surface-low border rounded-md p-md transition-all hover:border-primary-light hover:bg-surface-high cursor-pointer mb-sm ${isSelected ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border'} ${!capacity.ok ? 'border-danger/40 bg-danger/5' : ''}`}
         onClick={() => onSelectVehicle(vehicle.id)}
       >
         {/* Header: Biển số + badge trạng thái */}
-        <div className="card-header">
-          <div className="vehicle-info">
-            <Truck size={16} />
-            <span className="vehicle-plate">{vehicle.plateNumber}</span>
-            <span className="vehicle-type">{vehicle.type}</span>
+        <div className="flex justify-between items-center mb-2">
+          <div className="flex items-center gap-1.5">
+            <Truck size={16} className="text-text-muted" />
+            <span className="font-bold text-primary-light">{vehicle.plateNumber}</span>
+            <span className="text-[11px] text-text-muted capitalize bg-surface-high px-1.5 py-0.5 rounded-full">{vehicle.type}</span>
           </div>
           <Badge variant={capacity.ok ? 'success' : 'danger'}>{vehicle.status}</Badge>
         </div>
 
         {/* Tài xế */}
-        <div className="vehicle-meta-row">
-          <Users size={13} className="icon-dim" />
+        <div className="flex items-center gap-1.5 text-xs text-text-dim mt-1.5">
+          <Users size={13} className="text-text-muted shrink-0" />
           <span>{vehicle.driver?.fullName || 'Chưa gán tài xế'}</span>
           {!licenseOk && (
-            <span className="license-warning">
+            <span className="flex items-center gap-1 text-[11px] text-danger font-semibold ml-auto">
               <AlertTriangle size={12} /> Bằng lái hết hạn
             </span>
           )}
         </div>
 
         {/* Tải trọng — cảnh báo nếu không đủ */}
-        <div className={`vehicle-meta-row ${!capacity.ok ? 'text-danger' : ''}`}>
-          <Scale size={13} className="icon-dim" />
+        <div className={`flex items-center gap-1.5 text-xs mt-1.5 ${!capacity.ok ? 'text-danger' : 'text-text-dim'}`}>
+          <Scale size={13} className="text-text-muted shrink-0" />
           <span>
             Tải trọng còn: <strong>{capacity.freeKg.toFixed(0)} kg</strong>
             {selectedOrderData && (
@@ -98,7 +98,7 @@ export function DispatchVehiclesSidebar({
             )}
           </span>
           {!capacity.ok && (
-            <span className="overweight-badge">
+            <span className="flex items-center gap-1 text-[11px] text-danger font-semibold ml-auto">
               <AlertTriangle size={12} /> Quá tải
             </span>
           )}
@@ -106,17 +106,17 @@ export function DispatchVehiclesSidebar({
 
         {/* Khoảng cách (chỉ hiện trong Smart Mode) */}
         {suggestion && (
-          <div className="vehicle-meta-row suggestion-row">
-            <MapPin size={13} className="icon-dim" />
+          <div className="flex items-center gap-1.5 text-xs text-success mt-1.5">
+            <MapPin size={13} className="text-text-muted shrink-0" />
             <span>Cách điểm lấy: <strong>{suggestion.distanceKm.toFixed(1)} km</strong></span>
             {suggestion.kpiScore > 0 && (
-              <span className="kpi-chip">KPI {suggestion.kpiScore.toFixed(0)}</span>
+              <span className="ml-auto text-[11px] font-bold text-primary-light bg-primary/10 px-2 py-0.5 rounded-full">KPI {suggestion.kpiScore.toFixed(0)}</span>
             )}
           </div>
         )}
 
         {/* Footer: nút Assign */}
-        <div className="card-footer">
+        <div className="mt-2 border-t border-border pt-2">
           <Button
             variant="primary"
             size="sm"
@@ -180,20 +180,20 @@ export function DispatchVehiclesSidebar({
   const totalVisibleCount = combinedList.length;
 
   return (
-    <aside className="dispatch-sidebar vehicles-list">
-      <div className="sidebar-header">
-        <h3>Available Fleet</h3>
+    <aside className="flex flex-col glass rounded-md overflow-hidden h-full">
+      <div className="p-md border-b border-border shrink-0 flex justify-between items-center">
+        <h3 className="font-bold text-text">Available Fleet</h3>
         <Badge variant="success">{totalVisibleCount}</Badge>
       </div>
 
-      <div className="sidebar-content">
+      <div className="flex-1 overflow-y-auto min-h-0 p-md flex flex-col">
         {isLoading ? (
           <div className="flex items-center justify-center h-32">
             <LoadingSpinner size={24} />
           </div>
         ) : (
           <>
-            <div className="dispatch-search">
+            <div className="sticky top-0 bg-surface pb-sm -mt-md pt-md z-10">
               <SearchInput
                 placeholder="Search vehicles..."
                 value={searchQuery}
@@ -203,8 +203,8 @@ export function DispatchVehiclesSidebar({
 
             {/* === Smart Suggest Mode: hiện khi đã chọn đơn hàng === */}
             {selectedOrder && (
-              <div className="suggest-banner">
-                <Zap size={14} />
+              <div className="sticky top-[54px] z-9 flex items-center gap-xs p-xs px-sm glass border border-primary/30 rounded-md text-xs text-primary-light mb-sm shadow-sm">
+                <Zap size={14} className="text-primary" />
                 <span>
                   {isSuggestLoading
                     ? 'Đang tìm xe phù hợp...'
@@ -217,7 +217,7 @@ export function DispatchVehiclesSidebar({
             )}
 
             {totalVisibleCount === 0 ? (
-              <div className="text-center py-8 text-dim">
+              <div className="text-center py-8 text-text-dim">
                 {searchQuery ? (
                   <>No vehicles matching "<strong>{searchQuery}</strong>"</>
                 ) : (
@@ -229,7 +229,7 @@ export function DispatchVehiclesSidebar({
                 {/* Section: Gợi ý thông minh (Top suggestions) */}
                 {filteredSuggestions.length > 0 && (
                   <>
-                    <div className="section-label">Gợi ý thông minh</div>
+                    <div className="text-[11px] font-semibold uppercase tracking-wider text-text-muted mt-2 mb-1">Gợi ý thông minh</div>
                     {filteredSuggestions.map((item) => renderVehicleCard(item.vehicle, item.suggestion))}
                   </>
                 )}
@@ -237,7 +237,7 @@ export function DispatchVehiclesSidebar({
                 {/* Section: Xe khác (Remaining available fleet) */}
                 {filteredOthers.length > 0 && (
                   <>
-                    <div className="section-label other-section">
+                    <div className="text-[11px] font-semibold uppercase tracking-wider text-text-muted mt-4 pt-2 border-t border-border mb-1">
                       {filteredSuggestions.length > 0 ? 'Xe khác' : 'Danh sách xe'}
                     </div>
                     {filteredOthers
@@ -263,186 +263,6 @@ export function DispatchVehiclesSidebar({
           </>
         )}
       </div>
-
-      <style jsx>{`
-        .dispatch-sidebar {
-          display: flex;
-          flex-direction: column;
-          background: var(--color-surface);
-          border: 1px solid var(--color-border);
-          border-radius: var(--radius-md);
-          overflow: hidden;
-          height: 100%;
-        }
-
-        .sidebar-header {
-          padding: var(--space-md);
-          border-bottom: 1px solid var(--color-border);
-          flex-shrink: 0;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .sidebar-content {
-          flex: 1;
-          overflow-y: auto;
-          min-height: 0;
-          padding: var(--space-md);
-          display: flex;
-          flex-direction: column;
-        }
-
-        .dispatch-search {
-          position: sticky;
-          top: 0;
-          background: var(--color-surface);
-          padding-bottom: var(--space-sm);
-          margin-top: calc(var(--space-md) * -1);
-          padding-top: var(--space-md);
-          z-index: 10;
-        }
-
-        .dispatch-search :global(.search-input-group) {
-          width: 100%;
-        }
-
-        .suggest-banner {
-          position: sticky;
-          top: 54px; /* Sau search input (46px) + gap/padding */
-          z-index: 9;
-          display: flex;
-          align-items: center;
-          gap: var(--space-xs);
-          padding: 8px var(--space-sm);
-          background: rgba(99, 102, 241, 0.1);
-          backdrop-filter: blur(8px);
-          border: 1px solid rgba(99, 102, 241, 0.3);
-          border-radius: var(--radius-sm);
-          font-size: 12px;
-          color: var(--color-primary-light);
-          margin-bottom: var(--space-sm);
-          box-shadow: var(--shadow-sm);
-        }
-
-        .section-label {
-          font-size: 11px;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.07em;
-          color: var(--color-text-muted);
-          margin: var(--space-sm) 0 var(--space-xs);
-        }
-
-        .other-section {
-          margin-top: var(--space-md);
-          padding-top: var(--space-sm);
-          border-top: 1px solid var(--color-border);
-        }
-
-        .dispatch-card {
-          background: var(--color-surface-low);
-          border: 1px solid var(--color-border);
-          border-radius: var(--radius-default);
-          padding: var(--space-md);
-          transition: all var(--transition-fast);
-          cursor: pointer;
-          margin-bottom: var(--space-sm);
-        }
-
-        .dispatch-card:hover {
-          border-color: var(--color-primary-light);
-          background: var(--color-surface-high);
-        }
-
-        .dispatch-card.selected {
-          border-color: var(--color-primary);
-          background: rgba(99, 102, 241, 0.05);
-          box-shadow: 0 0 0 1px var(--color-primary);
-        }
-
-        .dispatch-card.over-capacity {
-          border-color: rgba(239, 68, 68, 0.4);
-          background: rgba(239, 68, 68, 0.04);
-        }
-
-        .card-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: var(--space-sm);
-        }
-
-        .vehicle-info {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-
-        .vehicle-plate {
-          font-weight: 700;
-          color: var(--color-primary-light);
-        }
-
-        .vehicle-type {
-          font-size: 11px;
-          color: var(--color-text-muted);
-          text-transform: capitalize;
-          background: var(--color-surface-high);
-          padding: 1px 6px;
-          border-radius: 99px;
-        }
-
-        .vehicle-meta-row {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 12px;
-          color: var(--color-text-dim);
-          margin-top: 5px;
-        }
-
-        .vehicle-meta-row.text-danger {
-          color: #ef4444;
-        }
-
-        .icon-dim {
-          color: var(--color-text-muted);
-          flex-shrink: 0;
-        }
-
-        .license-warning,
-        .overweight-badge {
-          display: flex;
-          align-items: center;
-          gap: 3px;
-          font-size: 11px;
-          color: #ef4444;
-          font-weight: 600;
-          margin-left: auto;
-        }
-
-        .suggestion-row {
-          color: var(--color-success);
-          margin-top: 6px;
-        }
-
-        .kpi-chip {
-          margin-left: auto;
-          font-size: 11px;
-          font-weight: 700;
-          color: var(--color-primary-light);
-          background: rgba(99, 102, 241, 0.12);
-          padding: 2px 7px;
-          border-radius: 99px;
-        }
-
-        .card-footer {
-          margin-top: var(--space-sm);
-          border-top: 1px solid var(--color-border);
-          padding-top: var(--space-sm);
-        }
-      `}</style>
     </aside>
   );
 }

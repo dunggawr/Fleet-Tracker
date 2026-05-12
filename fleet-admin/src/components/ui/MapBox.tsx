@@ -211,7 +211,7 @@ export function MapBox({
   };
 
   return (
-    <div className={`map-wrapper ${className}`}>
+    <div className={`relative w-full h-full min-h-[300px] rounded-inherit overflow-hidden bg-[#0f172a] ${className}`}>
       <Map
         {...viewState}
         ref={mapRef}
@@ -283,13 +283,13 @@ export function MapBox({
             longitude={marker.lng}
             anchor="bottom"
           >
-            <div className={`custom-marker ${selectedMarkerId === marker.id ? 'is-selected' : ''}`}>
+            <div className={`flex flex-col items-center cursor-pointer ${selectedMarkerId === marker.id ? 'is-selected' : ''}`}>
               {marker.label && (
-                <div className="marker-tooltip">
+                <div className="bg-[#0f172a]/95 text-white text-[10px] font-medium px-2 py-0.5 rounded border border-white/10 mb-1 whitespace-nowrap shadow-[0_4px_12px_rgba(0,0,0,0.5)] pointer-events-none">
                   {marker.label}
                 </div>
               )}
-              <div className="marker-icon" style={{ color: resolveColor(marker.color) }}>
+              <div className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] transition-transform duration-200 hover:scale-110" style={{ color: resolveColor(marker.color) }}>
                 {marker.icon || <MapPin size={selectedMarkerId === marker.id ? 32 : 24} fill="currentColor" stroke="white" strokeWidth={1} />}
               </div>
             </div>
@@ -298,28 +298,36 @@ export function MapBox({
       </Map>
 
       {showSearch && (
-        <div className="map-search-overlay">
-          <div className="search-container">
-            <div className="search-input-wrapper">
+        <div className="absolute top-3 left-3 z-10 w-[320px] max-w-[calc(100%-24px)]">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-[10px] p-[8px_12px] bg-[#0f172a]/90 backdrop-blur-sm border border-white/10 rounded-lg text-white shadow-md">
               {isSearching ? <Loader2 size={18} className="animate-spin" /> : <Search size={18} />}
               <input 
                 type="text" 
                 placeholder="Search address or place..." 
                 value={searchQuery}
+                className="flex-1 bg-transparent border-none text-white text-sm outline-none placeholder:text-white/50"
                 onChange={(e) => handleSearch(e.target.value)}
                 onFocus={() => searchQuery.length >= 3 && setShowResults(true)}
               />
               {searchQuery && (
-                <button onClick={() => { setSearchQuery(''); setSearchResults([]); setShowResults(false); }}>
+                <button 
+                  className="bg-transparent border-none text-white/50 cursor-pointer flex items-center hover:text-white"
+                  onClick={() => { setSearchQuery(''); setSearchResults([]); setShowResults(false); }}
+                >
                   <X size={16} />
                 </button>
               )}
             </div>
 
             {showResults && searchResults.length > 0 && (
-              <ul className="search-results">
+              <ul className="list-none p-1 m-0 bg-[#0f172a]/95 backdrop-blur-md border border-white/10 rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.4)] max-h-[200px] overflow-y-auto">
                 {searchResults.map((result: any) => (
-                  <li key={result.id} onClick={() => selectSearchResult(result)}>
+                  <li 
+                    key={result.id} 
+                    onClick={() => selectSearchResult(result)}
+                    className="flex items-start gap-[10px] p-[8px_12px] text-white/80 text-[13px] cursor-pointer rounded-md transition-all duration-200 hover:bg-primary/30 hover:text-white"
+                  >
                     <MapPin size={14} />
                     <span>{result.place_name}</span>
                   </li>
@@ -331,192 +339,24 @@ export function MapBox({
       )}
 
       {!webGLSupported && (
-        <div className="token-error">
-          <div className="error-content">
+        <div className="absolute inset-0 flex items-center justify-center bg-[#0f172a]/80 backdrop-blur-xs z-100">
+          <div className="text-center p-6 bg-surface border border-danger rounded-xl text-white">
             <AlertTriangle color="var(--color-danger)" size={32} />
-            <h3>WebGL Not Supported</h3>
+            <h3 className="text-danger font-bold mb-2">WebGL Not Supported</h3>
             <p>Your browser or hardware does not support WebGL, which is required for the map.</p>
           </div>
         </div>
       )}
 
       {!MAPBOX_TOKEN && (
-        <div className="token-error">
-          <div className="error-content">
-            <h3>Mapbox Token Missing</h3>
+        <div className="absolute inset-0 flex items-center justify-center bg-[#0f172a]/80 backdrop-blur-xs z-100">
+          <div className="text-center p-6 bg-surface border border-danger rounded-xl text-white">
+            <h3 className="text-danger font-bold mb-2">Mapbox Token Missing</h3>
             <p>Please provide NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN in .env.local</p>
           </div>
         </div>
       )}
 
-      <style jsx>{`
-        .map-wrapper {
-          position: relative;
-          width: 100%;
-          height: 100%;
-          min-height: 300px;
-          border-radius: inherit;
-          overflow: hidden;
-          background: #0f172a;
-        }
-
-        .custom-marker {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          cursor: pointer;
-        }
-
-        .marker-tooltip {
-          background: rgba(15, 23, 42, 0.95);
-          color: white;
-          font-size: 10px;
-          font-weight: 500;
-          padding: 2px 8px;
-          border-radius: 4px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          margin-bottom: 4px;
-          white-space: nowrap;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-          pointer-events: none;
-        }
-
-        .marker-icon {
-          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
-          transition: transform 0.2s ease;
-        }
-
-        .marker-icon:hover {
-          transform: scale(1.1);
-        }
-
-        .token-error {
-          position: absolute;
-          inset: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: rgba(15, 23, 42, 0.8);
-          backdrop-filter: blur(4px);
-          z-index: 100;
-        }
-
-        .error-content {
-          text-align: center;
-          padding: 24px;
-          background: var(--color-surface);
-          border: 1px solid var(--color-danger);
-          border-radius: 12px;
-          color: white;
-        }
-
-        .error-content h3 {
-          color: var(--color-danger);
-          margin-bottom: 8px;
-        }
-
-        .error-content p {
-          color: var(--color-text-dim);
-          font-size: 14px;
-        }
-
-        .map-search-overlay {
-          position: absolute;
-          top: 12px;
-          left: 12px;
-          z-index: 10;
-          width: 320px;
-          max-width: calc(100% - 24px);
-        }
-
-        .search-container {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-
-        .search-input-wrapper {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 8px 12px;
-          background: rgba(15, 23, 42, 0.9);
-          backdrop-filter: blur(8px);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 8px;
-          color: white;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-
-        .search-input-wrapper input {
-          flex: 1;
-          background: transparent;
-          border: none;
-          color: white;
-          font-size: 14px;
-          outline: none;
-        }
-
-        .search-input-wrapper input::placeholder {
-          color: rgba(255, 255, 255, 0.5);
-        }
-
-        .search-input-wrapper button {
-          background: transparent;
-          border: none;
-          color: rgba(255, 255, 255, 0.5);
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-        }
-
-        .search-input-wrapper button:hover {
-          color: white;
-        }
-
-        .search-results {
-          list-style: none;
-          padding: 4px;
-          margin: 0;
-          background: rgba(15, 23, 42, 0.95);
-          backdrop-filter: blur(12px);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 8px;
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-          max-height: 200px;
-          overflow-y: auto;
-        }
-
-        .search-results li {
-          display: flex;
-          align-items: flex-start;
-          gap: 10px;
-          padding: 8px 12px;
-          color: rgba(255, 255, 255, 0.8);
-          font-size: 13px;
-          cursor: pointer;
-          border-radius: 6px;
-          transition: background 0.2s;
-        }
-
-        .search-results li:hover {
-          background: rgba(99, 102, 241, 0.3);
-          color: white;
-        }
-
-        .search-results li span {
-          line-height: 1.4;
-        }
-
-        .animate-spin {
-          animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 }

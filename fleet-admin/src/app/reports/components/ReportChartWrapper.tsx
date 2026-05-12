@@ -26,80 +26,28 @@ export function ReportChartWrapper({
     setIsMounted(true);
   }, []);
   return (
-    <div className="chart-wrapper">
-      <div className="chart-header">
-        <div className="header-info">
-          <h3>{title}</h3>
-          {subtitle && <p>{subtitle}</p>}
+    <div className="bg-surface border border-border rounded-md p-lg flex flex-col gap-lg">
+      <div className="flex justify-between items-start">
+        <div className="flex flex-col">
+          <h3 className="text-lg font-bold text-text leading-tight">{title}</h3>
+          {subtitle && <p className="text-xs font-medium text-text-dim mt-1">{subtitle}</p>}
         </div>
       </div>
 
-      <div className="chart-content" style={{ height: typeof height === 'number' ? `${height}px` : height }}>
+      <div className="relative w-full min-w-0 min-h-px flex-1 overflow-hidden" style={{ height: typeof height === 'number' ? `${height}px` : height }}>
         {isLoading ? (
-          <div className="status-container">
+          <div className="h-full flex flex-col items-center justify-center gap-md">
             <LoadingSpinner size={32} />
-            <p>Loading chart data...</p>
+            <p className="text-sm text-text-dim">Loading chart data...</p>
           </div>
         ) : isEmpty ? (
-          <div className="status-container">
-            <p className="empty-text">No data available for the selected range</p>
+          <div className="h-full flex flex-col items-center justify-center gap-md">
+            <p className="text-sm text-text-muted">No data available for the selected range</p>
           </div>
         ) : isMounted ? (
           children
         ) : null}
       </div>
-
-      <style jsx>{`
-        .chart-wrapper {
-          background: var(--color-surface);
-          border: 1px solid var(--color-border);
-          border-radius: var(--radius-md);
-          padding: var(--space-lg);
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-lg);
-        }
-
-        .chart-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-        }
-
-        .header-info h3 {
-          font: var(--font-h3);
-          color: var(--color-text);
-        }
-
-        .header-info p {
-          font: var(--font-label-sm);
-          color: var(--color-text-dim);
-          margin-top: 4px;
-        }
-
-        .chart-content {
-          position: relative;
-          width: 100%;
-          min-width: 0;
-          min-height: 1px;
-          flex: 1;
-          overflow: hidden;
-        }
-
-        .status-container {
-          height: 100%;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: var(--space-md);
-        }
-
-        .empty-text {
-          color: var(--color-text-muted);
-          font: var(--font-body-sm);
-        }
-      `}</style>
     </div>
   );
 }

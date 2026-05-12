@@ -95,25 +95,25 @@ export function DispatchMapPanel({
   const allMarkers = [...vehicleMarkers, ...orderMarkers];
 
   return (
-    <main className="dispatch-map-area">
-      <div className="map-container-inner">
-        <div className="map-overlay-top">
+    <main className="relative bg-background rounded-md overflow-hidden border border-border h-full min-h-[500px]">
+      <div className="w-full h-full relative">
+        <div className="absolute top-lg left-lg right-lg z-10 flex flex-col gap-sm">
           {/* Legend khi đang trong Smart Suggest mode */}
           {selectedOrderData && suggestedVehicles.length > 0 && (
-            <div className="map-legend card">
-              <div className="legend-item">
-                <span className="legend-dot" style={{ background: 'var(--color-success)' }} />
+            <div className="flex gap-md p-sm px-md w-fit glass rounded-md text-xs text-text-dim animate-in fade-in slide-in-from-top-1 duration-200 shadow-lg">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full flex-none bg-success" />
                 <span>Xe gợi ý (gần nhất)</span>
               </div>
-              <div className="legend-item">
-                <span className="legend-dot" style={{ background: 'var(--color-warning)' }} />
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full flex-none bg-warning" />
                 <span>Điểm lấy hàng</span>
               </div>
             </div>
           )}
         </div>
 
-        <div className="real-map-wrapper">
+        <div className="absolute inset-0 z-1">
           <MapBox 
             markers={allMarkers}
             lines={routeLines}
@@ -123,123 +123,19 @@ export function DispatchMapPanel({
           />
         </div>
 
-        <div className="map-overlay-bottom">
-          <div className="map-controls card">
+        <div className="absolute bottom-lg right-lg z-10">
+          <div className="flex gap-xs p-sm glass rounded-md shadow-lg">
             <Button variant="secondary" size="sm" icon={<Users size={14} />} onClick={onToggleClusterView}>
               {clusterView ? 'Cluster View' : 'List View'}
             </Button>
-            <div className="divider-v" />
+            <div className="w-px bg-border my-xs" />
             <Button variant="secondary" size="sm">2D/3D</Button>
             <Button variant="secondary" size="sm">Satellite</Button>
-            <div className="divider-v" />
+            <div className="w-px bg-border my-xs" />
             <Button variant="secondary" size="sm">Traffic</Button>
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        .dispatch-map-area {
-          position: relative;
-          background: #0a0a0a;
-          border-radius: var(--radius-md);
-          overflow: hidden;
-          border: 1px solid var(--color-border);
-          height: 100%;
-          min-height: 500px;
-        }
-
-        .map-container-inner {
-          width: 100%;
-          height: 100%;
-          position: relative;
-        }
-
-        .real-map-wrapper {
-          position: absolute;
-          inset: 0;
-          z-index: 1;
-        }
-
-        .map-overlay-top {
-          position: absolute;
-          top: var(--space-lg);
-          left: var(--space-lg);
-          right: var(--space-lg);
-          z-index: 10;
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-sm);
-        }
-
-        .map-search {
-          display: flex;
-          align-items: center;
-          gap: var(--space-sm);
-          padding: 8px var(--space-md);
-          max-width: 300px;
-          background: rgba(18, 33, 49, 0.9);
-          backdrop-filter: blur(10px);
-        }
-
-        .map-search input {
-          background: transparent;
-          border: none;
-          color: white;
-          outline: none;
-          font-size: 14px;
-        }
-
-        .map-legend {
-          display: flex;
-          gap: var(--space-md);
-          padding: 8px var(--space-md);
-          max-width: fit-content;
-          background: rgba(18, 33, 49, 0.9);
-          backdrop-filter: blur(10px);
-          font-size: 12px;
-          color: var(--color-text-dim);
-          animation: fadeIn 0.2s ease;
-        }
-
-        .legend-item {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-
-        .legend-dot {
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
-          flex-shrink: 0;
-        }
-
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(-4px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-
-        .map-overlay-bottom {
-          position: absolute;
-          bottom: var(--space-lg);
-          right: var(--space-lg);
-          z-index: 10;
-        }
-
-        .map-controls {
-          display: flex;
-          gap: var(--space-xs);
-          padding: 6px;
-          background: rgba(18, 33, 49, 0.9);
-          backdrop-filter: blur(10px);
-        }
-
-        .divider-v {
-          width: 1px;
-          background: var(--color-border);
-          margin: 4px 0;
-        }
-      `}</style>
     </main>
   );
 }

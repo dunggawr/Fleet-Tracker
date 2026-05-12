@@ -101,13 +101,13 @@ export default function TripSummaryPage() {
   ];
 
   return (
-    <div className="trip-summary">
-      <div className="action-bar">
+    <div className="flex flex-col gap-xl">
+      <div className="flex justify-between items-center">
         <DateRangeFilter onRangeChange={setDateRange} />
         <ExportActions reportName="trip_summary" params={dateRange} />
       </div>
 
-      <div className="stats-grid">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-lg">
         <StatCard 
           label="Total Trips" 
           value={data?.totalTrips || 0} 
@@ -128,13 +128,13 @@ export default function TripSummaryPage() {
         />
       </div>
 
-      <section className="table-section card">
-        <header className="section-header">
-          <div className="title-group">
+      <section className="flex flex-col gap-md p-0 overflow-hidden bg-surface border border-border rounded-lg">
+        <header className="flex justify-between items-center py-md px-lg border-b border-border bg-surface-low">
+          <div className="flex items-center gap-sm">
             <Info size={18} className="text-primary" />
-            <h3>Trip History</h3>
+            <h3 className="text-lg font-bold text-text m-0">Trip History</h3>
           </div>
-          <div className="results-count">Showing {data?.trips?.length || 0} results</div>
+          <div className="text-xs font-medium text-text-dim">Showing {data?.trips?.length || 0} results</div>
         </header>
         
         <DataTable 
@@ -151,63 +151,63 @@ export default function TripSummaryPage() {
         title="Trip Details"
       >
         {selectedTrip && (
-          <div className="trip-detail-modal">
-            <div className="detail-header">
+          <div className="flex flex-col gap-xl">
+            <div className="flex justify-between items-center">
               <Badge variant={
                 selectedTrip.status === 'completed' ? 'success' : 
                 selectedTrip.status === 'ongoing' ? 'primary' : 'warning'
               }>
                 {selectedTrip.status}
               </Badge>
-              <span className="trip-id">ID: {selectedTrip.id}</span>
+              <span className="font-mono text-xs text-text-dim">ID: {selectedTrip.id}</span>
             </div>
 
-            <div className="detail-main-grid">
-              <div className="detail-box">
-                <label>Route</label>
-                <div className="route-info">
-                  <div className="route-point">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-xl">
+              <div className="flex flex-col gap-xs">
+                <label className="text-xs text-text-dim uppercase block mb-1 font-semibold">Route</label>
+                <div className="flex flex-col gap-xs p-md bg-surface-low rounded-default border-l-4 border-primary">
+                  <div className="flex items-center gap-sm font-medium">
                     <MapPin size={16} className="text-primary" />
                     <span>{selectedTrip.startLocation}</span>
                   </div>
-                  <div className="route-connector" />
-                  <div className="route-point">
+                  <div className="w-px h-3 bg-border ml-[7px]" />
+                  <div className="flex items-center gap-sm font-medium">
                     <MapPin size={16} className="text-danger" />
                     <span>{selectedTrip.endLocation}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="detail-stats">
-                <div className="stat-item">
-                  <Clock size={16} />
+              <div className="grid grid-cols-1 gap-md">
+                <div className="flex items-center gap-md p-sm px-md bg-surface-low rounded-default">
+                  <Clock size={16} className="text-text-dim" />
                   <div>
-                    <label>Duration</label>
-                    <span>{selectedTrip.duration}</span>
+                    <label className="text-[10px] text-text-dim uppercase block leading-tight">Duration</label>
+                    <span className="text-sm font-medium">{selectedTrip.duration}</span>
                   </div>
                 </div>
-                <div className="stat-item">
-                  <Truck size={16} />
+                <div className="flex items-center gap-md p-sm px-md bg-surface-low rounded-default">
+                  <Truck size={16} className="text-text-dim" />
                   <div>
-                    <label>Distance</label>
-                    <span>{selectedTrip.distance} km</span>
+                    <label className="text-[10px] text-text-dim uppercase block leading-tight">Distance</label>
+                    <span className="text-sm font-medium">{selectedTrip.distance} km</span>
                   </div>
                 </div>
-                <div className="stat-item">
-                  <UserIcon size={16} />
+                <div className="flex items-center gap-md p-sm px-md bg-surface-low rounded-default">
+                  <UserIcon size={16} className="text-text-dim" />
                   <div>
-                    <label>Driver</label>
-                    <span>{selectedTrip.driverName}</span>
+                    <label className="text-[10px] text-text-dim uppercase block leading-tight">Driver</label>
+                    <span className="text-sm font-medium">{selectedTrip.driverName}</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="trip-map-container">
+            <div className="h-[300px] bg-surface-high rounded-lg overflow-hidden relative border border-border">
               <MapBox 
                 path={selectedTrip.trail || [
-                  { lat: 21.0285, lng: 105.8542 }, // Hanoi
-                  { lat: 20.8449, lng: 106.6881 }  // Hai Phong
+                  { lat: 21.0285, lng: 105.8542 },
+                  { lat: 20.8449, lng: 106.6881 }
                 ]}
                 markers={[
                   {
@@ -228,47 +228,53 @@ export default function TripSummaryPage() {
                   }
                 ]}
                 zoom={9}
-                className="rounded-lg border border-slate-700"
+                className="w-full h-full"
               />
             </div>
-            <div className="detail-tabs">
-              <section className="timeline-section">
-                <div className="section-title">
-                  <History size={16} />
-                  <h4>Trip Timeline</h4>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-xl pt-lg border-t border-border">
+              <section className="flex flex-col gap-md">
+                <div className="flex items-center gap-sm">
+                  <History size={16} className="text-text-dim" />
+                  <h4 className="text-xs uppercase m-0 text-text-dim font-bold">Trip Timeline</h4>
                 </div>
-                <div className="timeline-list">
+                <div className="flex flex-col gap-md relative">
                   {(selectedTrip.timeline || [
                     { status: 'Departed', time: '08:00 AM', location: selectedTrip.startLocation },
                     { status: 'Arrived', time: '10:30 AM', location: selectedTrip.endLocation }
-                  ]).map((item, i) => (
-                    <div key={i} className="timeline-item">
-                      <div className="time">{item.time}</div>
-                      <div className="status-dot" />
-                      <div className="content">
-                        <div className="status">{item.status}</div>
-                        <div className="loc">{item.location}</div>
+                  ]).map((item, i, arr) => (
+                    <div key={i} className="flex gap-md text-[13px]">
+                      <div className="w-[70px] text-text-dim font-mono">{item.time}</div>
+                      <div className="relative">
+                        <div className="w-2 h-2 rounded-full bg-primary mt-[6px] z-10 relative" />
+                        {i !== arr.length - 1 && (
+                          <div className="absolute top-2 left-[3px] w-px h-full bg-border z-0" />
+                        )}
+                      </div>
+                      <div className="flex flex-col">
+                        <div className="font-bold">{item.status}</div>
+                        <div className="text-text-dim text-xs">{item.location}</div>
                       </div>
                     </div>
                   ))}
                 </div>
               </section>
 
-              <section className="violations-section">
-                <div className="section-title">
+              <section className="flex flex-col gap-md">
+                <div className="flex items-center gap-sm">
                   <AlertTriangle size={16} className="text-danger" />
-                  <h4>Violations</h4>
+                  <h4 className="text-xs uppercase m-0 text-text-dim font-bold">Violations</h4>
                 </div>
-                <div className="violations-list">
+                <div className="flex flex-col gap-sm">
                   {selectedTrip.violations?.length ? (
                     selectedTrip.violations.map((v, i) => (
-                      <div key={i} className="violation-item">
+                      <div key={i} className="flex justify-between items-center p-sm bg-danger-low rounded-sm">
                         <Badge variant="danger">{v.type}</Badge>
-                        <span className="v-time">{v.time}</span>
+                        <span className="text-[11px] text-text-dim">{v.time}</span>
                       </div>
                     ))
                   ) : (
-                    <div className="no-violations">No violations recorded</div>
+                    <div className="text-[13px] text-success italic">No violations recorded</div>
                   )}
                 </div>
               </section>
@@ -276,235 +282,6 @@ export default function TripSummaryPage() {
           </div>
         )}
       </Modal>
-
-      <style jsx>{`
-        .trip-summary {
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-xl);
-        }
-
-        .action-bar {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .stats-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-          gap: var(--space-lg);
-        }
-
-        .table-section {
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-md);
-          padding: 0;
-          overflow: hidden;
-        }
-
-        .section-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: var(--space-md) var(--space-lg);
-          border-bottom: 1px solid var(--color-border);
-          background: var(--color-surface-low);
-        }
-
-        .title-group {
-          display: flex;
-          align-items: center;
-          gap: var(--space-sm);
-        }
-
-        .section-header h3 {
-          font: var(--font-h3);
-          color: var(--color-text);
-          margin: 0;
-        }
-
-        .results-count {
-          font: var(--font-label-sm);
-          color: var(--color-text-dim);
-        }
-
-        .trip-detail-modal {
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-xl);
-        }
-
-        .detail-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .trip-id {
-          font-family: monospace;
-          font-size: 12px;
-          color: var(--color-text-dim);
-        }
-
-        .detail-main-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: var(--space-xl);
-        }
-
-        .detail-box label, .stat-item label {
-          font: var(--font-label-sm);
-          color: var(--color-text-dim);
-          text-transform: uppercase;
-          display: block;
-          margin-bottom: 4px;
-        }
-
-        .route-info {
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-xs);
-          padding: var(--space-md);
-          background: var(--color-surface-low);
-          border-radius: var(--radius-default);
-          border-left: 3px solid var(--color-primary);
-        }
-
-        .route-point {
-          display: flex;
-          align-items: center;
-          gap: var(--space-sm);
-          font-weight: 500;
-        }
-
-        .route-connector {
-          width: 1px;
-          height: 12px;
-          background: var(--color-border);
-          margin-left: 7px;
-        }
-
-        .detail-stats {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: var(--space-md);
-        }
-
-        .stat-item {
-          display: flex;
-          align-items: center;
-          gap: var(--space-md);
-          padding: var(--space-sm) var(--space-md);
-          background: var(--color-surface-low);
-          border-radius: var(--radius-default);
-        }
-
-        .detail-tabs {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: var(--space-xl);
-          padding-top: var(--space-lg);
-          border-top: 1px solid var(--color-border);
-        }
-
-        .section-title {
-          display: flex;
-          align-items: center;
-          gap: var(--space-sm);
-          margin-bottom: var(--space-md);
-        }
-
-        .section-title h4 {
-          font: var(--font-label-sm);
-          text-transform: uppercase;
-          margin: 0;
-          color: var(--color-text-dim);
-        }
-
-        .timeline-list {
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-md);
-          position: relative;
-        }
-
-        .timeline-item {
-          display: flex;
-          gap: var(--space-md);
-          font-size: 13px;
-        }
-
-        .timeline-item .time {
-          width: 70px;
-          color: var(--color-text-dim);
-          font-variant-numeric: tabular-nums;
-        }
-
-        .status-dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          background: var(--color-primary);
-          margin-top: 6px;
-          position: relative;
-          z-index: 1;
-        }
-
-        .timeline-item:not(:last-child) .status-dot::after {
-          content: '';
-          position: absolute;
-          top: 8px;
-          left: 4px;
-          width: 1px;
-          height: 24px;
-          background: var(--color-border);
-        }
-
-        .timeline-item .status {
-          font-weight: 600;
-        }
-
-        .timeline-item .loc {
-          color: var(--color-text-dim);
-          font-size: 12px;
-        }
-
-        .violations-list {
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-sm);
-        }
-
-        .violation-item {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: var(--space-sm);
-          background: var(--color-danger-low);
-          border-radius: var(--radius-sm);
-        }
-
-        .v-time {
-          font-size: 11px;
-          color: var(--color-text-dim);
-        }
-
-        .no-violations {
-          font-size: 13px;
-          color: var(--color-success);
-          font-style: italic;
-        }
-
-        .trip-map-container {
-          height: 300px;
-          background: var(--color-surface-high);
-          border-radius: var(--radius-lg);
-          overflow: hidden;
-          position: relative;
-        }
-      `}</style>
     </div>
   );
 }

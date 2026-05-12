@@ -144,7 +144,7 @@ export default function DispatchPage() {
   const mapSelectedVehicleId = selectedVehicle || (suggestions?.[0]?.vehicle?.id ?? null);
 
   return (
-    <div className="dispatch-container">
+    <div className="grid grid-cols-[350px_1fr_350px] [@media(max-width:1400px)]:grid-cols-[300px_1fr_300px] h-[calc(100vh-var(--height-header)-var(--spacing-xl)*2)] gap-md overflow-hidden relative">
       <DispatchOrdersSidebar
         pendingOrderCount={pendingOrders.length}
         isLoading={isLoading}
@@ -187,24 +187,6 @@ export default function DispatchPage() {
         suggestions={suggestions}
         isSuggestLoading={isSuggestLoading}
       />
-
-      <style jsx>{`
-        .dispatch-container {
-          display: grid;
-          grid-template-columns: 350px 1fr 350px;
-          height: calc(100vh - var(--header-height) - (var(--space-xl) * 2));
-          gap: var(--space-md);
-          overflow: hidden;
-          position: relative;
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 1400px) {
-          .dispatch-container {
-            grid-template-columns: 300px 1fr 300px;
-          }
-        }
-      `}</style>
     </div>
   );
 }

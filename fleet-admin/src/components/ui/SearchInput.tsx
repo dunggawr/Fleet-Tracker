@@ -9,61 +9,15 @@ interface SearchInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 export function SearchInput({ label, className = '', ...props }: SearchInputProps) {
   return (
-    <div className="search-input-group">
-      {label && <label className="search-input-label">{label}</label>}
-      <div className="search-input-shell">
-        <Search size={18} className="search-input-icon" />
-        <input className={`search-input ${className}`} {...props} />
+    <div className="flex flex-col gap-1.5 w-full">
+      {label && <label className="text-xs font-medium text-text-muted">{label}</label>}
+      <div className="flex items-center gap-2 w-full px-3.5 py-2.5 bg-surface-low border border-outline-variant rounded-md transition-all duration-150 focus-within:border-primary focus-within:ring-3 focus-within:ring-primary/15">
+        <Search size={18} className="text-text-dim flex-none" />
+        <input 
+          className={`w-full bg-transparent text-text text-sm outline-none placeholder:text-text-dim ${className}`} 
+          {...props} 
+        />
       </div>
-
-      <style jsx>{`
-        .search-input-group {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-          width: 100%;
-        }
-
-        .search-input-label {
-          font: var(--font-label-sm);
-          color: var(--color-text-muted);
-        }
-
-        .search-input-shell {
-          display: flex;
-          align-items: center;
-          gap: var(--space-sm);
-          width: 100%;
-          padding: 10px 14px;
-          background: var(--color-surface-low);
-          border: 1px solid var(--color-outline-variant);
-          border-radius: var(--radius-default);
-          transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-        }
-
-        .search-input-shell:focus-within {
-          border-color: var(--color-primary);
-          box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-        }
-
-        .search-input-icon {
-          color: var(--color-text-dim);
-          flex: none;
-        }
-
-        .search-input {
-          width: 100%;
-          border: none;
-          background: transparent;
-          color: var(--color-text);
-          font: var(--font-body-md);
-          outline: none;
-        }
-
-        .search-input::placeholder {
-          color: var(--color-text-dim);
-        }
-      `}</style>
     </div>
   );
 }
