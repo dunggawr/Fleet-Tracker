@@ -23,6 +23,7 @@ import { Dropdown } from '@/components/ui/Dropdown';
 import { useVehicles } from '@/hooks/use-vehicles';
 import { useDrivers } from '@/hooks/use-drivers';
 import { useOrders } from '@/hooks/use-orders';
+import { useAlerts } from '@/hooks/use-alerts';
 import { formatDistanceToNow } from 'date-fns';
 import { useRouter } from 'next/navigation';
 
@@ -31,13 +32,13 @@ export default function DashboardPage() {
   const { vehicles, isLoading: vehiclesLoading } = useVehicles();
   const { drivers, isLoading: driversLoading } = useDrivers();
   const { orders, isLoading: ordersLoading } = useOrders();
+  const { alerts, isLoading: alertsLoading, resolveAlert } = useAlerts();
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
     setMounted(true);
   }, []);
 
-  const isLoading = vehiclesLoading || driversLoading || ordersLoading;
   const currency = new Intl.NumberFormat('vi-VN', {
     style: 'currency',
     currency: 'VND',
@@ -89,38 +90,18 @@ export default function DashboardPage() {
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5);
 
-  const initialAlerts = React.useMemo(() => [
-    { id: 1, type: 'speed', message: 'Vehicle VN-102 exceeding speed limit (85km/h)', time: '2 mins ago', plate: 'VN-102' },
-    { id: 2, type: 'route', message: 'Vehicle VN-045 diverted from planned route', time: '15 mins ago', plate: 'VN-045' },
-    { id: 3, type: 'stop', message: 'Vehicle VN-088 unplanned stop > 30 mins', time: '40 mins ago', plate: 'VN-088' },
-  ], []);
-
-  const [activeAlerts, setActiveAlerts] = React.useState<any[]>([]);
-
-  React.useEffect(() => {
-    if (vehicles.length > 0) {
-      const enhancedAlerts = initialAlerts.map(alert => {
-        const vehicle = vehicles.find((v: Vehicle) => v.plateNumber.includes(alert.plate));
-        return { ...alert, vehicleId: vehicle?.id };
-      });
-      setActiveAlerts(enhancedAlerts);
-    }
-  }, [vehicles, initialAlerts]);
-
-  const dismissAlert = (id: number) => {
-    setActiveAlerts(prev => prev.filter(alert => alert.id !== id));
-  };
+  const isLoading = vehiclesLoading || driversLoading || ordersLoading || alertsLoading;
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-64"><Loader2 className="animate-spin" size={32} /></div>;
   }
 
   return (
-    <div className="dashboard-container">
-      <header className="page-header">
+    <div className="flex flex-col gap-8">
+      <header className="flex justify-between items-center">
         <div>
-          <h1>Dashboard Overview</h1>
-          <p className="text-dim">Welcome back, here&apos;s what&apos;s happening with your fleet today.</p>
+          <h1 className="text-2xl font-bold text-text">Dashboard Overview</h1>
+          <p className="text-text-dim">Welcome back, here&apos;s what&apos;s happening with your fleet today.</p>
         </div>
         <Button 
           variant="primary" 
@@ -131,7 +112,7 @@ export default function DashboardPage() {
         </Button>
       </header>
 
-      <section className="stats-grid">
+      <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
         {stats.map((stat, idx) => (
           <StatCard 
             key={idx} 
@@ -141,35 +122,35 @@ export default function DashboardPage() {
         ))}
       </section>
 
-      <div className="dashboard-grid">
-        <section className="card recent-activity">
-          <div className="card-header">
-            <h3>Recent Orders</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6">
+        <section className="bg-surface p-6 rounded-xl border border-border shadow-md">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-semibold text-text">Recent Orders</h3>
             <Button 
               variant="ghost" 
               size="sm"
               href="/orders"
             >
-              View All <ArrowRight size={14} />
+              View All <ArrowRight size={14} className="ml-1" />
             </Button>
           </div>
-          <div className="activity-list">
+          <div className="flex flex-col gap-4">
             {recentOrders.map((order) => (
               <div 
                 key={order.id} 
-                className="activity-item clickable"
+                className="flex items-center gap-4 p-4 bg-surface-low rounded-lg border border-border cursor-pointer transition-all hover:bg-surface-high hover:-translate-y-0.5 hover:border-primary-light"
                 onClick={() => router.push(`/dispatch?orderId=${order.id}`)}
               >
-                <div className="activity-icon">
+                <div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center text-primary-light">
                   <ClipboardList size={18} />
                 </div>
-                <div className="activity-info">
-                  <div className="activity-title">
-                    <span className="order-id">ORD-{order.id.substring(0, 4)}</span>
-                    <span className="text-dim">to</span>
-                    <span className="customer-name">{order.deliveryAddress}</span>
+                <div className="flex-1 flex flex-col min-w-0">
+                  <div className="flex items-center gap-1.5 font-medium truncate">
+                    <span className="text-primary-light">ORD-{order.id.substring(0, 4)}</span>
+                    <span className="text-text-dim text-sm">to</span>
+                    <span className="text-text truncate">{order.deliveryAddress}</span>
                   </div>
-                  <span className="activity-time">
+                  <span className="text-xs text-text-dim">
                     {mounted ? `${formatDistanceToNow(new Date(order.createdAt))} ago` : '...'}
                   </span>
                 </div>
@@ -181,38 +162,55 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <section className="card alerts-feed">
-          <div className="card-header">
-            <h3>Live Alerts</h3>
-            <Badge variant="danger">Live</Badge>
+        <section className="bg-surface p-6 rounded-xl border border-border shadow-md">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-semibold text-text">Live Alerts</h3>
+            <Badge variant="danger" className="animate-pulse">Live</Badge>
           </div>
-          <div className="alerts-list">
-            {activeAlerts.length === 0 ? (
-              <div className="text-dim text-center py-8">No active alerts</div>
+          <div className="flex flex-col gap-4">
+            {alerts.length === 0 ? (
+              <div className="text-text-dim text-center py-8 bg-surface-low rounded-lg border border-dashed border-border">
+                No active alerts
+              </div>
             ) : (
-              activeAlerts.map((alert) => (
-                <div key={alert.id} className={`alert-item alert-${alert.type}`}>
-                  <div className="alert-content">
-                    <div className="alert-header">
-                      <AlertTriangle size={16} />
-                      <span className="alert-type">{alert.type.toUpperCase()}</span>
+              alerts.map((alert) => (
+                <div 
+                  key={alert.id} 
+                  className={`
+                    flex justify-between items-center p-4 bg-surface-low rounded-lg border-l-4 
+                    ${alert.type === 'speed_violation' ? 'border-l-danger' : 
+                      alert.type === 'route_deviation' ? 'border-l-warning' : 
+                      alert.type === 'abnormal_stop' ? 'border-l-[#f97316]' : 'border-l-danger'}
+                  `}
+                >
+                  <div className="flex-1 min-w-0 pr-4">
+                    <div className={`flex items-center gap-1.5 text-[10px] font-bold mb-1 uppercase tracking-wider
+                      ${alert.type === 'speed_violation' ? 'text-danger' : 
+                        alert.type === 'route_deviation' ? 'text-warning' : 
+                        alert.type === 'abnormal_stop' ? 'text-[#f97316]' : 'text-danger'}
+                    `}>
+                      <AlertTriangle size={14} />
+                      <span>{alert.type.replace('_', ' ')}</span>
                     </div>
-                    <p className="alert-message">{alert.message}</p>
-                    <span className="alert-time"><Clock size={12} /> {alert.time}</span>
+                    <p className="text-[13px] text-text mb-1 line-clamp-2">{alert.message}</p>
+                    <span className="flex items-center gap-1 text-[11px] text-text-dim">
+                      <Clock size={12} /> 
+                      {mounted ? `${formatDistanceToNow(new Date(alert.createdAt))} ago` : '...'}
+                    </span>
                   </div>
                   <Dropdown align="right" trigger={
                     <Button variant="secondary" size="sm">
                       Action
                     </Button>
                   }>
-                    <button className="dropdown-item" onClick={() => router.push(`/dispatch${alert.vehicleId ? `?vehicleId=${alert.vehicleId}` : ''}`)}>
+                    <button className="dropdown-item" onClick={() => router.push(`/dispatch?vehicleId=${alert.vehicleId}`)}>
                       <Navigation size={16} /> Track Location
                     </button>
-                    <button className="dropdown-item" onClick={() => router.push(`/vehicles?search=${alert.plate}`)}>
+                    <button className="dropdown-item" onClick={() => router.push(`/vehicles?search=${alert.vehicle?.plateNumber}`)}>
                       <AlertTriangle size={16} /> View Vehicle
                     </button>
                     <div className="dropdown-divider" />
-                    <button className="dropdown-item" onClick={() => dismissAlert(alert.id)}>
+                    <button className="dropdown-item text-danger hover:bg-danger/10" onClick={() => resolveAlert(alert.id)}>
                       <CheckCircle size={16} /> Dismiss Alert
                     </button>
                   </Dropdown>
@@ -222,141 +220,6 @@ export default function DashboardPage() {
           </div>
         </section>
       </div>
-
-      <style jsx>{`
-        .dashboard-container {
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-xl);
-        }
-
-        .clickable {
-          cursor: pointer;
-          transition: transform var(--transition-fast), background var(--transition-fast);
-        }
-
-        .clickable:hover {
-          background: var(--color-surface-high);
-          transform: translateY(-2px);
-          border-color: var(--color-primary-light);
-        }
-
-        .page-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .stats-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-          gap: var(--space-lg);
-        }
-
-        .dashboard-grid {
-          display: grid;
-          grid-template-columns: 1.5fr 1fr;
-          gap: var(--space-lg);
-        }
-
-        .card-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: var(--space-lg);
-        }
-
-        .activity-list {
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-md);
-        }
-
-        .activity-item {
-          display: flex;
-          align-items: center;
-          gap: var(--space-md);
-          padding: var(--space-md);
-          background: var(--color-surface-low);
-          border-radius: var(--radius-default);
-          border: 1px solid var(--color-border);
-        }
-
-        .activity-icon {
-          width: 40px;
-          height: 40px;
-          background: rgba(255, 255, 255, 0.03);
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: var(--color-primary-light);
-        }
-
-        .activity-info {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-        }
-
-        .activity-title {
-          display: flex;
-          gap: 6px;
-          font-weight: 500;
-        }
-
-        .order-id { color: var(--color-primary-light); }
-        .customer-name { color: var(--color-text); }
-        .activity-time { font-size: 12px; color: var(--color-text-dim); }
-
-        .alerts-list {
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-md);
-        }
-
-        .alert-item {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: var(--space-md);
-          background: var(--color-surface-low);
-          border-radius: var(--radius-default);
-          border-left: 4px solid var(--color-primary);
-        }
-
-        .alert-header {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 10px;
-          font-weight: 700;
-          margin-bottom: 4px;
-        }
-
-        .alert-speed { border-left-color: var(--color-danger); }
-        .alert-speed .alert-type { color: var(--color-danger); }
-        
-        .alert-route { border-left-color: var(--color-warning); }
-        .alert-route .alert-type { color: var(--color-warning); }
-        
-        .alert-stop { border-left-color: #f97316; }
-        .alert-stop .alert-type { color: #f97316; }
-
-        .alert-message {
-          font-size: 13px;
-          color: var(--color-text);
-          margin-bottom: 4px;
-        }
-
-        .alert-time {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          font-size: 11px;
-          color: var(--color-text-dim);
-        }
-      `}</style>
     </div>
   );
 }

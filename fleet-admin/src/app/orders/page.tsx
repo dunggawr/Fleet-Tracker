@@ -11,7 +11,9 @@ import {
   ChevronRight,
   Eye,
   Truck as TruckIcon,
-  XCircle
+  XCircle,
+  LocateFixed,
+  Map as MapIcon
 } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
 import { Badge } from '@/components/ui/Badge';
@@ -19,6 +21,7 @@ import { Button } from '@/components/ui/Button';
 import { Dropdown } from '@/components/ui/Dropdown';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { MapBox, MapMarker } from '@/components/ui/MapBox';
 import { useRouter } from 'next/navigation';
 
 import { useOrders } from '@/hooks/use-orders';
@@ -50,28 +53,89 @@ export default function OrdersPage() {
   const [viewingOrder, setViewingOrder] = React.useState<Order | null>(null);
   const [orderToCancel, setOrderToCancel] = React.useState<Order | null>(null);
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<OrderFormValues>({
+  // Map Selection State
+  const [selectionMode, setSelectionMode] = React.useState<'none' | 'pickup' | 'delivery'>('none');
+  const [pickupCoord, setPickupCoord] = React.useState<{lat: number, lng: number} | null>(null);
+  const [deliveryCoord, setDeliveryCoord] = React.useState<{lat: number, lng: number} | null>(null);
+
+  const { register, handleSubmit, reset, formState: { errors }, setValue } = useForm<OrderFormValues>({
     resolver: zodResolver(orderSchema),
     defaultValues: {
-      weightKg: 1
+      weightKg: 1,
+      pickupAddress: '',
+      deliveryAddress: ''
     }
   });
 
   const onSubmit = async (data: OrderFormValues) => {
+    if (!pickupCoord || !deliveryCoord) {
+      alert('Please select both pickup and delivery locations on the map.');
+      return;
+    }
+
     try {
       await createOrder({
         ...data,
-        pickupLat: 10.762622,
-        pickupLng: 106.660172,
-        deliveryLat: 10.772622,
-        deliveryLng: 106.670172,
+        pickupLat: pickupCoord.lat,
+        pickupLng: pickupCoord.lng,
+        deliveryLat: deliveryCoord.lat,
+        deliveryLng: deliveryCoord.lng,
       } as any);
       setIsModalOpen(false);
       reset();
+      setPickupCoord(null);
+      setDeliveryCoord(null);
     } catch (err) {
       console.error('Failed to create order:', err);
     }
   };
+
+  const handleMapClick = (coord: {lat: number, lng: number}) => {
+    if (selectionMode === 'pickup') {
+      setPickupCoord(coord);
+      setValue('pickupAddress', `${coord.lat.toFixed(6)}, ${coord.lng.toFixed(6)}`);
+      setSelectionMode('none');
+    } else if (selectionMode === 'delivery') {
+      setDeliveryCoord(coord);
+      setValue('deliveryAddress', `${coord.lat.toFixed(6)}, ${coord.lng.toFixed(6)}`);
+      setSelectionMode('none');
+    }
+  };
+
+  const handleSearchSelect = (coord: {lat: number, lng: number}, address: string) => {
+    if (selectionMode === 'pickup') {
+      setPickupCoord(coord);
+      setValue('pickupAddress', address);
+      setSelectionMode('none');
+    } else if (selectionMode === 'delivery') {
+      setDeliveryCoord(coord);
+      setValue('deliveryAddress', address);
+      setSelectionMode('none');
+    }
+  };
+
+  const markers: MapMarker[] = React.useMemo(() => {
+    const list: MapMarker[] = [];
+    if (pickupCoord) {
+      list.push({
+        id: 'pickup',
+        lat: pickupCoord.lat,
+        lng: pickupCoord.lng,
+        label: 'Pickup',
+        color: 'var(--color-primary)'
+      });
+    }
+    if (deliveryCoord) {
+      list.push({
+        id: 'delivery',
+        lat: deliveryCoord.lat,
+        lng: deliveryCoord.lng,
+        label: 'Delivery',
+        color: 'var(--color-success)'
+      });
+    }
+    return list;
+  }, [pickupCoord, deliveryCoord]);
 
   const handleCancelOrder = async () => {
     if (!orderToCancel) return;
@@ -109,7 +173,7 @@ export default function OrdersPage() {
     { 
       header: 'Order ID', 
       accessor: (o: Order) => (
-        <div className="order-id-cell">
+        <div className="flex items-center gap-(--space-sm) text-primary-light font-semibold">
           <Package size={16} />
           <span>{o.id.split('-')[0]}</span>
         </div>
@@ -118,13 +182,13 @@ export default function OrdersPage() {
     { 
       header: 'Route', 
       accessor: (o: Order) => (
-        <div className="route-cell">
-          <div className="route-point">
+        <div className="flex items-center gap-(--space-md)">
+          <div className="flex items-center gap-1.5 text-sm max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap">
             <MapPin size={12} className="text-primary" />
             <span>{o.pickupAddress}</span>
           </div>
           <ChevronRight size={14} className="text-dim" />
-          <div className="route-point">
+          <div className="flex items-center gap-1.5 text-sm max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap">
             <MapPin size={12} className="text-success" />
             <span>{o.deliveryAddress}</span>
           </div>
@@ -143,7 +207,7 @@ export default function OrdersPage() {
     { 
       header: 'Created At', 
       accessor: (o: Order) => (
-        <div className="time-cell">
+        <div className="flex items-center gap-1.5 text-sm text-dim">
           <Clock size={14} />
           <span>{format(new Date(o.createdAt), 'yyyy-MM-dd HH:mm')}</span>
         </div>
@@ -175,13 +239,18 @@ export default function OrdersPage() {
   ];
 
   return (
-    <div className="page-container">
-      <header className="page-header">
+    <div className="flex flex-col gap-(--space-xl)">
+      <header className="flex justify-between items-center">
         <div>
           <h1>Order Management</h1>
           <p className="text-dim">Create, track and manage delivery orders for your fleet.</p>
         </div>
-        <Button variant="primary" icon={<Plus size={18} />} onClick={() => setIsModalOpen(true)}>
+        <Button variant="primary" icon={<Plus size={18} />} onClick={() => {
+          setPickupCoord(null);
+          setDeliveryCoord(null);
+          reset();
+          setIsModalOpen(true);
+        }}>
           Create New Order
         </Button>
       </header>
@@ -190,6 +259,8 @@ export default function OrdersPage() {
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         title="Create New Order"
+        className="order-modal"
+        size="xl"
         footer={(
           <>
             <Button variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
@@ -197,35 +268,91 @@ export default function OrdersPage() {
           </>
         )}
       >
-        <form className="order-form" onSubmit={handleSubmit(onSubmit)}>
-          <div className="form-grid">
-            <Input 
-              label="Weight (kg)" 
-              type="number"
-              step="0.1"
-              {...register('weightKg', { valueAsNumber: true })}
-              error={errors.weightKg?.message}
-            />
-            <Input 
-              label="Description (Optional)" 
-              placeholder="E.g. Fragile items" 
-              {...register('description')}
-              error={errors.description?.message}
-            />
-            <Input 
-              label="Pickup Address" 
-              placeholder="Address or coordinates" 
-              {...register('pickupAddress')}
-              error={errors.pickupAddress?.message}
-            />
-            <Input 
-              label="Delivery Address" 
-              placeholder="Address or coordinates" 
-              {...register('deliveryAddress')}
-              error={errors.deliveryAddress?.message}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-(--space-xl) min-h-[450px]">
+          <form className="flex flex-col gap-(--space-xl)" onSubmit={handleSubmit(onSubmit)}>
+            <div className="flex flex-col gap-(--space-md)">
+              <h3 className="text-xs font-bold text-dim uppercase tracking-wider border-b border-border pb-1">General Info</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-(--space-md)">
+                <Input 
+                  label="Weight (kg)" 
+                  type="number"
+                  step="0.1"
+                  {...register('weightKg', { valueAsNumber: true })}
+                  error={errors.weightKg?.message}
+                />
+                <Input 
+                  label="Description (Optional)" 
+                  placeholder="E.g. Fragile items" 
+                  {...register('description')}
+                  error={errors.description?.message}
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-(--space-md)">
+              <h3 className="text-xs font-bold text-dim uppercase tracking-wider border-b border-border pb-1">Route Selection</h3>
+              <div className="flex flex-col gap-(--space-md)">
+                <div className={`flex items-end gap-(--space-sm) p-(--space-sm) rounded-default transition-colors ${selectionMode === 'pickup' ? 'bg-primary-faint outline outline-primary' : ''}`}>
+                  <Input 
+                    label="Pickup Address" 
+                    placeholder="Click map to select location" 
+                    {...register('pickupAddress')}
+                    error={errors.pickupAddress?.message}
+                    readOnly
+                    className="flex-1"
+                  />
+                  <Button 
+                    type="button" 
+                    variant={selectionMode === 'pickup' ? 'primary' : 'secondary'}
+                    size="sm"
+                    icon={<MapIcon size={14} />}
+                    onClick={() => setSelectionMode(selectionMode === 'pickup' ? 'none' : 'pickup')}
+                  >
+                    {selectionMode === 'pickup' ? 'Picking...' : 'Pick on Map'}
+                  </Button>
+                </div>
+
+                <div className={`flex items-end gap-(--space-sm) p-(--space-sm) rounded-default transition-colors ${selectionMode === 'delivery' ? 'bg-primary-faint outline outline-primary' : ''}`}>
+                  <Input 
+                    label="Delivery Address" 
+                    placeholder="Click map to select location" 
+                    {...register('deliveryAddress')}
+                    error={errors.deliveryAddress?.message}
+                    readOnly
+                    className="flex-1"
+                  />
+                  <Button 
+                    type="button" 
+                    variant={selectionMode === 'delivery' ? 'primary' : 'secondary'}
+                    size="sm"
+                    icon={<MapIcon size={14} />}
+                    onClick={() => setSelectionMode(selectionMode === 'delivery' ? 'none' : 'delivery')}
+                  >
+                    {selectionMode === 'delivery' ? 'Picking...' : 'Pick on Map'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {selectionMode !== 'none' && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-warning-faint text-warning rounded-default text-xs animate-pulse">
+                <LocateFixed size={14} />
+                <span>Click anywhere on the map to set <b>{selectionMode}</b> location</span>
+              </div>
+            )}
+          </form>
+
+          <div className="relative h-full min-h-[400px] lg:min-h-full border border-border rounded-lg overflow-hidden">
+            <MapBox 
+              markers={markers}
+              onClick={handleMapClick}
+              showSearch={selectionMode !== 'none'}
+              onSearchSelect={handleSearchSelect}
+              zoom={13}
+              className="rounded-lg shadow-inner"
             />
           </div>
-        </form>
+        </div>
       </Modal>
 
       <Modal
@@ -234,32 +361,32 @@ export default function OrdersPage() {
         title={`Order Details - ${viewingOrder?.id.split('-')[0]}`}
       >
         {viewingOrder && (
-          <div className="order-details-view">
-            <div className="detail-row">
-              <span className="detail-label">Status</span>
+          <div className="flex flex-col gap-(--space-lg) py-(--space-sm)">
+            <div className="flex justify-between items-center pb-(--space-md) border-b border-border">
+              <span className="text-dim font-(--font-label-md)">Status</span>
               <Badge variant={getStatusVariant(viewingOrder.status)}>
                 {viewingOrder.status.replace('_', ' ')}
               </Badge>
             </div>
-            <div className="detail-row">
-              <span className="detail-label">Pickup</span>
-              <span className="detail-value">{viewingOrder.pickupAddress}</span>
+            <div className="flex justify-between items-center pb-(--space-md) border-b border-border">
+              <span className="text-dim font-(--font-label-md)">Pickup</span>
+              <span className="text-text font-medium">{viewingOrder.pickupAddress}</span>
             </div>
-            <div className="detail-row">
-              <span className="detail-label">Delivery</span>
-              <span className="detail-value">{viewingOrder.deliveryAddress}</span>
+            <div className="flex justify-between items-center pb-(--space-md) border-b border-border">
+              <span className="text-dim font-(--font-label-md)">Delivery</span>
+              <span className="text-text font-medium">{viewingOrder.deliveryAddress}</span>
             </div>
-            <div className="detail-row">
-              <span className="detail-label">Weight</span>
-              <span className="detail-value">{viewingOrder.weightKg} kg</span>
+            <div className="flex justify-between items-center pb-(--space-md) border-b border-border">
+              <span className="text-dim font-(--font-label-md)">Weight</span>
+              <span className="text-text font-medium">{viewingOrder.weightKg} kg</span>
             </div>
-            <div className="detail-row">
-              <span className="detail-label">Description</span>
-              <span className="detail-value">{viewingOrder.description || 'N/A'}</span>
+            <div className="flex justify-between items-center pb-(--space-md) border-b border-border">
+              <span className="text-dim font-(--font-label-md)">Description</span>
+              <span className="text-text font-medium">{viewingOrder.description || 'N/A'}</span>
             </div>
-            <div className="detail-row">
-              <span className="detail-label">Created At</span>
-              <span className="detail-value">{format(new Date(viewingOrder.createdAt), 'PPPP p')}</span>
+            <div className="flex justify-between items-center pb-(--space-md) border-b border-border last:border-b-0">
+              <span className="text-dim font-(--font-label-md)">Created At</span>
+              <span className="text-text font-medium">{format(new Date(viewingOrder.createdAt), 'PPPP p')}</span>
             </div>
           </div>
         )}
@@ -276,15 +403,16 @@ export default function OrdersPage() {
         onConfirm={handleCancelOrder}
       />
 
-      <section className="filters-bar card">
+      <section className="card flex justify-between items-center px-(--space-lg) py-(--space-md)">
         <SearchInput
           placeholder="Search by ID or address..."
           value={searchQuery}
+          className="flex-1 max-w-[400px]"
           onChange={(e) => setSearchQuery(e.target.value)}
         />
-        <div className="filter-actions">
+        <div className="flex items-center gap-3">
           <select 
-            className="select-filter" 
+            className="bg-surface-low border border-border rounded-default text-text px-3 py-2 font-(--font-label-md) outline-none cursor-pointer transition-colors focus:border-primary" 
             value={statusFilter} 
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -296,8 +424,8 @@ export default function OrdersPage() {
             <option value="failed">Failed</option>
             <option value="cancelled">Cancelled</option>
           </select>
-          <div className="divider" />
-          <span className="results-count">Total <b>{filteredOrders.length}</b> orders</span>
+          <div className="w-px h-6 bg-border" />
+          <span className="text-xs text-dim">Total <b>{filteredOrders.length}</b> orders</span>
         </div>
       </section>
 
@@ -315,122 +443,6 @@ export default function OrdersPage() {
         )}
       </section>
 
-      <style jsx>{`
-        .page-container {
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-xl);
-        }
-
-        .page-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .order-id-cell {
-          display: flex;
-          align-items: center;
-          gap: var(--space-sm);
-          color: var(--color-primary-light);
-          font-weight: 600;
-        }
-
-        .route-cell {
-          display: flex;
-          align-items: center;
-          gap: var(--space-md);
-        }
-
-        .route-point {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 13px;
-          max-width: 150px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        .time-cell {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 13px;
-          color: var(--color-text-dim);
-        }
-
-        .order-details-view {
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-lg);
-          padding: var(--space-sm) 0;
-        }
-        .detail-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding-bottom: var(--space-md);
-          border-bottom: 1px solid var(--color-border);
-        }
-        .detail-row:last-child {
-          border-bottom: none;
-        }
-        .detail-label {
-          color: var(--color-text-dim);
-          font: var(--font-label-md);
-        }
-        .detail-value {
-          color: var(--color-text);
-          font-weight: 500;
-        }
-        .filters-bar {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: var(--space-md) var(--space-lg);
-        }
-
-        .filters-bar :global(.search-input-group) {
-          flex: 1;
-          max-width: 400px;
-        }
-
-        .divider {
-          width: 1px;
-          height: 24px;
-          background: var(--color-border);
-        }
-
-        .form-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: var(--space-lg);
-        }
-
-        .select-filter {
-          background: var(--color-surface-low);
-          border: 1px solid var(--color-border);
-          border-radius: var(--radius-default);
-          color: var(--color-text);
-          padding: 8px 12px;
-          font: var(--font-label-md);
-          outline: none;
-          cursor: pointer;
-          transition: border-color 0.2s;
-        }
-
-        .select-filter:focus {
-          border-color: var(--color-primary);
-        }
-
-        @media (max-width: 600px) {
-          .form-grid {
-            grid-template-columns: 1fr;
-          }
-        }
-      `}</style>
     </div>
   );
 }

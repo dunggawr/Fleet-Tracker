@@ -1,3 +1,66 @@
+## [2026-05-11] - Dashboard Real-time Alerts & Monitoring
+### Added
+- **Frontend (Admin Dashboard)**:
+    - Triển khai **Real-time Active Alerts**:
+        - Thay thế toàn bộ dữ liệu hardcoded (fake) bằng dữ liệu thực tế từ API `/alerts/active`.
+        - Tích hợp **WebSocket Listener** (`alert:new`, `alert:resolved`) để cập nhật danh sách cảnh báo ngay lập tức mà không cần tải lại trang.
+        - Tạo hook `useAlerts` hỗ trợ quản lý trạng thái, xử lý lỗi và polling fallback (60s).
+        - Cập nhật giao diện Dashboard hiển thị đầy đủ các loại vi phạm: Quá tốc độ, Lệch lộ trình, Dừng đỗ bất thường và Sự cố (Incident).
+        - Hỗ trợ chức năng **Dismiss Alert** đồng bộ trực tiếp với cơ sở dữ liệu qua API `/resolve`.
+
+### Fixed
+- **Frontend (Admin Dashboard)**:
+    - Khắc phục lỗi TypeScript: Xử lý biến `isLoading` bị khai báo trùng lặp trong `DashboardPage`.
+    - Đồng bộ hóa kiểu dữ liệu Alert Enums giữa Backend (Postgres) và Frontend (TypeScript).
+    - Đảm bảo build production thành công 100% với các thay đổi mới.
+
+## [2026-05-11] - Interactive Order Dispatch & Driver Management (Phase 12)
+### Added
+- **Frontend (Admin Dashboard)**:
+    - Triển khai chức năng **Interactive Order Creation**:
+        - Giao diện split-view (Map + Form) cho phép chọn vị trí pickup/delivery trực tiếp trên bản đồ.
+        - Hỗ trợ nút "Pick on Map" để lấy tọa độ Lat/Lng chính xác, thay thế dữ liệu hardcoded.
+        - Hiển thị Marker màu sắc khác nhau (Tím cho Pickup, Xanh cho Delivery) để dễ nhận diện.
+    - Hoàn thiện tính năng **Edit Driver**:
+        - Nâng cấp modal đăng ký để hỗ trợ cả tạo mới và cập nhật thông tin tài xế.
+        - Đồng bộ hóa dữ liệu tài xế từ bảng vào form chỉnh sửa một cách mượt mà.
+    - Cập nhật component `Modal`: Hỗ trợ prop `className` và các kích thước linh hoạt (`xl`).
+    - Nâng cấp component `MapBox`: Thêm sự kiện `onClick` để hỗ trợ chọn vị trí tương tác.
+
+### Fixed
+- **Backend (API)**:
+    - Sửa lỗi nghiêm trọng `column "reset_code" does not exist`: Triển khai migration bổ sung cột `reset_code` và `reset_code_expiry` cho bảng `users`.
+- **Frontend (Admin Dashboard)**:
+    - Khắc phục lỗi TypeScript build liên quan đến `ModalProps` và `className`.
+    - Đảm bảo dự án đạt trạng thái "Production Ready" với bản build thành công 100%.
+
+### Dev Ops
+- Tạo nhánh mới `feat/driver-edit-order-map-sync` và đẩy toàn bộ thay đổi lên GitHub.
+
+## [2026-05-11] - Driver App Web Support & Platform Abstraction
+### Added
+- **Mobile (Driver App)**:
+    - Triển khai cơ chế **Platform-specific Components**: Tách biệt logic bản đồ giữa Native (Dùng `react-native-maps`) và Web (Dùng Mock component).
+    - Tạo `MapComponents.tsx` và `MapComponents.web.tsx` để đóng gói các thành phần bản đồ.
+    - Cho phép chạy Driver App trực tiếp trên trình duyệt (`expo start --web`) để thuận tiện cho việc kiểm thử luồng GPS mà không cần thiết bị thật.
+
+### Fixed
+- **Mobile (Driver App)**:
+    - Khắc phục lỗi crash nghiêm trọng khi chạy trên Web: `Importing native-only module "react-native/Libraries/Utilities/codegenNativeCommands"`.
+    - Sử dụng dynamic `require` trong `MapComponents.tsx` để cô lập hoàn toàn thư viện Native khỏi Web bundler.
+    - Sửa lỗi type definition cho `mapRef` để tương thích với cả `MapView` native và Mock component.
+
+## [2026-05-11] - Dispatch API Fixes & Backend Hardening
+### Fixed
+- **Backend (API)**:
+    - Khắc phục lỗi nghiêm trọng `QueryFailedError: FOR UPDATE cannot be applied to the nullable side of an outer join` bằng cách tách biệt truy vấn khóa (lock) thực thể và nạp dữ liệu quan hệ (relations).
+    - Áp dụng bản vá cho `DispatchService` (assign/bulk-assign) và `TripsService` (updateStatus).
+    - Giải quyết lỗi TypeScript build (`fullTrip is possibly null`) trong `TripsService.ts`.
+- **Frontend (Admin Dashboard)**:
+    - Sửa lỗi 404 khi gán đơn hàng: Cập nhật `use-orders.ts` gọi đúng endpoint `/api/dispatch/assign` thay vì `/api/orders/:id/assign`.
+    - Đồng bộ hóa `use-dispatch-suggest.ts` sử dụng `/api/dispatch/bulk-assign` cho các thao tác gán đơn hàng hàng loạt.
+    - Khắc phục lỗi Mapbox runtime: Chuyển đổi các biến màu CSS (`var(--color-...)`) sang mã Hex thông qua hàm `resolveColor` để tương thích với Mapbox GL JS.
+
 ## [2026-05-11] - Admin Dashboard Polishing & Build Stability (Phase 11)
 ### Added
 - **Frontend (Admin Dashboard)**:

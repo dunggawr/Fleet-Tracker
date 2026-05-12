@@ -235,11 +235,11 @@ export default function VehiclesPage() {
   ];
 
   return (
-    <div className="page-container">
-      <header className="page-header">
+    <div className="flex flex-col gap-8">
+      <header className="flex justify-between items-center">
         <div>
-          <h1>Vehicle Management</h1>
-          <p className="text-dim">Manage your fleet vehicles, maintenance schedules, and assignments.</p>
+          <h1 className="text-2xl font-bold text-text">Vehicle Management</h1>
+          <p className="text-sm text-text-dim mt-1">Manage your fleet vehicles, maintenance schedules, and assignments.</p>
         </div>
         <Button variant="primary" icon={<Plus size={18} />} onClick={openCreateModal}>
           Add New Vehicle
@@ -257,8 +257,8 @@ export default function VehiclesPage() {
           </>
         )}
       >
-        <form className="vehicle-form" onSubmit={handleSubmit(onSubmit)}>
-          <div className="form-grid">
+        <form className="flex flex-col gap-6" onSubmit={handleSubmit(onSubmit)}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Input 
               label="Plate Number" 
               placeholder="e.g. 29A-12345" 
@@ -271,27 +271,36 @@ export default function VehiclesPage() {
               {...register('maxCapacityKg', { valueAsNumber: true })}
               error={errors.maxCapacityKg?.message}
             />
-            <div className="form-group">
-              <label className="label">Vehicle Type</label>
-              <select className="select" {...register('type')}>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-text-dim">Vehicle Type</label>
+              <select 
+                className="bg-surface-low border border-border rounded-lg text-text px-3 py-2.5 text-sm outline-none focus:border-primary transition-colors cursor-pointer" 
+                {...register('type')}
+              >
                 <option value="small">Small</option>
                 <option value="medium">Medium</option>
                 <option value="large">Large</option>
               </select>
-              {errors.type && <p className="error-text">{errors.type.message}</p>}
+              {errors.type && <p className="text-danger text-xs mt-1">{errors.type.message}</p>}
             </div>
-            <div className="form-group">
-              <label className="label">Status</label>
-              <select className="select" {...register('status')}>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-text-dim">Status</label>
+              <select 
+                className="bg-surface-low border border-border rounded-lg text-text px-3 py-2.5 text-sm outline-none focus:border-primary transition-colors cursor-pointer" 
+                {...register('status')}
+              >
                 <option value="available">Available</option>
                 <option value="delivering">Delivering</option>
                 <option value="maintenance">Maintenance</option>
               </select>
-              {errors.status && <p className="error-text">{errors.status.message}</p>}
+              {errors.status && <p className="text-danger text-xs mt-1">{errors.status.message}</p>}
             </div>
-            <div className="form-group">
-              <label className="label">Assigned Driver</label>
-              <select className="select" {...register('driverId')}>
+            <div className="flex flex-col gap-1.5 md:col-span-2">
+              <label className="text-sm font-medium text-text-dim">Assigned Driver</label>
+              <select 
+                className="bg-surface-low border border-border rounded-lg text-text px-3 py-2.5 text-sm outline-none focus:border-primary transition-colors cursor-pointer" 
+                {...register('driverId')}
+              >
                 <option value="">Unassigned</option>
                 {sortedDrivers.map((driver) => (
                   <option key={driver.id} value={driver.id}>
@@ -299,7 +308,7 @@ export default function VehiclesPage() {
                   </option>
                 ))}
               </select>
-              {errors.driverId && <p className="error-text">Invalid driver selection</p>}
+              {errors.driverId && <p className="text-danger text-xs mt-1">Invalid driver selection</p>}
             </div>
           </div>
         </form>
@@ -317,11 +326,11 @@ export default function VehiclesPage() {
           </>
         )}
       >
-        <div className="form-grid">
-          <div className="form-group">
-            <label className="label">Select Driver</label>
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-text-dim">Select Driver</label>
             <select
-              className="select"
+              className="bg-surface-low border border-border rounded-lg text-text px-3 py-2.5 text-sm outline-none focus:border-primary transition-colors cursor-pointer"
               value={assignedDriverId}
               onChange={(e) => setAssignedDriverId(e.target.value)}
             >
@@ -333,7 +342,7 @@ export default function VehiclesPage() {
               ))}
             </select>
           </div>
-          <p className="text-dim">
+          <p className="text-xs text-text-dim">
             This will update the vehicle&apos;s assigned driver without changing other vehicle details.
           </p>
         </div>
@@ -354,15 +363,17 @@ export default function VehiclesPage() {
         }}
       />
 
-      <section className="filters-bar card">
-        <SearchInput
-          placeholder="Search by plate number or driver..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-        <div className="filter-actions">
+      <section className="flex flex-col md:flex-row justify-between items-center gap-4 p-4 md:px-6 md:py-4 bg-surface rounded-xl border border-border">
+        <div className="w-full md:flex-1 md:max-w-[400px]">
+          <SearchInput
+            placeholder="Search by plate number or driver..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <div className="flex items-center gap-4 w-full md:w-auto">
           <select 
-            className="select-filter" 
+            className="bg-surface-low border border-border rounded-lg text-text px-3 py-2 text-sm font-medium outline-none cursor-pointer focus:border-primary transition-colors flex-1 md:flex-none" 
             value={typeFilter} 
             onChange={(e) => setTypeFilter(e.target.value)}
           >
@@ -372,7 +383,7 @@ export default function VehiclesPage() {
             <option value="large">Large</option>
           </select>
           <select 
-            className="select-filter" 
+            className="bg-surface-low border border-border rounded-lg text-text px-3 py-2 text-sm font-medium outline-none cursor-pointer focus:border-primary transition-colors flex-1 md:flex-none" 
             value={statusFilter} 
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -381,18 +392,18 @@ export default function VehiclesPage() {
             <option value="delivering">Delivering</option>
             <option value="maintenance">Maintenance</option>
           </select>
-          <div className="divider" />
-          <span className="results-count">Total <b>{total}</b> vehicles</span>
+          <div className="hidden md:block w-px h-6 bg-border" />
+          <span className="text-xs font-medium text-text-dim whitespace-nowrap">Total <b>{total}</b> vehicles</span>
         </div>
       </section>
 
-      <section className="table-section">
+      <section className="bg-surface rounded-xl border border-border overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center h-64">
             <LoadingSpinner size={32} />
           </div>
         ) : (
-          <>
+          <div className="overflow-x-auto">
             <DataTable 
               data={filteredVehicles} 
               columns={columns} 
@@ -400,7 +411,7 @@ export default function VehiclesPage() {
             />
             
             {totalPages > 1 && (
-              <div className="pagination">
+              <div className="flex items-center justify-center gap-4 mt-6 p-4 border-t border-border bg-surface-low/30">
                 <Button 
                   variant="secondary" 
                   size="sm" 
@@ -409,7 +420,7 @@ export default function VehiclesPage() {
                 >
                   Previous
                 </Button>
-                <span className="page-info">
+                <span className="text-xs font-medium text-text-dim">
                   Page <b>{page}</b> of <b>{totalPages}</b>
                 </span>
                 <Button 
@@ -422,129 +433,9 @@ export default function VehiclesPage() {
                 </Button>
               </div>
             )}
-          </>
+          </div>
         )}
       </section>
-
-      <style jsx>{`
-        .page-container {
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-xl);
-        }
-
-        .page-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .filters-bar {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: var(--space-md) var(--space-lg);
-        }
-
-        .filters-bar :global(.search-input-group) {
-          flex: 1;
-          max-width: 400px;
-        }
-
-        .filter-actions {
-          display: flex;
-          align-items: center;
-          gap: var(--space-lg);
-        }
-
-        .divider {
-          width: 1px;
-          height: 24px;
-          background: var(--color-border);
-        }
-
-        .results-count {
-          font: var(--font-label-sm);
-          color: var(--color-text-dim);
-        }
-
-        .action-buttons {
-          display: flex;
-          gap: 4px;
-        }
-
-        .form-grid {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: var(--space-lg);
-        }
-
-        .form-group {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-
-        .label {
-          font: var(--font-label-md);
-          color: var(--color-text-dim);
-        }
-
-        .select {
-          background: var(--color-surface-low);
-          border: 1px solid var(--color-border);
-          border-radius: var(--radius-default);
-          color: var(--color-text);
-          padding: 10px 12px;
-          font: var(--font-body-md);
-          outline: none;
-          transition: border-color 0.2s;
-        }
-
-        .select:focus {
-          border-color: var(--color-primary);
-        }
-
-        .select-filter {
-          background: var(--color-surface-low);
-          border: 1px solid var(--color-border);
-          border-radius: var(--radius-default);
-          color: var(--color-text);
-          padding: 8px 12px;
-          font: var(--font-label-md);
-          outline: none;
-          cursor: pointer;
-          transition: border-color 0.2s;
-        }
-
-        .select-filter:focus {
-          border-color: var(--color-primary);
-        }
-
-        .error-text {
-          color: var(--color-danger);
-          font-size: 12px;
-          margin-top: 4px;
-        }
-        .capitalize {
-          text-transform: capitalize;
-        }
-
-        .pagination {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: var(--space-md);
-          margin-top: var(--space-lg);
-          padding: var(--space-md);
-          border-top: 1px solid var(--color-border);
-        }
-
-        .page-info {
-          font: var(--font-label-sm);
-          color: var(--color-text-dim);
-        }
-      `}</style>
     </div>
   );
 }

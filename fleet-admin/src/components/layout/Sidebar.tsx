@@ -1,248 +1,107 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  Truck, 
-  Users, 
-  ClipboardList, 
-  Map as MapIcon, 
+import React, { useEffect } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  LayoutDashboard,
+  Truck,
+  Users,
+  ClipboardList,
+  Map as MapIcon,
   Settings,
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Signal,
   BarChart3,
   Navigation,
-} from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
+} from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 const navItems = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Vehicles', href: '/vehicles', icon: Truck },
-  { name: 'Drivers', href: '/drivers', icon: Users },
-  { name: 'Orders', href: '/orders', icon: ClipboardList },
-  { name: 'Dispatch Center', href: '/dispatch', icon: MapIcon },
-  { name: 'Live Tracking', href: '/tracking', icon: Navigation },
-  { name: 'Reports', href: '/reports', icon: BarChart3 },
+  { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Vehicles", href: "/vehicles", icon: Truck },
+  { name: "Drivers", href: "/drivers", icon: Users },
+  { name: "Orders", href: "/orders", icon: ClipboardList },
+  { name: "Dispatch Center", href: "/dispatch", icon: MapIcon },
+  { name: "Live Tracking", href: "/tracking", icon: Navigation },
+  { name: "Reports", href: "/reports", icon: BarChart3 },
 ];
 
-export function Sidebar() {
-  const [collapsed, setCollapsed] = React.useState(false);
+interface SidebarProps {
+  collapsed: boolean;
+  onToggle: () => void;
+}
+
+export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
   const { logout } = useAuth();
 
   return (
-    <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
-      <div className="sidebar-header">
-        <div className="logo">
-          <div className="logo-icon">FT</div>
-          {!collapsed && <span className="logo-text">Fleet<span>Tracker</span></span>}
+    <aside 
+      className="fixed left-0 top-0 h-screen bg-surface border-r border-border flex flex-col transition-all duration-200 z-100"
+      style={{ width: collapsed ? '80px' : '260px' }}
+    >
+      <div className={`h-header border-b border-border flex items-center justify-between px-lg ${collapsed ? "justify-center px-md" : ""}`}>
+        <div className="flex items-center gap-sm">
+          <div className="w-8 h-8 bg-primary text-white rounded-sm flex items-center justify-center font-bold text-sm">FT</div>
+          {!collapsed && (
+            <span className="font-bold text-lg text-text">
+              Fleet<span className="text-primary-light">Tracker</span>
+            </span>
+          )}
         </div>
-        <button 
-          className="collapse-btn" 
-          onClick={() => setCollapsed(!collapsed)}
+        <button
+          className={`bg-surface-high border border-border text-text-muted w-6 h-6 rounded-sm flex items-center justify-center cursor-pointer transition-all hover:text-primary-light hover:border-primary ${collapsed ? "absolute -right-3 top-[72px] bg-primary text-white rounded-full border-none shadow-sm" : ""}`}
+          onClick={onToggle}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
         </button>
       </div>
 
-      <nav className="sidebar-nav">
+      <nav className="flex-1 p-lg px-sm flex flex-col gap-xs">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = pathname === item.href;
-          
+          const isActive =
+            item.href === "/"
+              ? pathname === "/"
+              : pathname === item.href || pathname.startsWith(`${item.href}/`);
+
           return (
-            <Link 
-              key={item.name} 
+            <Link
+              key={item.name}
               href={item.href}
-              className={`nav-item ${isActive ? 'active' : ''}`}
+              className={`flex items-center gap-md p-3 px-md text-text-muted no-underline rounded-default transition-all relative font-medium text-body-md hover:bg-surface-high hover:text-text ${isActive ? "bg-primary/10 text-primary-light" : ""} ${collapsed ? "justify-center p-3" : ""}`}
               title={collapsed ? item.name : undefined}
             >
               <Icon size={20} />
               {!collapsed && <span>{item.name}</span>}
-              {isActive && <div className="active-indicator" />}
+              {isActive && <div className="absolute left-0 top-1/5 bottom-1/5 w-[3px] bg-primary rounded-r-md" />}
             </Link>
           );
         })}
       </nav>
 
-      <div className="sidebar-footer">
-        <Link href="/settings" className="nav-item">
+      <div className="p-lg px-sm border-t border-border flex flex-col gap-xs">
+        <Link
+          href="/settings"
+          className={`flex items-center gap-md p-3 px-md text-text-muted no-underline rounded-default transition-all relative font-medium text-body-md hover:bg-surface-high hover:text-text ${pathname.startsWith("/settings") ? "bg-primary/10 text-primary-light" : ""} ${collapsed ? "justify-center p-3" : ""}`}
+        >
           <Settings size={20} />
           {!collapsed && <span>Settings</span>}
+          {pathname.startsWith("/settings") && (
+            <div className="absolute left-0 top-1/5 bottom-1/5 w-[3px] bg-primary rounded-r-md" />
+          )}
         </Link>
-        <button className="nav-item logout-btn" onClick={logout}>
+        <button 
+          className={`flex items-center gap-md p-3 px-md text-danger opacity-80 no-underline rounded-default transition-all relative font-medium text-body-md hover:bg-danger/10 hover:opacity-100 bg-transparent border-none w-full cursor-pointer ${collapsed ? "justify-center p-3" : ""}`} 
+          onClick={logout}
+        >
           <LogOut size={20} />
           {!collapsed && <span>Logout</span>}
         </button>
       </div>
-
-      <style jsx>{`
-        .sidebar {
-          width: var(--sidebar-width);
-          height: 100vh;
-          background: var(--color-surface);
-          border-right: 1px solid var(--color-border);
-          display: flex;
-          flex-direction: column;
-          transition: width var(--transition-normal);
-          position: fixed;
-          left: 0;
-          top: 0;
-          z-index: 100;
-        }
-
-        .sidebar.collapsed {
-          width: 80px;
-        }
-
-        .sidebar-header {
-          height: var(--header-height);
-          padding: 0 var(--space-lg);
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          border-bottom: 1px solid var(--color-border);
-        }
-
-        .collapsed .sidebar-header {
-          padding: 0 var(--space-md);
-          justify-content: center;
-        }
-
-        .logo {
-          display: flex;
-          align-items: center;
-          gap: var(--space-sm);
-        }
-
-        .logo-icon {
-          width: 32px;
-          height: 32px;
-          background: var(--color-primary);
-          color: white;
-          border-radius: var(--radius-sm);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: 700;
-          font-size: 14px;
-        }
-
-        .logo-text {
-          font-weight: 700;
-          font-size: 18px;
-          color: var(--color-text);
-        }
-
-        .logo-text span {
-          color: var(--color-primary-light);
-        }
-
-        .collapse-btn {
-          background: var(--color-surface-high);
-          border: 1px solid var(--color-border);
-          color: var(--color-text-muted);
-          width: 24px;
-          height: 24px;
-          border-radius: var(--radius-sm);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all var(--transition-fast);
-        }
-
-        .collapse-btn:hover {
-          color: var(--color-primary-light);
-          border-color: var(--color-primary);
-        }
-
-        .collapsed .collapse-btn {
-          position: absolute;
-          right: -12px;
-          top: 72px;
-          background: var(--color-primary);
-          color: white;
-          border-radius: 50%;
-          border: none;
-          box-shadow: var(--shadow-sm);
-        }
-
-        .sidebar-nav {
-          flex: 1;
-          padding: var(--space-lg) var(--space-sm);
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-xs);
-        }
-
-        .nav-item {
-          display: flex;
-          align-items: center;
-          gap: var(--space-md);
-          padding: 12px var(--space-md);
-          color: var(--color-text-muted);
-          text-decoration: none;
-          border-radius: var(--radius-default);
-          transition: all var(--transition-fast);
-          position: relative;
-          background: transparent;
-          border: none;
-          width: 100%;
-          cursor: pointer;
-          font: var(--font-body-md);
-          font-weight: 500;
-        }
-
-        .collapsed .nav-item {
-          justify-content: center;
-          padding: 12px;
-        }
-
-        .nav-item:hover {
-          background: var(--color-surface-high);
-          color: var(--color-text);
-        }
-
-        .nav-item.active {
-          background: rgba(99, 102, 241, 0.1);
-          color: var(--color-primary-light);
-        }
-
-        .active-indicator {
-          position: absolute;
-          left: 0;
-          top: 20%;
-          bottom: 20%;
-          width: 3px;
-          background: var(--color-primary);
-          border-radius: 0 4px 4px 0;
-        }
-
-        .sidebar-footer {
-          padding: var(--space-lg) var(--space-sm);
-          border-top: 1px solid var(--color-border);
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-xs);
-        }
-
-        .logout-btn {
-          color: var(--color-danger);
-          opacity: 0.8;
-        }
-
-        .logout-btn:hover {
-          background: rgba(239, 68, 68, 0.1);
-          color: var(--color-danger);
-          opacity: 1;
-        }
-      `}</style>
     </aside>
   );
 }

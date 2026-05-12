@@ -1,19 +1,19 @@
-import { useAuthStore } from '@/store/useAuthStore';
+import { useAuthStore } from "@/store/useAuthStore";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3001/api";
 
 let refreshInFlight: Promise<string | null> | null = null;
 
 function withAuthHeader(headers: HeadersInit | undefined, token: string) {
   if (headers instanceof Headers) {
     const next = new Headers(headers);
-    next.set('Authorization', `Bearer ${token}`);
+    next.set("Authorization", `Bearer ${token}`);
     return next;
   }
 
   if (Array.isArray(headers)) {
     const next = new Headers(headers);
-    next.set('Authorization', `Bearer ${token}`);
+    next.set("Authorization", `Bearer ${token}`);
     return next;
   }
 
@@ -38,9 +38,9 @@ export async function refreshAccessToken(): Promise<string | null> {
 
     try {
       const response = await fetch(`${API_URL}/auth/refresh`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ refreshToken }),
       });

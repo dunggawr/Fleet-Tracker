@@ -1,47 +1,47 @@
-import React, { useState } from 'react';
-import { 
-  StyleSheet, 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  ActivityIndicator, 
-  KeyboardAvoidingView, 
+import React, { useState } from "react";
+import {
+  StyleSheet,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ActivityIndicator,
+  KeyboardAvoidingView,
   Platform,
-  Alert
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import { Mail, Lock, LogIn, ArrowLeft } from 'lucide-react-native';
-import { useAuthStore } from '../store/useAuthStore';
-import Toast from 'react-native-toast-message';
+  Alert,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import { Mail, Lock, LogIn, ArrowLeft } from "lucide-react-native";
+import { useAuthStore } from "../store/useAuthStore";
+import Toast from "react-native-toast-message";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3001/api";
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isForgotMode, setIsForgotMode] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
-  const [resetCode, setResetCode] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [stage, setStage] = useState<'email' | 'code' | 'password'>('email'); // email -> code -> password
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetCode, setResetCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [stage, setStage] = useState<"email" | "code" | "password">("email"); // email -> code -> password
   const router = useRouter();
-  const setAuth = useAuthStore(state => state.setAuth);
+  const setAuth = useAuthStore((state) => state.setAuth);
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Lỗi', 'Vui lòng nhập email và mật khẩu');
+      Alert.alert("Lỗi", "Vui lòng nhập email và mật khẩu");
       return;
     }
 
     setIsLoading(true);
     try {
       const response = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
@@ -49,7 +49,7 @@ export default function LoginScreen() {
 
       if (!response.ok) {
         throw new Error(
-          data?.message || data?.error?.message || 'Đăng nhập thất bại'
+          data?.message || data?.error?.message || "Đăng nhập thất bại",
         );
       }
 
@@ -60,11 +60,11 @@ export default function LoginScreen() {
       const { user } = payload;
 
       if (!accessToken || !refreshToken || !user) {
-        throw new Error('Phản hồi không hợp lệ từ máy chủ');
+        throw new Error("Phản hồi không hợp lệ từ máy chủ");
       }
 
-      if ((user.role || '').toLowerCase() !== 'driver') {
-        throw new Error('Tài khoản này không có quyền truy cập Driver App');
+      if ((user.role || "").toLowerCase() !== "driver") {
+        throw new Error("Tài khoản này không có quyền truy cập Driver App");
       }
 
       setAuth(
@@ -78,9 +78,9 @@ export default function LoginScreen() {
         refreshToken,
       );
 
-      router.replace('/(tabs)');
+      router.replace("/(tabs)");
     } catch (error: any) {
-      Alert.alert('Đăng nhập thất bại', error.message || 'Lỗi kết nối máy chủ');
+      Alert.alert("Đăng nhập thất bại", error.message || "Lỗi kết nối máy chủ");
     } finally {
       setIsLoading(false);
     }
@@ -89,9 +89,9 @@ export default function LoginScreen() {
   const handleForgotPassword = async () => {
     if (!resetEmail) {
       Toast.show({
-        type: 'error',
-        text1: 'Lỗi',
-        text2: 'Vui lòng nhập email',
+        type: "error",
+        text1: "Lỗi",
+        text2: "Vui lòng nhập email",
       });
       return;
     }
@@ -99,8 +99,8 @@ export default function LoginScreen() {
     setIsLoading(true);
     try {
       const response = await fetch(`${API_URL}/auth/forgot-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: resetEmail }),
       });
 
@@ -108,21 +108,21 @@ export default function LoginScreen() {
       const result = data?.data ?? data;
 
       if (!response.ok) {
-        throw new Error(result?.message || 'Không thể gửi mã reset');
+        throw new Error(result?.message || "Không thể gửi mã reset");
       }
 
       Toast.show({
-        type: 'success',
-        text1: 'Thành công',
+        type: "success",
+        text1: "Thành công",
         text2: `Mã reset: ${result.resetCode} (Demo - kiểm tra console)`,
       });
 
-      setStage('code');
+      setStage("code");
     } catch (error: any) {
       Toast.show({
-        type: 'error',
-        text1: 'Lỗi',
-        text2: error.message || 'Không thể gửi mã reset',
+        type: "error",
+        text1: "Lỗi",
+        text2: error.message || "Không thể gửi mã reset",
       });
     } finally {
       setIsLoading(false);
@@ -132,27 +132,27 @@ export default function LoginScreen() {
   const handleResetPassword = async () => {
     if (!newPassword || !confirmPassword) {
       Toast.show({
-        type: 'error',
-        text1: 'Lỗi',
-        text2: 'Vui lòng nhập mật khẩu mới',
+        type: "error",
+        text1: "Lỗi",
+        text2: "Vui lòng nhập mật khẩu mới",
       });
       return;
     }
 
     if (newPassword !== confirmPassword) {
       Toast.show({
-        type: 'error',
-        text1: 'Lỗi',
-        text2: 'Mật khẩu không khớp',
+        type: "error",
+        text1: "Lỗi",
+        text2: "Mật khẩu không khớp",
       });
       return;
     }
 
     if (newPassword.length < 6) {
       Toast.show({
-        type: 'error',
-        text1: 'Lỗi',
-        text2: 'Mật khẩu phải ít nhất 6 ký tự',
+        type: "error",
+        text1: "Lỗi",
+        text2: "Mật khẩu phải ít nhất 6 ký tự",
       });
       return;
     }
@@ -160,8 +160,8 @@ export default function LoginScreen() {
     setIsLoading(true);
     try {
       const response = await fetch(`${API_URL}/auth/reset-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: resetEmail,
           resetCode,
@@ -173,27 +173,27 @@ export default function LoginScreen() {
       const result = data?.data ?? data;
 
       if (!response.ok) {
-        throw new Error(result?.message || 'Không thể reset mật khẩu');
+        throw new Error(result?.message || "Không thể reset mật khẩu");
       }
 
       Toast.show({
-        type: 'success',
-        text1: 'Thành công',
-        text2: 'Mật khẩu đã được thay đổi. Vui lòng đăng nhập lại',
+        type: "success",
+        text1: "Thành công",
+        text2: "Mật khẩu đã được thay đổi. Vui lòng đăng nhập lại",
       });
 
       // Reset form and go back to login
       setIsForgotMode(false);
-      setStage('email');
-      setResetEmail('');
-      setResetCode('');
-      setNewPassword('');
-      setConfirmPassword('');
+      setStage("email");
+      setResetEmail("");
+      setResetCode("");
+      setNewPassword("");
+      setConfirmPassword("");
     } catch (error: any) {
       Toast.show({
-        type: 'error',
-        text1: 'Lỗi',
-        text2: error.message || 'Không thể reset mật khẩu',
+        type: "error",
+        text1: "Lỗi",
+        text2: error.message || "Không thể reset mật khẩu",
       });
     } finally {
       setIsLoading(false);
@@ -201,21 +201,21 @@ export default function LoginScreen() {
   };
 
   return (
-    <LinearGradient colors={['#0f172a', '#1e293b']} style={styles.container}>
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <LinearGradient colors={["#0f172a", "#1e293b"]} style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.content}
       >
         {isForgotMode && (
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.backButton}
             onPress={() => {
               setIsForgotMode(false);
-              setStage('email');
-              setResetEmail('');
-              setResetCode('');
-              setNewPassword('');
-              setConfirmPassword('');
+              setStage("email");
+              setResetEmail("");
+              setResetCode("");
+              setNewPassword("");
+              setConfirmPassword("");
             }}
           >
             <ArrowLeft size={24} color="#6366f1" />
@@ -229,7 +229,7 @@ export default function LoginScreen() {
           </View>
           <Text style={styles.title}>FleetTracker</Text>
           <Text style={styles.subtitle}>
-            {isForgotMode ? 'Reset Password' : 'Driver Portal'}
+            {isForgotMode ? "Reset Password" : "Driver Portal"}
           </Text>
         </View>
 
@@ -262,8 +262,11 @@ export default function LoginScreen() {
                 />
               </View>
 
-              <TouchableOpacity 
-                style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
+              <TouchableOpacity
+                style={[
+                  styles.loginButton,
+                  isLoading && styles.loginButtonDisabled,
+                ]}
                 onPress={handleLogin}
                 disabled={isLoading}
               >
@@ -274,17 +277,17 @@ export default function LoginScreen() {
                 )}
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.forgotButton}
                 onPress={() => {
                   setIsForgotMode(true);
-                  setStage('email');
+                  setStage("email");
                 }}
               >
                 <Text style={styles.forgotText}>Forgot Password?</Text>
               </TouchableOpacity>
             </>
-          ) : stage === 'email' ? (
+          ) : stage === "email" ? (
             <>
               <Text style={styles.stageTitle}>Enter Your Email</Text>
               <View style={styles.inputContainer}>
@@ -300,8 +303,11 @@ export default function LoginScreen() {
                   autoCorrect={false}
                 />
               </View>
-              <TouchableOpacity 
-                style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
+              <TouchableOpacity
+                style={[
+                  styles.loginButton,
+                  isLoading && styles.loginButtonDisabled,
+                ]}
                 onPress={handleForgotPassword}
                 disabled={isLoading}
               >
@@ -312,10 +318,12 @@ export default function LoginScreen() {
                 )}
               </TouchableOpacity>
             </>
-          ) : stage === 'code' ? (
+          ) : stage === "code" ? (
             <>
               <Text style={styles.stageTitle}>Enter Reset Code</Text>
-              <Text style={styles.stageDesc}>Check your email for the reset code</Text>
+              <Text style={styles.stageDesc}>
+                Check your email for the reset code
+              </Text>
               <View style={styles.inputContainer}>
                 <Lock size={20} color="#94a3b8" style={styles.inputIcon} />
                 <TextInput
@@ -328,9 +336,12 @@ export default function LoginScreen() {
                   maxLength={6}
                 />
               </View>
-              <TouchableOpacity 
-                style={[styles.loginButton, (!resetCode || isLoading) && styles.loginButtonDisabled]}
-                onPress={() => setStage('password')}
+              <TouchableOpacity
+                style={[
+                  styles.loginButton,
+                  (!resetCode || isLoading) && styles.loginButtonDisabled,
+                ]}
+                onPress={() => setStage("password")}
                 disabled={!resetCode || isLoading}
               >
                 <Text style={styles.loginButtonText}>Next</Text>
@@ -361,8 +372,11 @@ export default function LoginScreen() {
                   secureTextEntry
                 />
               </View>
-              <TouchableOpacity 
-                style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
+              <TouchableOpacity
+                style={[
+                  styles.loginButton,
+                  isLoading && styles.loginButtonDisabled,
+                ]}
                 onPress={handleResetPassword}
                 disabled={isLoading}
               >
@@ -387,64 +401,64 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 30,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   logoContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 50,
   },
   iconCircle: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(99, 102, 241, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(99, 102, 241, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.2)',
+    borderColor: "rgba(99, 102, 241, 0.2)",
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
-    color: '#f8fafc',
+    fontWeight: "bold",
+    color: "#f8fafc",
     letterSpacing: 1,
   },
   subtitle: {
     fontSize: 16,
-    color: '#94a3b8',
+    color: "#94a3b8",
     marginTop: 5,
   },
   form: {
-    width: '100%',
+    width: "100%",
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(30, 41, 59, 0.5)',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(30, 41, 59, 0.5)",
     borderRadius: 12,
     marginBottom: 20,
     paddingHorizontal: 15,
     height: 60,
     borderWidth: 1,
-    borderColor: 'rgba(51, 65, 85, 0.5)',
+    borderColor: "rgba(51, 65, 85, 0.5)",
   },
   inputIcon: {
     marginRight: 15,
   },
   input: {
     flex: 1,
-    color: '#f8fafc',
+    color: "#f8fafc",
     fontSize: 16,
   },
   loginButton: {
-    backgroundColor: '#6366f1',
+    backgroundColor: "#6366f1",
     height: 60,
     borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginTop: 10,
-    shadowColor: '#6366f1',
+    shadowColor: "#6366f1",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -454,37 +468,37 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   loginButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   forgotButton: {
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 20,
   },
   forgotText: {
-    color: '#94a3b8',
+    color: "#94a3b8",
     fontSize: 14,
   },
   backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 20,
     gap: 8,
   },
   backButtonText: {
-    color: '#6366f1',
+    color: "#6366f1",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   stageTitle: {
-    color: '#f8fafc',
+    color: "#f8fafc",
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 10,
   },
   stageDesc: {
-    color: '#94a3b8',
+    color: "#94a3b8",
     fontSize: 14,
     marginBottom: 20,
   },

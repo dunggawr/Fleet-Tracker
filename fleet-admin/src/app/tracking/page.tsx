@@ -23,8 +23,8 @@ import { formatDistanceToNow } from 'date-fns';
 const LiveTrackingMap = dynamic(() => import('@/components/tracking/LiveTrackingMap'), {
   ssr: false,
   loading: () => (
-    <div className="map-loading">
-      <div className="map-loading-spinner" />
+    <div className="w-full h-full flex flex-col items-center justify-center gap-3 bg-surface text-text-dim">
+      <div className="w-8 h-8 border-3 border-border border-t-primary rounded-full animate-spin" />
       <span>Đang tải bản đồ...</span>
     </div>
   ),
@@ -190,27 +190,27 @@ export default function LiveTrackingPage() {
   };
 
   return (
-    <div className="tracking-page">
+    <div className="h-full flex flex-col gap-4 p-5 bg-background min-h-0">
       {/* Header */}
-      <div className="tracking-header">
-        <div className="tracking-title">
+      <div className="flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-3 text-text">
           <Navigation size={24} />
-          <h1>Theo dõi đội xe trực tiếp</h1>
-          <div className={`connection-badge ${isConnected ? 'connected' : 'disconnected'}`}>
+          <h1 className="text-2xl font-bold m-0">Theo dõi đội xe trực tiếp</h1>
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${isConnected ? 'bg-success/15 text-success' : 'bg-danger/15 text-danger'}`}>
             {isConnected ? <Wifi size={14} /> : <WifiOff size={14} />}
             {isConnected ? 'Đang kết nối' : 'Mất kết nối'}
           </div>
         </div>
 
-        <div className="tracking-filters">
+        <div className="flex gap-2">
           {(['all', 'active', 'idle', 'offline'] as const).map(f => (
             <button
               key={f}
-              className={`filter-btn ${filter === f ? 'active' : ''}`}
+              className={`flex items-center gap-1.5 px-3.5 py-2 border border-border rounded-lg bg-surface text-text-muted cursor-pointer text-sm transition-all hover:not-[.active]:border-primary hover:not-[.active]:text-text ${filter === f ? 'bg-primary text-white border-primary active' : ''}`}
               onClick={() => setFilter(f)}
             >
               {f === 'all' ? 'Tất cả' : f === 'active' ? 'Đang chạy' : f === 'idle' ? 'Chờ' : 'Offline'}
-              <span className="filter-count">
+              <span className={`px-1.5 py-0.5 rounded-full text-[11px] font-bold ${filter === f ? 'bg-white/20 text-white' : 'bg-background text-text-dim'}`}>
                 {f === 'all' ? stats.total : stats[f]}
               </span>
             </button>
@@ -219,40 +219,40 @@ export default function LiveTrackingPage() {
       </div>
 
       {/* Stats */}
-      <div className="tracking-stats">
-        <div className="stat-card">
-          <Truck size={20} className="stat-icon blue" />
+      <div className="grid grid-cols-4 gap-3 shrink-0">
+        <div className="flex items-center gap-3 p-4 bg-surface rounded-xl border border-border">
+          <Truck size={20} className="shrink-0 text-info" />
           <div>
-            <div className="stat-value">{stats.total}</div>
-            <div className="stat-label">Tổng xe</div>
+            <div className="text-2xl font-bold text-text leading-none">{stats.total}</div>
+            <div className="text-xs text-text-dim mt-0.5">Tổng xe</div>
           </div>
         </div>
-        <div className="stat-card">
-          <Activity size={20} className="stat-icon green" />
+        <div className="flex items-center gap-3 p-4 bg-surface rounded-xl border border-border">
+          <Activity size={20} className="shrink-0 text-success" />
           <div>
-            <div className="stat-value">{stats.active}</div>
-            <div className="stat-label">Đang vận chuyển</div>
+            <div className="text-2xl font-bold text-text leading-none">{stats.active}</div>
+            <div className="text-xs text-text-dim mt-0.5">Đang vận chuyển</div>
           </div>
         </div>
-        <div className="stat-card">
-          <Clock size={20} className="stat-icon yellow" />
+        <div className="flex items-center gap-3 p-4 bg-surface rounded-xl border border-border">
+          <Clock size={20} className="shrink-0 text-warning" />
           <div>
-            <div className="stat-value">{stats.idle}</div>
-            <div className="stat-label">Chờ việc</div>
+            <div className="text-2xl font-bold text-text leading-none">{stats.idle}</div>
+            <div className="text-xs text-text-dim mt-0.5">Chờ việc</div>
           </div>
         </div>
-        <div className="stat-card">
-          <AlertTriangle size={20} className="stat-icon red" />
+        <div className="flex items-center gap-3 p-4 bg-surface rounded-xl border border-border">
+          <AlertTriangle size={20} className="shrink-0 text-danger" />
           <div>
-            <div className="stat-value">{stats.alerts}</div>
-            <div className="stat-label">Cảnh báo</div>
+            <div className="text-2xl font-bold text-text leading-none">{stats.alerts}</div>
+            <div className="text-xs text-text-dim mt-0.5">Cảnh báo</div>
           </div>
         </div>
       </div>
 
-      <div className="tracking-body">
+      <div className="grid grid-cols-[1fr_340px] gap-4 flex-1 min-h-0">
         {/* Map */}
-        <div className="map-container">
+        <div className="rounded-2xl overflow-hidden border border-border relative min-h-[500px]">
           <LiveTrackingMap
             vehicles={filteredVehicles}
             selectedVehicle={selectedVehicle}
@@ -261,24 +261,24 @@ export default function LiveTrackingPage() {
         </div>
 
         {/* Sidebar */}
-        <div className="tracking-sidebar">
+        <div className="flex flex-col gap-3 overflow-y-auto min-h-0">
           {/* Active Alerts */}
           {alerts.filter(a => !a.resolved).length > 0 && (
-            <div className="sidebar-section alerts-section">
-              <h3 className="section-title">
-                <AlertTriangle size={16} className="text-red" />
+            <div className="bg-surface rounded-xl border border-border p-4 border-l-3 border-l-danger">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-text mb-3 mt-0">
+                <AlertTriangle size={16} className="text-danger" />
                 Cảnh báo ({alerts.filter(a => !a.resolved).length})
               </h3>
               {alerts.filter(a => !a.resolved).slice(0, 5).map(alert => (
-                <div key={alert.id} className={`alert-item alert-${alert.type}`}>
-                  <div className="alert-content">
-                    <span className="alert-message">{alert.message}</span>
-                    <span className="alert-time">
+                <div key={alert.id} className={`flex items-center gap-2.5 p-2.5 rounded-lg mb-2 text-sm ${alert.type === 'sos' ? 'bg-danger/10 border border-danger/20' : 'bg-surface-high border border-border'}`}>
+                  <div className="flex-1 flex flex-col gap-0.5">
+                    <span className="text-text font-medium">{alert.message}</span>
+                    <span className="text-text-dim text-[11px]">
                       {formatDistanceToNow(new Date(alert.timestamp), { addSuffix: true })}
                     </span>
                   </div>
                   <button
-                    className="alert-resolve"
+                    className="bg-none border-none text-success cursor-pointer p-1 rounded-md transition-colors hover:bg-success/10"
                     onClick={() => resolveAlert(alert.id)}
                     title="Đánh dấu đã xử lý"
                   >
@@ -290,36 +290,36 @@ export default function LiveTrackingPage() {
           )}
 
           {/* Vehicle List */}
-          <div className="sidebar-section">
-            <h3 className="section-title">
+          <div className="bg-surface rounded-xl border border-border p-4">
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-text mb-3 mt-0">
               <Truck size={16} />
               Danh sách xe ({filteredVehicles.length})
             </h3>
-            <div className="vehicle-list">
+            <div className="flex flex-col gap-1.5 max-h-[300px] overflow-y-auto">
               {filteredVehicles.length === 0 ? (
-                <div className="empty-list">Không có xe nào</div>
+                <div className="text-center text-text-dim text-sm p-5">Không có xe nào</div>
               ) : (
                 filteredVehicles.map(vehicle => (
                   <div
                     key={vehicle.vehicleId}
-                    className={`vehicle-item ${selectedVehicle?.vehicleId === vehicle.vehicleId ? 'selected' : ''}`}
+                    className={`flex items-center gap-2.5 p-2.5 rounded-lg border border-transparent cursor-pointer transition-all hover:bg-surface-low hover:border-border ${selectedVehicle?.vehicleId === vehicle.vehicleId ? 'bg-primary/10 border-primary' : ''}`}
                     onClick={() => setSelectedVehicle(
                       selectedVehicle?.vehicleId === vehicle.vehicleId ? null : vehicle
                     )}
                   >
-                    <div className={`vehicle-status-dot status-${vehicle.status}`} />
-                    <div className="vehicle-info">
-                      <div className="vehicle-plate">{vehicle.licensePlate}</div>
-                      <div className="vehicle-driver">{vehicle.driverName}</div>
-                      <div className="vehicle-meta">
+                    <div className={`w-2 h-2 rounded-full shrink-0 ${vehicle.status === 'active' ? 'bg-success shadow-[0_0_0_2px_rgba(34,197,94,0.2)]' : vehicle.status === 'idle' ? 'bg-warning' : 'bg-gray-500'}`} />
+                    <div className="flex-1">
+                      <div className="text-sm font-semibold text-text">{vehicle.licensePlate}</div>
+                      <div className="text-xs text-text-muted">{vehicle.driverName}</div>
+                      <div className="flex items-center gap-1.5 text-[11px] text-text-dim mt-0.5">
                         <MapPin size={12} />
                         {vehicle.speed > 0 ? `${vehicle.speed.toFixed(0)} km/h` : 'Đang đứng'}
                         {vehicle.ordersCount !== undefined && (
-                          <span className="orders-badge">{vehicle.ordersCount} đơn</span>
+                          <span className="bg-primary/15 text-primary-light px-1.5 py-0.5 rounded-full font-semibold">{vehicle.ordersCount} đơn</span>
                         )}
                       </div>
                     </div>
-                    <button className="vehicle-focus-btn" title="Xem trên bản đồ">
+                    <button className="bg-none border-none text-text-dim cursor-pointer p-1 rounded-md transition-all hover:bg-primary hover:text-white" title="Xem trên bản đồ">
                       <Eye size={14} />
                     </button>
                   </div>
@@ -330,37 +330,37 @@ export default function LiveTrackingPage() {
 
           {/* Selected Vehicle Detail */}
           {selectedVehicle && (
-            <div className="sidebar-section vehicle-detail">
-              <h3 className="section-title">Chi tiết xe</h3>
-              <div className="detail-grid">
-                <div className="detail-row">
-                  <span className="detail-label">Biển số</span>
-                  <span className="detail-value">{selectedVehicle.licensePlate}</span>
+            <div className="bg-surface rounded-xl border border-border p-4 border-t-3 border-t-primary">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-text mb-3 mt-0">Chi tiết xe</h3>
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-text-dim">Biển số</span>
+                  <span className="text-text font-medium font-mono">{selectedVehicle.licensePlate}</span>
                 </div>
-                <div className="detail-row">
-                  <span className="detail-label">Tài xế</span>
-                  <span className="detail-value">{selectedVehicle.driverName}</span>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-text-dim">Tài xế</span>
+                  <span className="text-text font-medium font-mono">{selectedVehicle.driverName}</span>
                 </div>
-                <div className="detail-row">
-                  <span className="detail-label">Tốc độ</span>
-                  <span className="detail-value">{selectedVehicle.speed.toFixed(1)} km/h</span>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-text-dim">Tốc độ</span>
+                  <span className="text-text font-medium font-mono">{selectedVehicle.speed.toFixed(1)} km/h</span>
                 </div>
-                <div className="detail-row">
-                  <span className="detail-label">Tọa độ</span>
-                  <span className="detail-value">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-text-dim">Tọa độ</span>
+                  <span className="text-text font-medium font-mono">
                     {selectedVehicle.latitude.toFixed(5)}, {selectedVehicle.longitude.toFixed(5)}
                   </span>
                 </div>
-                <div className="detail-row">
-                  <span className="detail-label">Cập nhật</span>
-                  <span className="detail-value">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-text-dim">Cập nhật</span>
+                  <span className="text-text font-medium font-mono">
                     {formatDistanceToNow(new Date(selectedVehicle.lastUpdate), { addSuffix: true })}
                   </span>
                 </div>
                 {selectedVehicle.currentTripId && (
-                  <div className="detail-row">
-                    <span className="detail-label">Chuyến</span>
-                    <span className="detail-value trip-link">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-text-dim">Chuyến</span>
+                    <span className="text-primary font-medium font-mono">
                       #{selectedVehicle.currentTripId.slice(0, 8)}
                     </span>
                   </div>
@@ -371,348 +371,7 @@ export default function LiveTrackingPage() {
         </div>
       </div>
 
-      <style jsx>{`
-        .tracking-page {
-          height: 100%;
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-          padding: 20px;
-          background: var(--bg-secondary);
-          min-height: 0;
-        }
 
-        .tracking-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          flex-shrink: 0;
-        }
-
-        .tracking-title {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          color: var(--text-primary);
-        }
-
-        .tracking-title h1 {
-          font-size: 1.5rem;
-          font-weight: 700;
-          margin: 0;
-        }
-
-        .connection-badge {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 4px 10px;
-          border-radius: 20px;
-          font-size: 12px;
-          font-weight: 600;
-        }
-
-        .connection-badge.connected {
-          background: rgba(34, 197, 94, 0.15);
-          color: #22c55e;
-        }
-
-        .connection-badge.disconnected {
-          background: rgba(239, 68, 68, 0.15);
-          color: #ef4444;
-        }
-
-        .tracking-filters {
-          display: flex;
-          gap: 8px;
-        }
-
-        .filter-btn {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 8px 14px;
-          border: 1px solid var(--border-color);
-          border-radius: 8px;
-          background: var(--bg-card);
-          color: var(--text-secondary);
-          cursor: pointer;
-          font-size: 13px;
-          transition: all 0.2s;
-        }
-
-        .filter-btn.active {
-          background: var(--accent-primary);
-          color: white;
-          border-color: var(--accent-primary);
-        }
-
-        .filter-btn:hover:not(.active) {
-          border-color: var(--accent-primary);
-          color: var(--text-primary);
-        }
-
-        .filter-count {
-          background: rgba(255,255,255,0.2);
-          padding: 1px 6px;
-          border-radius: 10px;
-          font-size: 11px;
-          font-weight: 700;
-        }
-
-        .filter-btn:not(.active) .filter-count {
-          background: var(--bg-secondary);
-          color: var(--text-muted);
-        }
-
-        .tracking-stats {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 12px;
-          flex-shrink: 0;
-        }
-
-        .stat-card {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 16px;
-          background: var(--bg-card);
-          border-radius: 12px;
-          border: 1px solid var(--border-color);
-        }
-
-        .stat-icon { flex-shrink: 0; }
-        .stat-icon.blue { color: #3b82f6; }
-        .stat-icon.green { color: #22c55e; }
-        .stat-icon.yellow { color: #f59e0b; }
-        .stat-icon.red { color: #ef4444; }
-
-        .stat-value {
-          font-size: 1.5rem;
-          font-weight: 700;
-          color: var(--text-primary);
-          line-height: 1;
-        }
-
-        .stat-label {
-          font-size: 12px;
-          color: var(--text-muted);
-          margin-top: 2px;
-        }
-
-        .tracking-body {
-          display: grid;
-          grid-template-columns: 1fr 340px;
-          gap: 16px;
-          flex: 1;
-          min-height: 0;
-        }
-
-        .map-container {
-          border-radius: 16px;
-          overflow: hidden;
-          border: 1px solid var(--border-color);
-          position: relative;
-          min-height: 500px;
-        }
-
-        .map-loading {
-          width: 100%;
-          height: 100%;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 12px;
-          background: var(--bg-card);
-          color: var(--text-muted);
-        }
-
-        .map-loading-spinner {
-          width: 32px;
-          height: 32px;
-          border: 3px solid var(--border-color);
-          border-top-color: var(--accent-primary);
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        .tracking-sidebar {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-          overflow-y: auto;
-          min-height: 0;
-        }
-
-        .sidebar-section {
-          background: var(--bg-card);
-          border-radius: 12px;
-          border: 1px solid var(--border-color);
-          padding: 16px;
-        }
-
-        .section-title {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 13px;
-          font-weight: 600;
-          color: var(--text-primary);
-          margin: 0 0 12px 0;
-        }
-
-        .text-red { color: #ef4444; }
-
-        .alerts-section { border-left: 3px solid #ef4444; }
-
-        .alert-item {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 10px;
-          border-radius: 8px;
-          margin-bottom: 8px;
-          font-size: 13px;
-        }
-
-        .alert-item.alert-sos {
-          background: rgba(239, 68, 68, 0.1);
-          border: 1px solid rgba(239, 68, 68, 0.2);
-        }
-
-        .alert-content {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-        }
-
-        .alert-message { color: var(--text-primary); font-weight: 500; }
-        .alert-time { color: var(--text-muted); font-size: 11px; }
-
-        .alert-resolve {
-          background: none;
-          border: none;
-          color: #22c55e;
-          cursor: pointer;
-          padding: 4px;
-          border-radius: 6px;
-          transition: background 0.2s;
-        }
-
-        .alert-resolve:hover { background: rgba(34, 197, 94, 0.1); }
-
-        .vehicle-list {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-          max-height: 300px;
-          overflow-y: auto;
-        }
-
-        .empty-list {
-          text-align: center;
-          color: var(--text-muted);
-          font-size: 13px;
-          padding: 20px;
-        }
-
-        .vehicle-item {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 10px;
-          border-radius: 8px;
-          border: 1px solid transparent;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .vehicle-item:hover {
-          background: var(--bg-secondary);
-          border-color: var(--border-color);
-        }
-
-        .vehicle-item.selected {
-          background: rgba(99, 102, 241, 0.1);
-          border-color: var(--accent-primary);
-        }
-
-        .vehicle-status-dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          flex-shrink: 0;
-        }
-
-        .status-active { background: #22c55e; box-shadow: 0 0 0 2px rgba(34,197,94,0.2); }
-        .status-idle { background: #f59e0b; }
-        .status-offline { background: #6b7280; }
-
-        .vehicle-info { flex: 1; }
-
-        .vehicle-plate {
-          font-size: 13px;
-          font-weight: 600;
-          color: var(--text-primary);
-        }
-
-        .vehicle-driver {
-          font-size: 12px;
-          color: var(--text-secondary);
-        }
-
-        .vehicle-meta {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 11px;
-          color: var(--text-muted);
-          margin-top: 2px;
-        }
-
-        .orders-badge {
-          background: rgba(99, 102, 241, 0.15);
-          color: var(--accent-primary);
-          padding: 1px 6px;
-          border-radius: 10px;
-          font-weight: 600;
-        }
-
-        .vehicle-focus-btn {
-          background: none;
-          border: none;
-          color: var(--text-muted);
-          cursor: pointer;
-          padding: 4px;
-          border-radius: 6px;
-          transition: all 0.2s;
-        }
-
-        .vehicle-focus-btn:hover {
-          background: var(--accent-primary);
-          color: white;
-        }
-
-        .vehicle-detail { border-top: 3px solid var(--accent-primary); }
-
-        .detail-grid { display: flex; flex-direction: column; gap: 8px; }
-
-        .detail-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          font-size: 13px;
-        }
-
-        .detail-label { color: var(--text-muted); }
-        .detail-value { color: var(--text-primary); font-weight: 500; font-family: monospace; }
-        .trip-link { color: var(--accent-primary); }
-      `}</style>
     </div>
   );
 }

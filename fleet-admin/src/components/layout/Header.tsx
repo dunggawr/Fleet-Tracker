@@ -9,7 +9,6 @@ import {
   Globe,
   LogOut,
   Settings,
-  Shield
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { Dropdown } from '@/components/ui/Dropdown';
@@ -18,21 +17,21 @@ export function Header() {
   const { user, logout } = useAuth();
 
   return (
-    <header className="header glass">
-      <div className="search-container">
-        <Search size={18} className="search-icon" />
+    <header className="h-(--header-height) px-(--space-xl) flex items-center justify-between sticky top-0 z-90 border-b border-border glass">
+      <div className="flex items-center bg-surface-low border border-outline-variant rounded-default px-(--space-md) w-(400px) transition-all focus-within:border-primary focus-within:bg-surface-high focus-within:shadow-[0_0_0_3px_rgba(99,102,241,0.1)]">
+        <Search size={18} className="text-(--color-text-dim)" />
         <input 
           type="text" 
           placeholder="Search for vehicles, drivers or orders..." 
-          className="search-input"
+          className="border-none bg-transparent text-text p-(--space-md) w-(400px) outline-none font-(--font-body-md)"
         />
       </div>
 
-      <div className="header-actions">
+      <div className="flex items-center gap-(--space-lg)">
         <Dropdown 
           align="right"
           trigger={
-            <button className="action-btn" aria-label="Language">
+            <button className="bg-transparent border-none text-text-muted flex items-center gap-(--space-xs) cursor-pointer p-(--space-md) rounded-sm transition-all hover:bg-surface-high hover:text-text font-(--font-label-sm)" aria-label="Language">
               <Globe size={20} />
               <span>EN</span>
             </button>
@@ -42,24 +41,24 @@ export function Header() {
           <button className="dropdown-item" onClick={() => console.log('Set language: VN')}>Tiếng Việt</button>
         </Dropdown>
         
-        <button className="action-btn notification-btn" aria-label="Notifications" onClick={() => console.log('Open Notifications')}>
+        <button className="bg-transparent border-none text-text-muted flex items-center gap-(--space-xs) cursor-pointer p-(--space-md) rounded-sm transition-all hover:bg-surface-high hover:text-text relative" aria-label="Notifications" onClick={() => console.log('Open Notifications')}>
           <Bell size={20} />
-          <span className="notification-badge">3</span>
+          <span className="absolute top-xs right-xs bg-danger text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border-2 border-surface">3</span>
         </button>
 
-        <div className="user-profile-group">
+        <div className="flex items-center gap-(--space-sm) bg-surface-low p-xs rounded-default border border-border">
           <Dropdown
             align="right"
             trigger={
-              <div className="user-profile">
-                <div className="avatar">
-                  <UserIcon size={20} />
+              <div className="flex items-center gap-(--space-md) p-[4px_8px] rounded-sm cursor-pointer transition-colors hover:bg-surface-high">
+                <div className="w-[36px] h-[36px] bg-surface-highest rounded-full flex items-center justify-center border border-border">
+                  <UserIcon size={20} className="text-primary-light" />
                 </div>
-                <div className="user-info">
-                  <span className="user-name">{user?.fullName || 'Admin User'}</span>
-                  <span className="user-role">{user?.role || 'Fleet Manager'}</span>
+                <div className="flex flex-col">
+                  <span className="text-[14px] font-semibold text-text leading-tight">{user?.fullName || 'Admin User'}</span>
+                  <span className="text-[12px] text-(--color-text-dim) leading-tight">{user?.role || 'Fleet Manager'}</span>
                 </div>
-                <ChevronDown size={16} className="dropdown-icon" />
+                <ChevronDown size={16} className="text-(--color-text-dim)" />
               </div>
             }
           >
@@ -76,172 +75,6 @@ export function Header() {
           </Dropdown>
         </div>
       </div>
-
-      <style jsx>{`
-        .header {
-          height: var(--header-height);
-          padding: 0 var(--space-xl);
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          position: sticky;
-          top: 0;
-          z-index: 90;
-          border-bottom: 1px solid var(--color-border);
-        }
-
-        .search-container {
-          display: flex;
-          align-items: center;
-          background: var(--color-surface-low);
-          border: 1px solid var(--color-outline-variant);
-          border-radius: var(--radius-default);
-          padding: 0 var(--space-md);
-          width: 400px;
-          transition: all var(--transition-fast);
-        }
-
-        .search-container:focus-within {
-          border-color: var(--color-primary);
-          background: var(--color-surface-high);
-          box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-        }
-
-        .search-icon {
-          color: var(--color-text-dim);
-        }
-
-        .search-input {
-          border: none;
-          background: transparent;
-          color: var(--color-text);
-          padding: 10px;
-          width: 100%;
-          outline: none;
-          font: var(--font-body-md);
-        }
-
-        .header-actions {
-          display: flex;
-          align-items: center;
-          gap: var(--space-lg);
-        }
-
-        .action-btn {
-          background: transparent;
-          border: none;
-          color: var(--color-text-muted);
-          display: flex;
-          align-items: center;
-          gap: var(--space-xs);
-          cursor: pointer;
-          padding: 8px;
-          border-radius: var(--radius-sm);
-          transition: all var(--transition-fast);
-          font: var(--font-label-sm);
-        }
-
-        .action-btn:hover {
-          background: var(--color-surface-high);
-          color: var(--color-text);
-        }
-
-        .notification-btn {
-          position: relative;
-        }
-
-        .notification-badge {
-          position: absolute;
-          top: 4px;
-          right: 4px;
-          background: var(--color-danger);
-          color: white;
-          font-size: 10px;
-          font-weight: 700;
-          width: 16px;
-          height: 16px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border: 2px solid var(--color-surface);
-        }
-
-        .user-profile-group {
-          display: flex;
-          align-items: center;
-          gap: var(--space-sm);
-          background: var(--color-surface-low);
-          padding: 4px;
-          border-radius: var(--radius-default);
-          border: 1px solid var(--color-border);
-        }
-
-        .user-profile {
-          display: flex;
-          align-items: center;
-          gap: var(--space-md);
-          padding: 4px 8px;
-          border-radius: var(--radius-sm);
-          cursor: pointer;
-          transition: background var(--transition-fast);
-        }
-
-        .user-profile:hover {
-          background: var(--color-surface-high);
-        }
-
-        .logout-btn {
-          background: transparent;
-          border: none;
-          color: var(--color-text-dim);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 36px;
-          height: 36px;
-          border-radius: var(--radius-sm);
-          cursor: pointer;
-          transition: all var(--transition-fast);
-        }
-
-        .logout-btn:hover {
-          background: rgba(239, 68, 68, 0.1);
-          color: var(--color-danger);
-        }
-
-        .avatar {
-          width: 36px;
-          height: 36px;
-          background: var(--color-surface-highest);
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: var(--color-primary-light);
-          border: 1px solid var(--color-border);
-        }
-
-        .user-info {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .user-name {
-          font-size: 14px;
-          font-weight: 600;
-          color: var(--color-text);
-        }
-
-        .user-role {
-          font-size: 12px;
-          color: var(--color-text-dim);
-        }
-
-        .dropdown-icon {
-          color: var(--color-text-dim);
-        }
-      `}</style>
     </header>
   );
 }

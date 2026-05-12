@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import * as TaskManager from 'expo-task-manager';
 import * as Location from 'expo-location';
 import { socketService } from './socket';
@@ -6,64 +7,71 @@ import { offlineQueue } from './offlineQueue';
 
 export const LOCATION_TASK_NAME = 'background-location-task';
 
-TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }: any) => {
-  let locations = data?.locations;
+if (Platform.OS !== 'web') {
+  TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }: any) => {
+    let locations = data?.locations;
 
-  if (error) {
-    console.error('[Background] Location task error:', error);
-    // Fallback: try to get last known position
-    try {
-      const lastLocation = await Location.getLastKnownPositionAsync();
-      if (lastLocation) {
-        locations = [lastLocation];
-      }
-    } catch (e) {
-      console.error('[Background] Last known position failed:', e);
-      return;
-    }
-  }
-
-  if (locations && locations.length > 0) {
-    const location = locations[0];
-    
-    // Battery Optimization: Skip if accuracy is very poor (> 100m) 
-    if (location.coords.accuracy && location.coords.accuracy > 100) {
-      console.log('[Background] Skipping inaccurate location:', location.coords.accuracy);
-      return;
-    }
-
-    const activeTrip = useTripStore.getState().activeTrip;
-    
-    if (activeTrip) {
-      // Connect if not connected (background task might run when app is killed)
-      socketService.connect();
-      
+    if (error) {
+      console.error('[Background] Location task error:', error);
+      // Fallback: try to get last known position
       try {
-        const payload = {
-          tripId: activeTrip.id,
-          vehicleId: activeTrip.vehicleId,
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-          heading: location.coords.heading || 0,
-          speed: location.coords.speed || 0,
-          timestamp: new Date(location.timestamp).toISOString(),
-        };
-
-        if (socketService.getSocket()?.connected) {
-          socketService.emit('gps:update', payload);
-          console.log(`[Background] GPS update sent for trip ${activeTrip.id}`);
-        } else {
-          console.log('[Background] Socket disconnected, queueing GPS point');
-          await offlineQueue.push(payload);
+        const lastLocation = await Location.getLastKnownPositionAsync();
+        if (lastLocation) {
+          locations = [lastLocation];
         }
-      } catch (emitError) {
-        console.error('[Background] Failed to handle GPS update:', emitError);
+      } catch (e) {
+        console.error('[Background] Last known position failed:', e);
+        return;
       }
     }
-  }
-});
+
+    if (locations && locations.length > 0) {
+      const location = locations[0];
+      
+      // Battery Optimization: Skip if accuracy is very poor (> 100m) 
+      if (location.coords.accuracy && location.coords.accuracy > 100) {
+        console.log('[Background] Skipping inaccurate location:', location.coords.accuracy);
+        return;
+      }
+
+      const activeTrip = useTripStore.getState().activeTrip;
+      
+      if (activeTrip) {
+        // Connect if not connected (background task might run when app is killed)
+        socketService.connect();
+        
+        try {
+          const payload = {
+            tripId: activeTrip.id,
+            vehicleId: activeTrip.vehicleId,
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+            heading: location.coords.heading || 0,
+            speed: location.coords.speed || 0,
+            timestamp: new Date(location.timestamp).toISOString(),
+          };
+
+          if (socketService.getSocket()?.connected) {
+            socketService.emit('gps:update', payload);
+            console.log(`[Background] GPS update sent for trip ${activeTrip.id}`);
+          } else {
+            console.log('[Background] Socket disconnected, queueing GPS point');
+            await offlineQueue.push(payload);
+          }
+        } catch (emitError) {
+          console.error('[Background] Failed to handle GPS update:', emitError);
+        }
+      }
+    }
+  });
+}
 
 export const startBackgroundLocation = async () => {
+  if (Platform.OS === 'web') {
+    console.log('[Background] Location tracking not supported on web');
+    return;
+  }
+
   const { status } = await Location.requestBackgroundPermissionsAsync();
   if (status !== 'granted') {
     console.error('Background location permission denied');
@@ -88,6 +96,8 @@ export const startBackgroundLocation = async () => {
 };
 
 export const stopBackgroundLocation = async () => {
+  if (Platform.OS === 'web') return;
+
   const isRegistered = await TaskManager.isTaskRegisteredAsync(LOCATION_TASK_NAME);
   if (isRegistered) {
     await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);

@@ -53,13 +53,13 @@ export default function FleetPerformancePage() {
   }, [dateRange]);
 
   return (
-    <div className="reports-overview">
-      <div className="action-bar">
+    <div className="flex flex-col gap-xl">
+      <div className="flex justify-between items-center">
         <DateRangeFilter onRangeChange={setDateRange} />
         <ExportActions reportName="fleet_performance" params={dateRange} />
       </div>
 
-      <div className="stats-grid">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-lg">
         <StatCard 
           label="Total Trips" 
           value={data?.totalTrips || 0} 
@@ -86,8 +86,8 @@ export default function FleetPerformancePage() {
         />
       </div>
 
-      <div className="charts-grid">
-        <div className="chart-large">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-lg">
+        <div className="lg:col-span-2">
           <ReportChartWrapper 
             title="Performance Trend" 
             subtitle="Trips vs Distance covered"
@@ -95,7 +95,7 @@ export default function FleetPerformancePage() {
             isEmpty={!data?.performanceTrend?.length}
             height={400}
           >
-            <div style={{ width: '100%', height: '100%', minWidth: 0 }}>
+            <div className="w-full h-full min-w-0">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={data?.performanceTrend}>
                   <defs>
@@ -127,14 +127,14 @@ export default function FleetPerformancePage() {
           </ReportChartWrapper>
         </div>
 
-        <div className="chart-small">
+        <div className="lg:col-span-1">
           <ReportChartWrapper 
             title="Trip Status" 
             subtitle="Distribution by status"
             isLoading={isLoading}
             isEmpty={!data?.statusDistribution?.length}
           >
-            <div style={{ width: '100%', height: '100%', minWidth: 0 }}>
+            <div className="w-full h-full min-w-0">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -159,7 +159,7 @@ export default function FleetPerformancePage() {
           </ReportChartWrapper>
         </div>
 
-        <div className="chart-full">
+        <div className="lg:col-span-3">
           <ReportChartWrapper 
             title="Trips by Vehicle" 
             subtitle="Volume of trips per vehicle plate"
@@ -167,7 +167,7 @@ export default function FleetPerformancePage() {
             isEmpty={!data?.tripsByVehicle?.length}
             height={300}
           >
-            <div style={{ width: '100%', height: '100%', minWidth: 0 }}>
+            <div className="w-full h-full min-w-0">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data?.tripsByVehicle}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
@@ -187,45 +187,6 @@ export default function FleetPerformancePage() {
           </ReportChartWrapper>
         </div>
       </div>
-
-      <style jsx>{`
-        .reports-overview {
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-xl);
-        }
-
-        .action-bar {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .stats-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-          gap: var(--space-lg);
-        }
-
-        .charts-grid {
-          display: grid;
-          grid-template-columns: 2fr 1fr;
-          gap: var(--space-lg);
-        }
-
-        .chart-full {
-          grid-column: span 2;
-        }
-
-        @media (max-width: 1024px) {
-          .charts-grid {
-            grid-template-columns: 1fr;
-          }
-          .chart-full {
-            grid-column: span 1;
-          }
-        }
-      `}</style>
     </div>
   );
 }

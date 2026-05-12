@@ -96,10 +96,10 @@ export default function KpiLeaderboardPage() {
   ];
 
   return (
-    <div className="kpi-leaderboard">
-      <div className="action-bar">
-        <div className="info">
-          <Trophy size={20} color="var(--color-warning)" />
+    <div className="flex flex-col gap-lg">
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-sm text-text-dim text-sm">
+          <Trophy size={20} className="text-warning" />
           <span>Updated every 24 hours</span>
         </div>
         <ExportActions reportName="kpi_leaderboard" />
@@ -111,98 +111,6 @@ export default function KpiLeaderboardPage() {
         isLoading={isLoading}
         onRowClick={(item) => console.log('Driver clicked:', item.driverId)}
       />
-
-      <style jsx>{`
-        .kpi-leaderboard {
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-lg);
-        }
-
-        .action-bar {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .info {
-          display: flex;
-          align-items: center;
-          gap: var(--space-sm);
-          color: var(--color-text-dim);
-          font-size: 14px;
-        }
-
-        .rank-badge {
-          font-weight: 700;
-          color: var(--color-primary-light);
-        }
-
-        .driver-cell {
-          display: flex;
-          align-items: center;
-          gap: var(--space-md);
-        }
-
-        .driver-cell.link {
-          text-decoration: none;
-          color: inherit;
-          transition: color var(--transition-fast);
-        }
-
-        .driver-cell.link:hover {
-          color: var(--color-primary-light);
-        }
-
-        .driver-name-wrapper {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-
-        .link-icon {
-          opacity: 0;
-          transition: opacity var(--transition-fast);
-        }
-
-        .driver-cell.link:hover .link-icon {
-          opacity: 1;
-        }
-
-        .avatar {
-          width: 32px;
-          height: 32px;
-          background: var(--color-surface-high);
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: bold;
-          font-size: 12px;
-          color: var(--color-text);
-        }
-
-        .score-cell {
-          display: flex;
-          align-items: center;
-          gap: var(--space-md);
-          min-width: 150px;
-        }
-
-        .score-bar-bg {
-          flex: 1;
-          height: 8px;
-          background: var(--color-surface-high);
-          border-radius: 4px;
-          overflow: hidden;
-        }
-
-        .score-bar-fill {
-          height: 100%;
-          border-radius: 4px;
-          transition: width 1s ease-out;
-        }
-      `}</style>
     </div>
   );
 }

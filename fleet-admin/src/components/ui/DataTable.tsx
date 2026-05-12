@@ -17,12 +17,16 @@ interface DataTableProps<T> {
 
 export function DataTable<T>({ data, columns, onRowClick, isLoading }: DataTableProps<T>) {
   return (
-    <div className="table-container">
-      <table className="data-table">
+    <div className="w-full overflow-x-auto bg-surface border border-border rounded-xl">
+      <table className="w-full border-collapse">
         <thead>
-          <tr>
+          <tr className="border-b border-outline-variant">
             {columns.map((col, idx) => (
-              <th key={idx} style={{ width: col.width }}>
+              <th 
+                key={idx} 
+                className="text-[12px] uppercase tracking-wider font-semibold text-text-muted px-4 py-3 text-left"
+                style={{ width: col.width }}
+              >
                 {col.header}
               </th>
             ))}
@@ -31,13 +35,13 @@ export function DataTable<T>({ data, columns, onRowClick, isLoading }: DataTable
         <tbody>
           {isLoading ? (
             <tr>
-              <td colSpan={columns.length} className="loading-cell">
-                <div className="spinner" />
+              <td colSpan={columns.length} className="text-center py-12">
+                <div className="w-6 h-6 border-3 border-white/10 border-t-primary rounded-full animate-spin mx-auto" />
               </td>
             </tr>
           ) : data.length === 0 ? (
             <tr>
-              <td colSpan={columns.length} className="empty-cell">
+              <td colSpan={columns.length} className="text-center py-12 text-text-dim text-sm">
                 No data available
               </td>
             </tr>
@@ -46,10 +50,13 @@ export function DataTable<T>({ data, columns, onRowClick, isLoading }: DataTable
               <tr 
                 key={rowIdx} 
                 onClick={() => onRowClick?.(item)}
-                style={{ cursor: onRowClick ? 'pointer' : 'default' }}
+                className={`
+                  border-b border-border transition-colors duration-150
+                  ${onRowClick ? 'cursor-pointer hover:bg-surface-high' : ''}
+                `}
               >
                 {columns.map((col, colIdx) => (
-                  <td key={colIdx}>
+                  <td key={colIdx} className="px-4 py-4 text-sm text-text">
                     {typeof col.accessor === 'function' 
                       ? col.accessor(item) 
                       : (item[col.accessor] as unknown as React.ReactNode)}
@@ -60,36 +67,6 @@ export function DataTable<T>({ data, columns, onRowClick, isLoading }: DataTable
           )}
         </tbody>
       </table>
-
-      <style jsx>{`
-        .table-container {
-          width: 100%;
-          overflow-x: auto;
-          background: var(--color-surface);
-          border-radius: var(--radius-md);
-          border: 1px solid var(--color-border);
-        }
-
-        .loading-cell, .empty-cell {
-          text-align: center;
-          padding: var(--space-2xl) !important;
-          color: var(--color-text-dim);
-        }
-
-        .spinner {
-          width: 24px;
-          height: 24px;
-          border: 3px solid rgba(255, 255, 255, 0.1);
-          border-top-color: var(--color-primary);
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-          margin: 0 auto;
-        }
-
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 }

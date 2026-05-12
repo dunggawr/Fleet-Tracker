@@ -63,13 +63,13 @@ export default function UtilizationPage() {
   }, [fetchData]);
 
   return (
-    <div className="utilization-reports">
-      <div className="action-bar">
+    <div className="flex flex-col gap-8">
+      <div className="flex justify-between items-center">
         <DateRangeFilter onRangeChange={setDateRange} />
         <ExportActions reportName="vehicle-utilization" params={dateRange} />
       </div>
 
-      <div className="stats-grid">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard 
           label="Active Vehicles" 
           value={data?.activeCount || 0} 
@@ -90,7 +90,7 @@ export default function UtilizationPage() {
         />
       </div>
 
-      <div className="charts-grid">
+      <div className="w-full min-w-0">
         <ReportChartWrapper 
           title="Utilization by Vehicle" 
           subtitle="Percentage of time spent on trips"
@@ -98,7 +98,7 @@ export default function UtilizationPage() {
           isEmpty={!data?.vehicleStats?.length}
           height={400}
         >
-          <div style={{ width: '100%', height: '100%', minWidth: 0 }}>
+          <div className="w-full h-full min-w-0">
             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
               <BarChart data={data?.vehicleStats} layout="vertical" margin={{ left: 20, right: 20, top: 10, bottom: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" horizontal={false} />
@@ -126,31 +126,6 @@ export default function UtilizationPage() {
           </div>
         </ReportChartWrapper>
       </div>
-
-      <style jsx>{`
-        .utilization-reports {
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-xl);
-        }
-
-        .action-bar {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .stats-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-          gap: var(--space-lg);
-        }
-
-        .charts-grid {
-          width: 100%;
-          min-width: 0;
-        }
-      `}</style>
     </div>
   );
 }

@@ -7,36 +7,21 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 export function Input({ label, error, className = '', ...props }: InputProps) {
   return (
-    <div className="input-group">
-      {label && <label className="input-label">{label}</label>}
+    <div className="flex flex-col gap-1.5 w-full">
+      {label && <label className="text-xs font-medium text-text-muted">{label}</label>}
       <input 
-        className={`input ${error ? 'error' : ''} ${className}`}
+        className={`
+          w-full px-3.5 py-2.5 
+          bg-surface-low border border-outline-variant rounded-md 
+          text-text text-sm transition-all duration-150 outline-none
+          focus:border-primary focus:ring-3 focus:ring-primary/15
+          ${error ? 'border-danger focus:border-danger focus:ring-danger/15' : ''} 
+          placeholder:text-text-dim
+          ${className}
+        `}
         {...props}
       />
-      {error && <span className="error-message">{error}</span>}
-
-      <style jsx>{`
-        .input-group {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-          width: 100%;
-        }
-
-        .input-label {
-          font: var(--font-label-sm);
-          color: var(--color-text-muted);
-        }
-
-        .input.error {
-          border-color: var(--color-danger);
-        }
-
-        .error-message {
-          font-size: 12px;
-          color: var(--color-danger);
-        }
-      `}</style>
+      {error && <span className="text-xs text-danger">{error}</span>}
     </div>
   );
 }
