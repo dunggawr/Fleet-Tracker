@@ -83,7 +83,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         })}
       </nav>
 
-      <div className="p-lg px-sm border-t border-border flex flex-col gap-xs">
+      <div className="py-sm px-sm border-t border-border flex flex-col gap-xs">
         <Link
           href="/settings"
           className={`flex items-center gap-md p-md text-text-muted no-underline rounded-default transition-all relative font-medium text-body-md hover:bg-surface-high hover:text-text ${pathname.startsWith("/settings") ? "bg-primary/10 text-primary-light" : ""} ${collapsed ? "justify-center" : ""}`}

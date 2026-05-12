@@ -1,3 +1,25 @@
+## [2026-05-12] - Performance Stability & Driver KPI Analytics
+### Added
+- **Frontend (Admin Dashboard)**:
+    - **Driver KPI Detail Page**: 
+        - Hoàn thiện trang chi tiết chỉ số hiệu suất tài xế với các biểu đồ Recharts (Safety, Fuel, Efficiency).
+        - Hiển thị đầy đủ thông tin liên hệ, rating và trạng thái hoạt động.
+        - Tích hợp dữ liệu thực tế từ backend, hỗ trợ giá trị mặc định (Score 100) khi chưa có dữ liệu.
+- **Backend (API)**:
+    - **Driver KPI Integration**:
+        - Đăng ký `DriverKpi` entity vào `DriversModule`.
+        - Cập nhật `DriversService.getKpi` để truy vấn dữ liệu thực tế từ database thay vì dùng dữ liệu giả.
+
+### Fixed
+- **Infinite Loop Stabilization**:
+    - Khắc phục lỗi vòng lặp re-fetch vô tận trong `useAlerts` và `useTrips` bằng cách chuyển Dependency Array từ dạng object sang các giá trị nguyên thủy (primitive values).
+    - Giảm thiểu số lượng request API dư thừa, giúp backend và frontend chạy mượt mà hơn.
+- **Frontend Crash Fixes**:
+    - Sửa lỗi `TypeError: toFixed is not a function` khi dữ liệu KPI chưa kịp tải hoặc bị null.
+    - Xử lý triệt để lỗi 404 khi gọi `/api/alerts` do sai cấu trúc query params.
+- **UI & Layout**:
+    - Đồng bộ hóa lại padding và margin cho Dashboard admin sau khi di chuyển sang Tailwind v4.
+
 ## [2026-05-12] - UI Modernization & Tailwind CSS v4 Migration
 ### Added
 - **Frontend (Admin Dashboard)**:

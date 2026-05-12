@@ -84,6 +84,35 @@ Thực hiện gán xe vào đơn hàng và khởi tạo chuyến đi.
 
 ---
 
+## 📊 Driver Performance (KPI)
+
+### GET `/drivers/:id/kpi`
+Lấy dữ liệu chỉ số hiệu suất chi tiết của tài xế.
+
+**Path Parameters:**
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| id | string | Yes | ID của tài xế |
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "totalTrips": 12,
+    "completedTrips": 11,
+    "completionRate": 91.67,
+    "totalViolations": 2,
+    "speedViolations": 1,
+    "routeViolations": 1,
+    "kpiScore": 95,
+    "updatedAt": "2026-05-12T10:00:00Z"
+  }
+}
+```
+
+---
+
 ## 🗺️ External Services
 
 ### Mapbox Geocoding (Address Search)

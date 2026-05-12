@@ -4,7 +4,7 @@ import { Trip } from '@/types';
 
 export function useTrips(params?: { driverId?: string; vehicleId?: string; status?: string }) {
   return useQuery({
-    queryKey: ['trips', params],
+    queryKey: ['trips', params?.driverId, params?.vehicleId, params?.status],
     queryFn: () => api.get<Trip[]>('/trips', { params }),
   });
 }

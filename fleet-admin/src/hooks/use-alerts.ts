@@ -9,10 +9,21 @@ export function useAlerts(params?: { driverId?: string; vehicleId?: string; isRe
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const driverId = params?.driverId;
+  const vehicleId = params?.vehicleId;
+  const isResolved = params?.isResolved;
+
   const fetchAlerts = useCallback(async () => {
     try {
       setIsLoading(true);
-      const data = await api.get<Alert[]>('/alerts', { params: { ...params, activeOnly: !params?.isResolved } });
+      const data = await api.get<Alert[]>('/alerts', { 
+        params: { 
+          driverId, 
+          vehicleId, 
+          isResolved,
+          activeOnly: isResolved !== undefined ? !isResolved : undefined 
+        } 
+      });
       setAlerts(data);
       setError(null);
     } catch (err: any) {
@@ -20,7 +31,7 @@ export function useAlerts(params?: { driverId?: string; vehicleId?: string; isRe
     } finally {
       setIsLoading(false);
     }
-  }, [params]);
+  }, [driverId, vehicleId, isResolved]);
 
   const resolveAlert = async (id: string) => {
     try {
@@ -42,8 +53,8 @@ export function useAlerts(params?: { driverId?: string; vehicleId?: string; isRe
       
       socket.on(SOCKET_EVENTS.ALERT_NEW, (newAlert: Alert) => {
         // Only add if it matches current filters
-        const matchesDriver = !params?.driverId || newAlert.driverId === params.driverId;
-        const matchesVehicle = !params?.vehicleId || newAlert.vehicleId === params.vehicleId;
+        const matchesDriver = !driverId || newAlert.driverId === driverId;
+        const matchesVehicle = !vehicleId || newAlert.vehicleId === vehicleId;
         
         if (matchesDriver && matchesVehicle) {
           setAlerts(prev => [newAlert, ...prev]);
@@ -66,7 +77,7 @@ export function useAlerts(params?: { driverId?: string; vehicleId?: string; isRe
         socket.off(SOCKET_EVENTS.ALERT_RESOLVED);
       }
     };
-  }, [fetchAlerts, params?.driverId, params?.vehicleId]);
+  }, [fetchAlerts, driverId, vehicleId]);
 
   return {
     alerts,
