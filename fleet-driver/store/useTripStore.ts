@@ -81,7 +81,8 @@ export const useTripStore = create<TripState>()(
           
           if (!response.ok) throw new Error('Failed to fetch trips');
           
-          const trips = await response.json();
+          const result = await response.json();
+          const trips = result?.data ?? result;
           
           // Helper to parse GeoJSON from PostGIS
           const parsePoint = (geo: any) => {

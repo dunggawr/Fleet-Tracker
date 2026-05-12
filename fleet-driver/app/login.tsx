@@ -38,6 +38,9 @@ export default function LoginScreen() {
     }
 
     setIsLoading(true);
+    console.log(`[DEBUG] Attempting login to: ${API_URL}/auth/login`);
+    console.log(`[DEBUG] Platform: ${Platform.OS}`);
+
     try {
       const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
@@ -45,7 +48,10 @@ export default function LoginScreen() {
         body: JSON.stringify({ email, password }),
       });
 
+      console.log(`[DEBUG] Response status: ${response.status} ${response.statusText}`);
+
       const data = await response.json();
+      console.log(`[DEBUG] Response data:`, data);
 
       if (!response.ok) {
         throw new Error(
@@ -60,6 +66,7 @@ export default function LoginScreen() {
       const { user } = payload;
 
       if (!accessToken || !refreshToken || !user) {
+        console.error("[DEBUG] Missing tokens or user in response", payload);
         throw new Error("Phản hồi không hợp lệ từ máy chủ");
       }
 
@@ -67,6 +74,7 @@ export default function LoginScreen() {
         throw new Error("Tài khoản này không có quyền truy cập Driver App");
       }
 
+      console.log("[DEBUG] Login successful, updating auth store");
       setAuth(
         {
           id: user.id,
@@ -80,6 +88,7 @@ export default function LoginScreen() {
 
       router.replace("/(tabs)");
     } catch (error: any) {
+      console.error("[DEBUG] Login error:", error);
       Alert.alert("Đăng nhập thất bại", error.message || "Lỗi kết nối máy chủ");
     } finally {
       setIsLoading(false);

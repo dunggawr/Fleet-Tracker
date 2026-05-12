@@ -1,3 +1,18 @@
+## [2026-05-12] - Driver App Web Login & CORS Hardening
+### Added
+- **Mobile (Driver App)**:
+    - Bổ sung **Debug Logs** chi tiết vào màn hình Login để theo dõi luồng API_URL, Platform, Response status và Data payload.
+    - Cải thiện thông báo lỗi người dùng: Phân tách rõ lỗi nghiệp vụ (Role mismatch) và lỗi hệ thống (Connection refused).
+
+### Changed
+- **Backend (API)**:
+    - Mở rộng cấu hình **CORS**: Cho phép các origin mặc định của Expo Web (`http://localhost:8081`, `http://localhost:19006`) bên cạnh `localhost:3000`.
+    - Cập nhật `.env` và `main.ts` để đồng bộ cấu hình CORS mới, hỗ trợ quá trình phát triển đa nền tảng (Web/Mobile).
+
+### Fixed
+- **Mobile (Driver App)**: 
+    - Khắc phục tiềm tàng lỗi đăng nhập trên bản Web do sai lệch cấu hình CORS hoặc thiếu thông tin môi trường.
+
 ## [2026-05-12] - Performance Stability & Driver KPI Analytics
 ### Added
 - **Frontend (Admin Dashboard)**:
