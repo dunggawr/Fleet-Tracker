@@ -8,6 +8,7 @@ import { Repository, DataSource } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { Driver, DriverStatus } from '../entities/driver.entity';
 import { User, UserRole } from '../entities/user.entity';
+import { DriverKpi } from '../entities/driver-kpi.entity';
 import { CreateDriverDto } from './dto/create-driver.dto';
 import { UpdateDriverDto } from './dto/update-driver.dto';
 import { DriverQueryDto } from './dto/driver-query.dto';
@@ -19,6 +20,8 @@ export class DriversService {
     private readonly driversRepository: Repository<Driver>,
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
+    @InjectRepository(DriverKpi)
+    private readonly kpiRepository: Repository<DriverKpi>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -131,13 +134,23 @@ export class DriversService {
 
   async getKpi(id: string) {
     await this.findOne(id);
-    // Placeholder logic for Phase 03
-    return {
-      tripsCompleted: 0,
-      totalDistanceKm: 0,
-      averageRating: 5.0,
-      onTimeRate: 100,
-    };
+    const kpi = await this.kpiRepository.findOne({ where: { driverId: id } });
+    
+    if (!kpi) {
+      return {
+        driverId: id,
+        totalTrips: 0,
+        completedTrips: 0,
+        completionRate: 0,
+        totalViolations: 0,
+        speedViolations: 0,
+        routeViolations: 0,
+        kpiScore: 100,
+        updatedAt: new Date(),
+      };
+    }
+    
+    return kpi;
   }
 
   async getTrips(id: string) {

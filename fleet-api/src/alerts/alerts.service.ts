@@ -5,6 +5,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Alert, AlertType, AlertSeverity } from '../entities/alert.entity';
 import { Trip } from '../entities/trip.entity';
 import { CreateAlertDto } from './dto/create-alert.dto';
+import { AlertQueryDto } from './dto/alert-query.dto';
 
 @Injectable()
 export class AlertsService {
@@ -83,5 +84,29 @@ export class AlertsService {
       .addSelect('COUNT(*)', 'count')
       .groupBy('alert.type')
       .getRawMany();
+  }
+
+  async findAll(query: AlertQueryDto) {
+    const { driverId, vehicleId, isResolved, activeOnly, type, severity } = query;
+    
+    const where: any = {};
+    
+    if (driverId) where.driverId = driverId;
+    if (vehicleId) where.vehicleId = vehicleId;
+    
+    if (activeOnly !== undefined) {
+      where.isResolved = !activeOnly;
+    } else if (isResolved !== undefined) {
+      where.isResolved = isResolved;
+    }
+    
+    if (type) where.type = type;
+    if (severity) where.severity = severity;
+
+    return this.alertRepository.find({
+      where,
+      order: { createdAt: 'DESC' },
+      relations: ['vehicle', 'driver', 'trip'],
+    });
   }
 }

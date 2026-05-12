@@ -52,15 +52,15 @@ export default function FuelCostPage() {
     { header: 'Type', accessor: 'type' },
     { 
       header: 'Total Cost', 
-      accessor: (item) => `$${item.cost.toLocaleString()}` 
+      accessor: (item) => `$${(item.cost ?? 0).toLocaleString()}` 
     },
     { 
       header: 'Distance', 
-      accessor: (item) => `${item.distance.toLocaleString()} km` 
+      accessor: (item) => `${(item.distance ?? 0).toLocaleString()} km` 
     },
     { 
       header: 'Efficiency', 
-      accessor: (item) => `${item.efficiency.toFixed(2)} L/100km` 
+      accessor: (item) => `${(item.efficiency ?? 0).toFixed(2)} L/100km` 
     },
   ];
 

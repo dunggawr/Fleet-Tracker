@@ -4,9 +4,10 @@ import { DriversService } from './drivers.service';
 import { DriversController } from './drivers.controller';
 import { Driver } from '../entities/driver.entity';
 import { User } from '../entities/user.entity';
+import { DriverKpi } from '../entities/driver-kpi.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Driver, User])],
+  imports: [TypeOrmModule.forFeature([Driver, User, DriverKpi])],
   controllers: [DriversController],
   providers: [DriversService],
   exports: [DriversService],

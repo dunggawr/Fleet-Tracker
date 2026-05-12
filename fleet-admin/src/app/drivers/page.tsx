@@ -20,6 +20,7 @@ import { SearchInput } from '@/components/ui/SearchInput';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Modal } from '@/components/ui/Modal';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { StatCard } from '@/components/ui/StatCard';
 import { Input } from '@/components/ui/Input';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -171,10 +172,10 @@ export default function DriversPage() {
 
   return (
     <div className="flex flex-col gap-2xl">
-      <header className="flex justify-between items-center">
+      <header className="flex justify-between items-end mb-xl">
         <div className="space-y-1">
-          <h1>Driver Management</h1>
-          <p className="text-dim text-sm">Monitor driver performance, status, and contact information.</p>
+          <h1 className="text-3xl font-bold tracking-tight">Driver Management</h1>
+          <p className="text-dim text-base">Monitor, manage and analyze your fleet's driver performance in real-time.</p>
         </div>
         <Button variant="primary" icon={<Plus size={18} />} onClick={() => { 
           setEditingDriver(null);
@@ -191,6 +192,69 @@ export default function DriversPage() {
           Register New Driver
         </Button>
       </header>
+
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-xl mb-2xl">
+        <StatCard 
+          label="Total Drivers" 
+          value={isLoading ? '...' : drivers.length.toLocaleString()} 
+          icon={UserIcon}
+          color="var(--color-primary)"
+        />
+        <StatCard 
+          label="Active Now" 
+          value={isLoading ? '...' : drivers.filter((d: any) => d.status === 'on_trip').length.toLocaleString()} 
+          icon={UserIcon}
+          color="var(--color-success)"
+          trend={{ value: 12, isUp: true }}
+        />
+        <StatCard 
+          label="Avg Performance" 
+          value="94.2%" 
+          icon={Star}
+          color="var(--color-warning)"
+          trend={{ value: 2.1, isUp: true }}
+        />
+      </section>
+
+      <section className="card flex justify-between items-center px-xl py-lg gap-xl mb-xl shadow-glow/5 border-primary/10">
+        <SearchInput
+          placeholder="Search by name, email or phone..."
+          value={searchQuery}
+          className="flex-1 max-w-[480px]"
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+        <div className="flex items-center gap-lg">
+          <div className="flex items-center gap-md">
+            <Filter size={16} className="text-dim" />
+            <select 
+              className="bg-surface-low border border-border rounded-default text-text px-lg py-md font-medium text-sm outline-none cursor-pointer transition-all focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm" 
+              value={statusFilter} 
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="all">All Status</option>
+              <option value="available">Available</option>
+              <option value="on_trip">On Trip</option>
+              <option value="offline">Offline</option>
+            </select>
+          </div>
+          <div className="w-px h-8 bg-border" />
+          <span className="text-xs text-dim font-medium">Total <b className="text-text">{filteredDrivers.length}</b> drivers</span>
+        </div>
+      </section>
+
+      <section className="table-section">
+        {isLoading ? (
+          <div className="flex items-center justify-center h-64">
+            <LoadingSpinner size={32} />
+          </div>
+        ) : (
+          <DataTable 
+            data={filteredDrivers} 
+            columns={columns} 
+            onRowClick={(driver) => router.push(`/drivers/${(driver as any).id}`)} 
+          />
+        )}
+      </section>
 
       <Modal
         isOpen={isModalOpen}
@@ -339,42 +403,6 @@ export default function DriversPage() {
           }
         }}
       />
-
-      <section className="card flex justify-between items-center px-xl py-lg gap-xl shadow-glow/5 border-primary/10">
-        <SearchInput
-          placeholder="Search by name, email or phone..."
-          value={searchQuery}
-          className="flex-1 max-w-[480px]"
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-        <div className="flex items-center gap-lg">
-          <div className="flex items-center gap-md">
-            <Filter size={16} className="text-dim" />
-            <select 
-              className="bg-surface-low border border-border rounded-default text-text px-lg py-md font-medium text-sm outline-none cursor-pointer transition-all focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm" 
-              value={statusFilter} 
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="all">All Status</option>
-              <option value="available">Available</option>
-              <option value="on_trip">On Trip</option>
-              <option value="offline">Offline</option>
-            </select>
-          </div>
-          <div className="w-px h-8 bg-border" />
-          <span className="text-xs text-dim font-medium">Total <b className="text-text">{filteredDrivers.length}</b> drivers</span>
-        </div>
-      </section>
-
-      <section className="table-section">
-        {isLoading ? (
-          <div className="flex items-center justify-center h-64">
-            <LoadingSpinner size={32} />
-          </div>
-        ) : (
-          <DataTable data={filteredDrivers} columns={columns} onRowClick={(driver) => setViewingDriver(driver as DriverWithUser)} />
-        )}
-      </section>
 
     </div>
   );

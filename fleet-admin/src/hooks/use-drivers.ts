@@ -1,13 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { Driver } from '@/types';
+import { Driver, DriverKpi } from '@/types';
+
+interface DriverWithUser extends Driver {
+  user?: { email: string };
+}
 
 export function useDrivers() {
   const queryClient = useQueryClient();
 
   const driversQuery = useQuery({
     queryKey: ['drivers'],
-    queryFn: () => api.get<Driver[]>('/drivers'),
+    queryFn: () => api.get<DriverWithUser[]>('/drivers'),
   });
 
   const registerDriverMutation = useMutation({
@@ -22,6 +26,7 @@ export function useDrivers() {
       api.patch<Driver>(`/drivers/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['drivers'] });
+      queryClient.invalidateQueries({ queryKey: ['driver'] });
     },
   });
 
@@ -43,4 +48,20 @@ export function useDrivers() {
     isUpdating: updateDriverMutation.isPending,
     isDeleting: deleteDriverMutation.isPending,
   };
+}
+
+export function useDriver(id: string) {
+  return useQuery({
+    queryKey: ['driver', id],
+    queryFn: () => api.get<DriverWithUser>(`/drivers/${id}`),
+    enabled: !!id,
+  });
+}
+
+export function useDriverKpi(id: string) {
+  return useQuery({
+    queryKey: ['driver-kpi', id],
+    queryFn: () => api.get<DriverKpi>(`/drivers/${id}/kpi`),
+    enabled: !!id,
+  });
 }
