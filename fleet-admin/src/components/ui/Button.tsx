@@ -31,14 +31,14 @@ export function Button({
   };
 
   const sizes = {
-    sm: 'px-3 py-1.5 text-xs',
-    md: 'px-5 py-2.5 text-sm',
-    lg: 'px-7 py-3.5 text-base',
+    sm: 'px-md py-xs text-xs h-9',
+    md: 'px-lg py-sm text-sm h-11',
+    lg: 'px-xl py-md text-base h-13',
   };
 
   const baseClasses = `
     inline-flex items-center justify-center gap-2 
-    rounded-md font-medium transition-all duration-200 
+    rounded-default font-semibold transition-all duration-200 
     active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none
     ${fullWidth ? 'w-full' : ''}
     ${variants[variant]}

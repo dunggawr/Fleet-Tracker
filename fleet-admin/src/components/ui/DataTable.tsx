@@ -24,7 +24,7 @@ export function DataTable<T>({ data, columns, onRowClick, isLoading }: DataTable
             {columns.map((col, idx) => (
               <th 
                 key={idx} 
-                className="text-[12px] uppercase tracking-wider font-semibold text-text-muted px-4 py-3 text-left"
+                className="text-[12px] uppercase tracking-wider font-semibold text-text-muted px-lg py-md text-left"
                 style={{ width: col.width }}
               >
                 {col.header}
@@ -56,7 +56,7 @@ export function DataTable<T>({ data, columns, onRowClick, isLoading }: DataTable
                 `}
               >
                 {columns.map((col, colIdx) => (
-                  <td key={colIdx} className="px-4 py-4 text-sm text-text">
+                  <td key={colIdx} className="px-lg py-lg text-sm text-text">
                     {typeof col.accessor === 'function' 
                       ? col.accessor(item) 
                       : (item[col.accessor] as unknown as React.ReactNode)}

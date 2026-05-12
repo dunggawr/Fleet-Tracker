@@ -110,7 +110,7 @@ export default function DriversPage() {
     { 
       header: 'Driver', 
       accessor: (d: DriverWithUser) => (
-        <div className="flex items-center gap-(--space-md)">
+        <div className="flex items-center gap-md">
           <div className="w-8 h-8 bg-surface-high rounded-full flex items-center justify-center text-primary-light">
             <UserIcon size={16} />
           </div>
@@ -142,7 +142,7 @@ export default function DriversPage() {
     {
       header: 'Actions',
       accessor: (d: DriverWithUser) => (
-        <div className="flex gap-1">
+        <div className="flex gap-sm">
           <Button 
             variant="ghost" 
             size="sm" 
@@ -157,7 +157,7 @@ export default function DriversPage() {
             variant="ghost" 
             size="sm" 
             icon={<Trash2 size={16} />} 
-            className="text-danger" 
+            className="text-danger hover:bg-danger/10" 
             aria-label={`Delete ${d.fullName}`}
             onClick={(e) => {
               e.stopPropagation();
@@ -170,11 +170,11 @@ export default function DriversPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-(--space-xl)">
+    <div className="flex flex-col gap-2xl">
       <header className="flex justify-between items-center">
-        <div>
+        <div className="space-y-1">
           <h1>Driver Management</h1>
-          <p className="text-dim">Monitor driver performance, status, and contact information.</p>
+          <p className="text-dim text-sm">Monitor driver performance, status, and contact information.</p>
         </div>
         <Button variant="primary" icon={<Plus size={18} />} onClick={() => { 
           setEditingDriver(null);
@@ -211,8 +211,8 @@ export default function DriversPage() {
           </>
         )}
       >
-        <form className="flex flex-col gap-(--space-lg)">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-(--space-lg)">
+        <form className="flex flex-col gap-lg">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-lg">
             <Input 
               label="Full Name" 
               placeholder="Enter driver's full name" 
@@ -278,42 +278,42 @@ export default function DriversPage() {
         title="Driver Details"
       >
         {viewingDriver && (
-          <div className="flex flex-col gap-(--space-lg)">
-            <div className="flex items-center gap-(--space-md) mb-(--space-md)">
-              <div className="w-14 h-14 bg-primary-faint text-primary rounded-full flex items-center justify-center">
-                <UserIcon size={24} />
+          <div className="flex flex-col gap-lg">
+            <div className="flex items-center gap-lg mb-lg pb-lg border-b border-border">
+              <div className="w-16 h-16 bg-primary/10 text-primary-light rounded-full flex items-center justify-center shadow-glow">
+                <UserIcon size={28} />
               </div>
               <div>
-                <h3>{viewingDriver.fullName}</h3>
+                <h3 className="text-xl font-bold">{viewingDriver.fullName}</h3>
                 <p className="text-dim">{viewingDriver.user?.email}</p>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-(--space-md)">
-              <div className="flex flex-col gap-1.5 p-(--space-md) bg-surface-high border border-border rounded-default">
-                <span className="text-[10px] font-bold text-dim uppercase tracking-wider">Phone</span>
-                <div className="flex items-center gap-2">
-                  <Phone size={14} className="text-dim" />
-                  <span>{viewingDriver.phone}</span>
+            <div className="grid grid-cols-2 gap-lg">
+              <div className="flex flex-col gap-md p-lg bg-surface-low border border-border rounded-default">
+                <span className="text-xs font-bold text-dim uppercase tracking-wider">Phone</span>
+                <div className="flex items-center gap-md">
+                  <Phone size={16} className="text-primary-light" />
+                  <span className="font-semibold">{viewingDriver.phone}</span>
                 </div>
               </div>
-              <div className="flex flex-col gap-1.5 p-(--space-md) bg-surface-high border border-border rounded-default">
-                <span className="text-[10px] font-bold text-dim uppercase tracking-wider">Status</span>
+              <div className="flex flex-col gap-md p-lg bg-surface-low border border-border rounded-default">
+                <span className="text-xs font-bold text-dim uppercase tracking-wider">Status</span>
                 <Badge variant={viewingDriver.status === 'available' ? 'success' : viewingDriver.status === 'on_trip' ? 'primary' : 'neutral'}>
                   {viewingDriver.status.replace('_', ' ')}
                 </Badge>
               </div>
-              <div className="flex flex-col gap-1.5 p-(--space-md) bg-surface-high border border-border rounded-default">
-                <span className="text-[10px] font-bold text-dim uppercase tracking-wider">License Class</span>
-                <div className="flex items-center gap-2">
-                  <CreditCard size={14} className="text-dim" />
-                  <span>{viewingDriver.licenseClass || 'N/A'}</span>
+              <div className="flex flex-col gap-md p-lg bg-surface-low border border-border rounded-default">
+                <span className="text-xs font-bold text-dim uppercase tracking-wider">License Class</span>
+                <div className="flex items-center gap-md">
+                  <CreditCard size={16} className="text-primary-light" />
+                  <span className="font-semibold">{viewingDriver.licenseClass || 'N/A'}</span>
                 </div>
               </div>
-              <div className="flex flex-col gap-1.5 p-(--space-md) bg-surface-high border border-border rounded-default">
-                <span className="text-[10px] font-bold text-dim uppercase tracking-wider">Expiry Date</span>
-                <div className="flex items-center gap-2">
-                  <Calendar size={14} className="text-dim" />
-                  <span>{viewingDriver.licenseExpiry && mounted ? new Date(viewingDriver.licenseExpiry).toLocaleDateString() : 'N/A'}</span>
+              <div className="flex flex-col gap-md p-lg bg-surface-low border border-border rounded-default">
+                <span className="text-xs font-bold text-dim uppercase tracking-wider">Expiry Date</span>
+                <div className="flex items-center gap-md">
+                  <Calendar size={16} className="text-primary-light" />
+                  <span className="font-semibold">{viewingDriver.licenseExpiry && mounted ? new Date(viewingDriver.licenseExpiry).toLocaleDateString() : 'N/A'}</span>
                 </div>
               </div>
             </div>
@@ -340,26 +340,29 @@ export default function DriversPage() {
         }}
       />
 
-      <section className="card flex justify-between items-center px-(--space-lg) py-(--space-md)">
+      <section className="card flex justify-between items-center px-xl py-lg gap-xl shadow-glow/5 border-primary/10">
         <SearchInput
           placeholder="Search by name, email or phone..."
           value={searchQuery}
-          className="flex-1 max-w-[400px]"
+          className="flex-1 max-w-[480px]"
           onChange={(e) => setSearchQuery(e.target.value)}
         />
-        <div className="flex items-center gap-3">
-          <select 
-            className="bg-surface-low border border-border rounded-default text-text px-3 py-2 text-sm outline-none cursor-pointer transition-colors focus:border-primary" 
-            value={statusFilter} 
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="all">All Status</option>
-            <option value="available">Available</option>
-            <option value="on_trip">On Trip</option>
-            <option value="offline">Offline</option>
-          </select>
-          <div className="w-px h-6 bg-border" />
-          <span className="text-xs text-dim">Total <b>{filteredDrivers.length}</b> drivers</span>
+        <div className="flex items-center gap-lg">
+          <div className="flex items-center gap-md">
+            <Filter size={16} className="text-dim" />
+            <select 
+              className="bg-surface-low border border-border rounded-default text-text px-lg py-md font-medium text-sm outline-none cursor-pointer transition-all focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm" 
+              value={statusFilter} 
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="all">All Status</option>
+              <option value="available">Available</option>
+              <option value="on_trip">On Trip</option>
+              <option value="offline">Offline</option>
+            </select>
+          </div>
+          <div className="w-px h-8 bg-border" />
+          <span className="text-xs text-dim font-medium">Total <b className="text-text">{filteredDrivers.length}</b> drivers</span>
         </div>
       </section>
 

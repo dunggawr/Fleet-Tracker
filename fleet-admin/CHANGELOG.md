@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-05-12]
+### Fixed
+- **UI Styling**: Resolved critical layout issues where padding and margins were not being applied in Tailwind CSS v4.
+- **Tailwind v4 Workaround**: Manually defined `@utility` classes for all named spacing tokens (`xs` to `3xl`) to bypass automatic generation conflicts with breakpoint names.
+- **CSS Reset**: Removed redundant and aggressive `*` selector reset in `globals.css` that interfered with utility class specificity.
+
+### Optimized
+- **Design Tokens**: Standardized spacing across `Orders` and `Drivers` pages using the new design system tokens.
+- **Sidebar & Header**: Refined padding and height calculations to ensure consistent layout across all screen sizes.
+
 ## [2026-05-11]
 ### Added
 - **Address Search**: Integrated Mapbox Geocoding API into `MapBox` component for easy location lookup.

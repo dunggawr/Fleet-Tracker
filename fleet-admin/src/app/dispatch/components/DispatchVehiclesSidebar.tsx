@@ -64,7 +64,7 @@ export function DispatchVehiclesSidebar({
     return (
       <div
         key={vehicle.id}
-        className={`bg-surface-low border rounded-md p-md transition-all hover:border-primary-light hover:bg-surface-high cursor-pointer mb-sm ${isSelected ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border'} ${!capacity.ok ? 'border-danger/40 bg-danger/5' : ''}`}
+        className={`bg-surface-low border rounded-md p-md transition-all hover:border-primary-light hover:bg-surface-high cursor-pointer ${isSelected ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border'} ${!capacity.ok ? 'border-danger/40 bg-danger/5' : ''}`}
         onClick={() => onSelectVehicle(vehicle.id)}
       >
         {/* Header: Biển số + badge trạng thái */}
@@ -186,14 +186,14 @@ export function DispatchVehiclesSidebar({
         <Badge variant="success">{totalVisibleCount}</Badge>
       </div>
 
-      <div className="flex-1 overflow-y-auto min-h-0 p-md flex flex-col">
+      <div className="flex-1 overflow-y-auto min-h-0 p-md flex flex-col gap-md">
         {isLoading ? (
           <div className="flex items-center justify-center h-32">
             <LoadingSpinner size={24} />
           </div>
         ) : (
           <>
-            <div className="sticky top-0 bg-surface pb-sm -mt-md pt-md z-10">
+            <div className="sticky top-0 bg-surface pb-md -mt-md pt-md z-10">
               <SearchInput
                 placeholder="Search vehicles..."
                 value={searchQuery}
