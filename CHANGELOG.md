@@ -1,3 +1,21 @@
+## [2026-05-12] - UI Modernization & Tailwind CSS v4 Migration
+### Added
+- **Frontend (Admin Dashboard)**:
+    - **Sidebar Navigation Redesign**: Cập nhật giao diện Sidebar theo chuẩn Figma (Fixed width 260px, màu nền #1A1D27, hiệu ứng active với accent border #6366F1).
+    - **Address Search Integration**: Tích hợp tính năng tìm kiếm địa chỉ (Mapbox Geocoding) trong module Dispatch, hỗ trợ tự động bay đến vị trí (Fly-to) và cập nhật tọa độ.
+
+### Changed
+- **Tailwind CSS v4 Migration**:
+    - Di chuyển toàn bộ giao diện **Dispatch Module** (MapPanel, VehiclesSidebar, OrdersSidebar) sang Tailwind CSS v4.
+    - Sử dụng các utility classes chuẩn dự án (`glass`, `bg-background`, `text-foreground`) và hệ thống spacing tokens (xs, sm, md).
+    - Loại bỏ các mã màu hardcoded và pixel values cũ, thay thế bằng design system tokens.
+    - Đồng bộ hóa hiệu ứng Blur và Transparency cho các floating panels thông qua utility `glass`.
+
+### Fixed
+- **Layout & Responsiveness**:
+    - Cải thiện cơ chế đóng/mở Sidebar, đảm bảo nội dung chính (body) co giãn chính xác.
+    - Chuẩn hóa thứ tự hiển thị (z-index) cho các thành phần điều khiển trên bản đồ.
+
 ## [2026-05-11] - Dashboard Real-time Alerts & Monitoring
 ### Added
 - **Frontend (Admin Dashboard)**:

@@ -81,3 +81,16 @@ Thực hiện gán xe vào đơn hàng và khởi tạo chuyến đi.
 1. Update `order.status = 'assigned'`.
 2. Update `vehicle.status = 'delivering'`.
 3. Create new `Trip` record with `vehicleId`, `driverId`, and the order.
+
+---
+
+## 🗺️ External Services
+
+### Mapbox Geocoding (Address Search)
+Dùng để tìm kiếm vị trí và bay đến (Fly-to) trên bản đồ Dispatch.
+
+**Service:** Mapbox Geocoding API
+**Frontend Usage:**
+- **Endpoint:** `https://api.mapbox.com/geocoding/v5/mapbox.places/{query}.json`
+- **Params:** `access_token`, `country=vn`, `limit=5`, `proximity={current_location}`.
+- **Action:** Trả về danh sách tọa độ (Center). Component `DispatchMapPanel` sử dụng `map.flyTo()` để di chuyển đến vị trí đã chọn.
