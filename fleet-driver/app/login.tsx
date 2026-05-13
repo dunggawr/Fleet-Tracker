@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import {
-  StyleSheet,
   View,
   Text,
   TextInput,
@@ -9,13 +8,17 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Dimensions,
+  StatusBar,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 import { useRouter } from "expo-router";
-import { Mail, Lock, LogIn, ArrowLeft } from "lucide-react-native";
+import { Mail, Lock, ShieldCheck, ChevronRight, ArrowLeft } from "lucide-react-native";
 import { useAuthStore } from "../store/useAuthStore";
 import Toast from "react-native-toast-message";
 
+const { width, height } = Dimensions.get("window");
 const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3001/api";
 
 export default function LoginScreen() {
@@ -27,20 +30,17 @@ export default function LoginScreen() {
   const [resetCode, setResetCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [stage, setStage] = useState<"email" | "code" | "password">("email"); // email -> code -> password
+  const [stage, setStage] = useState<"email" | "code" | "password">("email");
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert("Lỗi", "Vui lòng nhập email và mật khẩu");
+      Alert.alert("Error", "Please enter email and password");
       return;
     }
 
     setIsLoading(true);
-    console.log(`[DEBUG] Attempting login to: ${API_URL}/auth/login`);
-    console.log(`[DEBUG] Platform: ${Platform.OS}`);
-
     try {
       const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
@@ -48,33 +48,24 @@ export default function LoginScreen() {
         body: JSON.stringify({ email, password }),
       });
 
-      console.log(`[DEBUG] Response status: ${response.status} ${response.statusText}`);
-
       const data = await response.json();
-      console.log(`[DEBUG] Response data:`, data);
-
       if (!response.ok) {
-        throw new Error(
-          data?.message || data?.error?.message || "Đăng nhập thất bại",
-        );
+        throw new Error(data?.message || data?.error?.message || "Login failed");
       }
 
-      // Unwrap NestJS ResponseInterceptor format { data, statusCode }
       const payload = data?.data ?? data;
       const accessToken = payload?.accessToken ?? payload?.access_token;
       const refreshToken = payload?.refreshToken ?? payload?.refresh_token;
       const { user } = payload;
 
       if (!accessToken || !refreshToken || !user) {
-        console.error("[DEBUG] Missing tokens or user in response", payload);
-        throw new Error("Phản hồi không hợp lệ từ máy chủ");
+        throw new Error("Invalid server response");
       }
 
       if ((user.role || "").toLowerCase() !== "driver") {
-        throw new Error("Tài khoản này không có quyền truy cập Driver App");
+        throw new Error("Access denied: Drivers only");
       }
 
-      console.log("[DEBUG] Login successful, updating auth store");
       setAuth(
         {
           id: user.id,
@@ -88,8 +79,7 @@ export default function LoginScreen() {
 
       router.replace("/(tabs)");
     } catch (error: any) {
-      console.error("[DEBUG] Login error:", error);
-      Alert.alert("Đăng nhập thất bại", error.message || "Lỗi kết nối máy chủ");
+      Alert.alert("Login Failed", error.message || "Server connection error");
     } finally {
       setIsLoading(false);
     }
@@ -97,11 +87,7 @@ export default function LoginScreen() {
 
   const handleForgotPassword = async () => {
     if (!resetEmail) {
-      Toast.show({
-        type: "error",
-        text1: "Lỗi",
-        text2: "Vui lòng nhập email",
-      });
+      Toast.show({ type: "error", text1: "Error", text2: "Please enter your email" });
       return;
     }
 
@@ -116,22 +102,20 @@ export default function LoginScreen() {
       const data = await response.json();
       const result = data?.data ?? data;
 
-      if (!response.ok) {
-        throw new Error(result?.message || "Không thể gửi mã reset");
-      }
+      if (!response.ok) throw new Error(result?.message || "Could not send reset code");
 
       Toast.show({
         type: "success",
-        text1: "Thành công",
-        text2: `Mã reset: ${result.resetCode} (Demo - kiểm tra console)`,
+        text1: "Code Sent",
+        text2: `Reset code: ${result.resetCode} (Demo)`,
       });
 
       setStage("code");
     } catch (error: any) {
       Toast.show({
         type: "error",
-        text1: "Lỗi",
-        text2: error.message || "Không thể gửi mã reset",
+        text1: "Error",
+        text2: error.message || "Failed to send reset code",
       });
     } finally {
       setIsLoading(false);
@@ -140,29 +124,17 @@ export default function LoginScreen() {
 
   const handleResetPassword = async () => {
     if (!newPassword || !confirmPassword) {
-      Toast.show({
-        type: "error",
-        text1: "Lỗi",
-        text2: "Vui lòng nhập mật khẩu mới",
-      });
+      Toast.show({ type: "error", text1: "Error", text2: "Please fill all fields" });
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      Toast.show({
-        type: "error",
-        text1: "Lỗi",
-        text2: "Mật khẩu không khớp",
-      });
+      Toast.show({ type: "error", text1: "Error", text2: "Passwords do not match" });
       return;
     }
 
     if (newPassword.length < 6) {
-      Toast.show({
-        type: "error",
-        text1: "Lỗi",
-        text2: "Mật khẩu phải ít nhất 6 ký tự",
-      });
+      Toast.show({ type: "error", text1: "Error", text2: "Password must be at least 6 characters" });
       return;
     }
 
@@ -171,27 +143,20 @@ export default function LoginScreen() {
       const response = await fetch(`${API_URL}/auth/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: resetEmail,
-          resetCode,
-          newPassword,
-        }),
+        body: JSON.stringify({ email: resetEmail, resetCode, newPassword }),
       });
 
       const data = await response.json();
       const result = data?.data ?? data;
 
-      if (!response.ok) {
-        throw new Error(result?.message || "Không thể reset mật khẩu");
-      }
+      if (!response.ok) throw new Error(result?.message || "Could not reset password");
 
       Toast.show({
         type: "success",
-        text1: "Thành công",
-        text2: "Mật khẩu đã được thay đổi. Vui lòng đăng nhập lại",
+        text1: "Success",
+        text2: "Password changed successfully",
       });
 
-      // Reset form and go back to login
       setIsForgotMode(false);
       setStage("email");
       setResetEmail("");
@@ -201,8 +166,8 @@ export default function LoginScreen() {
     } catch (error: any) {
       Toast.show({
         type: "error",
-        text1: "Lỗi",
-        text2: error.message || "Không thể reset mật khẩu",
+        text1: "Error",
+        text2: error.message || "Failed to reset password",
       });
     } finally {
       setIsLoading(false);
@@ -210,305 +175,259 @@ export default function LoginScreen() {
   };
 
   return (
-    <LinearGradient colors={["#0f172a", "#1e293b"]} style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.content}
+    <View className="flex-1 bg-slate-950">
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      
+      <LinearGradient
+        colors={["#020617", "#0f172a", "#020617"]}
+        className="flex-1"
       >
-        {isForgotMode && (
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => {
-              setIsForgotMode(false);
-              setStage("email");
-              setResetEmail("");
-              setResetCode("");
-              setNewPassword("");
-              setConfirmPassword("");
-            }}
-          >
-            <ArrowLeft size={24} color="#6366f1" />
-            <Text style={styles.backButtonText}>Back to Login</Text>
-          </TouchableOpacity>
-        )}
+        {/* Animated Background Elements */}
+        <View 
+          className="absolute w-[500px] h-[500px] rounded-full bg-indigo-500/10"
+          style={{ top: -100, right: -150 }}
+        />
+        <View 
+          className="absolute w-[400px] h-[400px] rounded-full bg-blue-500/5"
+          style={{ bottom: -50, left: -100 }}
+        />
 
-        <View style={styles.logoContainer}>
-          <View style={styles.iconCircle}>
-            <LogIn size={40} color="#6366f1" />
-          </View>
-          <Text style={styles.title}>FleetTracker</Text>
-          <Text style={styles.subtitle}>
-            {isForgotMode ? "Reset Password" : "Driver Portal"}
-          </Text>
-        </View>
-
-        <View style={styles.form}>
-          {!isForgotMode ? (
-            <>
-              <View style={styles.inputContainer}>
-                <Mail size={20} color="#94a3b8" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Email address"
-                  placeholderTextColor="#64748b"
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
-
-              <View style={styles.inputContainer}>
-                <Lock size={20} color="#94a3b8" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Password"
-                  placeholderTextColor="#64748b"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                />
-              </View>
-
-              <TouchableOpacity
-                style={[
-                  styles.loginButton,
-                  isLoading && styles.loginButtonDisabled,
-                ]}
-                onPress={handleLogin}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.loginButtonText}>Sign In</Text>
-                )}
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.forgotButton}
-                onPress={() => {
-                  setIsForgotMode(true);
-                  setStage("email");
-                }}
-              >
-                <Text style={styles.forgotText}>Forgot Password?</Text>
-              </TouchableOpacity>
-            </>
-          ) : stage === "email" ? (
-            <>
-              <Text style={styles.stageTitle}>Enter Your Email</Text>
-              <View style={styles.inputContainer}>
-                <Mail size={20} color="#94a3b8" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Email address"
-                  placeholderTextColor="#64748b"
-                  value={resetEmail}
-                  onChangeText={setResetEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
-              <TouchableOpacity
-                style={[
-                  styles.loginButton,
-                  isLoading && styles.loginButtonDisabled,
-                ]}
-                onPress={handleForgotPassword}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.loginButtonText}>Send Reset Code</Text>
-                )}
-              </TouchableOpacity>
-            </>
-          ) : stage === "code" ? (
-            <>
-              <Text style={styles.stageTitle}>Enter Reset Code</Text>
-              <Text style={styles.stageDesc}>
-                Check your email for the reset code
-              </Text>
-              <View style={styles.inputContainer}>
-                <Lock size={20} color="#94a3b8" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Reset code (6 digits)"
-                  placeholderTextColor="#64748b"
-                  value={resetCode}
-                  onChangeText={setResetCode}
-                  keyboardType="number-pad"
-                  maxLength={6}
-                />
-              </View>
-              <TouchableOpacity
-                style={[
-                  styles.loginButton,
-                  (!resetCode || isLoading) && styles.loginButtonDisabled,
-                ]}
-                onPress={() => setStage("password")}
-                disabled={!resetCode || isLoading}
-              >
-                <Text style={styles.loginButtonText}>Next</Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <>
-              <Text style={styles.stageTitle}>Enter New Password</Text>
-              <View style={styles.inputContainer}>
-                <Lock size={20} color="#94a3b8" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="New password"
-                  placeholderTextColor="#64748b"
-                  value={newPassword}
-                  onChangeText={setNewPassword}
-                  secureTextEntry
-                />
-              </View>
-              <View style={styles.inputContainer}>
-                <Lock size={20} color="#94a3b8" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Confirm password"
-                  placeholderTextColor="#64748b"
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  secureTextEntry
-                />
-              </View>
-              <TouchableOpacity
-                style={[
-                  styles.loginButton,
-                  isLoading && styles.loginButtonDisabled,
-                ]}
-                onPress={handleResetPassword}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.loginButtonText}>Reset Password</Text>
-                )}
-              </TouchableOpacity>
-            </>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          className="flex-1 px-8 justify-center"
+        >
+          {isForgotMode && (
+            <TouchableOpacity
+              className="flex-row items-center mb-8 gap-2"
+              onPress={() => {
+                setIsForgotMode(false);
+                setStage("email");
+              }}
+            >
+              <BlurView intensity={20} className="w-10 h-10 rounded-full items-center justify-center border border-white/10 overflow-hidden">
+                <ArrowLeft size={20} color="#94a3b8" />
+              </BlurView>
+              <Text className="text-slate-400 text-base font-black uppercase tracking-widest">Login Portal</Text>
+            </TouchableOpacity>
           )}
-        </View>
-      </KeyboardAvoidingView>
-    </LinearGradient>
+
+          <View className="items-center mb-16">
+            <View className="w-24 h-24 rounded-[32px] bg-indigo-500/20 justify-center items-center mb-6 border border-indigo-500/30 rotate-12 shadow-2xl shadow-indigo-500/20">
+              <View className="-rotate-12">
+                <ShieldCheck size={48} color="#818cf8" strokeWidth={1.5} />
+              </View>
+            </View>
+            <Text className="text-5xl font-black text-white tracking-tighter italic">
+              FLEET<Text className="text-indigo-400">TRACKER</Text>
+            </Text>
+            <Text className="text-indigo-500/60 text-xs font-black uppercase tracking-[4px] mt-2">
+              {isForgotMode ? "Security Verification" : "Secure Driver Network"}
+            </Text>
+          </View>
+
+          <BlurView 
+            intensity={Platform.OS === 'ios' ? 20 : 40}
+            tint="dark"
+            className="w-full rounded-[48px] overflow-hidden border border-white/10 shadow-2xl"
+          >
+            <View className="p-10 bg-slate-900/40">
+              {!isForgotMode ? (
+                <View className="gap-6">
+                  <View className="gap-5">
+                    <View className="flex-row items-center bg-black/40 rounded-3xl px-6 h-18 border border-white/5 shadow-inner">
+                      <Mail size={20} color="#6366f1" />
+                      <TextInput
+                        className="flex-1 text-white text-lg ml-4 font-medium"
+                        placeholder="Driver ID / Email"
+                        placeholderTextColor="#475569"
+                        value={email}
+                        onChangeText={setEmail}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                      />
+                    </View>
+
+                    <View className="flex-row items-center bg-black/40 rounded-3xl px-6 h-18 border border-white/5 shadow-inner">
+                      <Lock size={20} color="#6366f1" />
+                      <TextInput
+                        className="flex-1 text-white text-lg ml-4 font-medium"
+                        placeholder="Access Key"
+                        placeholderTextColor="#475569"
+                        value={password}
+                        onChangeText={setPassword}
+                        secureTextEntry
+                      />
+                    </View>
+                  </View>
+
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={handleLogin}
+                    disabled={isLoading}
+                    className="mt-2"
+                  >
+                    <LinearGradient
+                      colors={["#6366f1", "#4f46e5"]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      className="h-18 rounded-3xl justify-center items-center shadow-2xl shadow-indigo-500/40"
+                    >
+                      {isLoading ? (
+                        <ActivityIndicator color="#fff" />
+                      ) : (
+                        <View className="flex-row items-center gap-3">
+                          <Text className="text-white text-xl font-black uppercase tracking-widest">Authorize</Text>
+                          <ChevronRight size={22} color="#fff" strokeWidth={3} />
+                        </View>
+                      )}
+                    </LinearGradient>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    className="items-center mt-4"
+                    onPress={() => {
+                      setIsForgotMode(true);
+                      setStage("email");
+                    }}
+                  >
+                    <Text className="text-slate-500 text-xs font-black uppercase tracking-widest">Lost Access Key?</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : stage === "email" ? (
+                <View className="gap-6">
+                  <View>
+                    <Text className="text-white text-2xl font-black tracking-tight mb-1">Reset Key</Text>
+                    <Text className="text-slate-500 text-sm font-medium mb-6">Enter your registered email below</Text>
+                  </View>
+                  
+                  <View className="flex-row items-center bg-black/40 rounded-3xl px-6 h-18 border border-white/5 shadow-inner">
+                    <Mail size={20} color="#6366f1" />
+                    <TextInput
+                      className="flex-1 text-white text-lg ml-4 font-medium"
+                      placeholder="Email address"
+                      placeholderTextColor="#475569"
+                      value={resetEmail}
+                      onChangeText={setResetEmail}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                    />
+                  </View>
+                  
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={handleForgotPassword}
+                    disabled={isLoading}
+                  >
+                    <LinearGradient
+                      colors={["#6366f1", "#4f46e5"]}
+                      className="h-18 rounded-3xl justify-center items-center shadow-2xl shadow-indigo-500/40"
+                    >
+                      {isLoading ? (
+                        <ActivityIndicator color="#fff" />
+                      ) : (
+                        <Text className="text-white text-lg font-black uppercase tracking-widest">Send Recovery Code</Text>
+                      )}
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
+              ) : stage === "code" ? (
+                <View className="gap-6">
+                  <View>
+                    <Text className="text-white text-2xl font-black tracking-tight mb-1">Verification</Text>
+                    <Text className="text-slate-500 text-sm font-medium mb-6">Enter the 6-digit code sent to you</Text>
+                  </View>
+
+                  <View className="flex-row items-center bg-black/40 rounded-3xl px-6 h-18 border border-white/5 shadow-inner">
+                    <Lock size={20} color="#6366f1" />
+                    <TextInput
+                      className="flex-1 text-white text-2xl font-black tracking-[12px] ml-4"
+                      placeholder="000000"
+                      placeholderTextColor="#334155"
+                      value={resetCode}
+                      onChangeText={setResetCode}
+                      keyboardType="number-pad"
+                      maxLength={6}
+                    />
+                  </View>
+                  
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => setStage("password")}
+                    disabled={!resetCode || isLoading}
+                  >
+                    <LinearGradient
+                      colors={["#6366f1", "#4f46e5"]}
+                      className="h-18 rounded-3xl justify-center items-center shadow-2xl shadow-indigo-500/40"
+                    >
+                      <Text className="text-white text-lg font-black uppercase tracking-widest">Verify Identity</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View className="gap-6">
+                  <View>
+                    <Text className="text-white text-2xl font-black tracking-tight mb-1">New Key</Text>
+                    <Text className="text-slate-500 text-sm font-medium mb-6">Create a secure new access key</Text>
+                  </View>
+
+                  <View className="gap-4">
+                    <View className="flex-row items-center bg-black/40 rounded-3xl px-6 h-18 border border-white/5 shadow-inner">
+                      <Lock size={20} color="#6366f1" />
+                      <TextInput
+                        className="flex-1 text-white text-lg ml-4 font-medium"
+                        placeholder="New access key"
+                        placeholderTextColor="#475569"
+                        value={newPassword}
+                        onChangeText={setNewPassword}
+                        secureTextEntry
+                      />
+                    </View>
+                    <View className="flex-row items-center bg-black/40 rounded-3xl px-6 h-18 border border-white/5 shadow-inner">
+                      <Lock size={20} color="#6366f1" />
+                      <TextInput
+                        className="flex-1 text-white text-lg ml-4 font-medium"
+                        placeholder="Confirm key"
+                        placeholderTextColor="#475569"
+                        value={confirmPassword}
+                        onChangeText={setConfirmPassword}
+                        secureTextEntry
+                      />
+                    </View>
+                  </View>
+
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={handleResetPassword}
+                    disabled={isLoading}
+                  >
+                    <LinearGradient
+                      colors={["#6366f1", "#4f46e5"]}
+                      className="h-18 rounded-3xl justify-center items-center shadow-2xl shadow-indigo-500/40"
+                    >
+                      {isLoading ? (
+                        <ActivityIndicator color="#fff" />
+                      ) : (
+                        <Text className="text-white text-lg font-black uppercase tracking-widest">Update Portal Key</Text>
+                      )}
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          </BlurView>
+          
+          <View className="mt-16 items-center">
+            <Text className="text-slate-700 text-[10px] font-black tracking-[3px] uppercase">
+              Operational Intelligence System
+            </Text>
+            <Text className="text-slate-800 text-[8px] font-bold uppercase mt-2 tracking-widest">
+              v2.4.0 • Encrypted Connection
+            </Text>
+          </View>
+        </KeyboardAvoidingView>
+      </LinearGradient>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    padding: 30,
-    justifyContent: "center",
-  },
-  logoContainer: {
-    alignItems: "center",
-    marginBottom: 50,
-  },
-  iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "rgba(99, 102, 241, 0.1)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: "rgba(99, 102, 241, 0.2)",
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#f8fafc",
-    letterSpacing: 1,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#94a3b8",
-    marginTop: 5,
-  },
-  form: {
-    width: "100%",
-  },
-  inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(30, 41, 59, 0.5)",
-    borderRadius: 12,
-    marginBottom: 20,
-    paddingHorizontal: 15,
-    height: 60,
-    borderWidth: 1,
-    borderColor: "rgba(51, 65, 85, 0.5)",
-  },
-  inputIcon: {
-    marginRight: 15,
-  },
-  input: {
-    flex: 1,
-    color: "#f8fafc",
-    fontSize: 16,
-  },
-  loginButton: {
-    backgroundColor: "#6366f1",
-    height: 60,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 10,
-    shadowColor: "#6366f1",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  loginButtonDisabled: {
-    opacity: 0.7,
-  },
-  loginButtonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  forgotButton: {
-    alignItems: "center",
-    marginTop: 20,
-  },
-  forgotText: {
-    color: "#94a3b8",
-    fontSize: 14,
-  },
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
-    gap: 8,
-  },
-  backButtonText: {
-    color: "#6366f1",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  stageTitle: {
-    color: "#f8fafc",
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-  stageDesc: {
-    color: "#94a3b8",
-    fontSize: 14,
-    marginBottom: 20,
-  },
-});

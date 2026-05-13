@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { Text, View, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { X, Camera, Check, RefreshCw } from 'lucide-react-native';
@@ -15,15 +15,18 @@ export default function CameraScreen() {
   const { orderId } = useLocalSearchParams();
 
   if (!permission) {
-    return <View />;
+    return <View className="flex-1 bg-black" />;
   }
 
   if (!permission.granted) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.message}>We need your permission to show the camera</Text>
-        <TouchableOpacity onPress={requestPermission} style={styles.button}>
-          <Text style={styles.buttonText}>Grant Permission</Text>
+      <View className="flex-1 bg-black justify-center items-center px-10">
+        <Text className="text-center pb-5 text-white text-base">We need your permission to show the camera</Text>
+        <TouchableOpacity 
+          onPress={requestPermission} 
+          className="bg-indigo-500 px-8 py-4 rounded-xl"
+        >
+          <Text className="text-white font-bold text-lg">Grant Permission</Text>
         </TouchableOpacity>
       </View>
     );
@@ -85,17 +88,21 @@ export default function CameraScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-black">
       {photo ? (
-        <View style={styles.previewContainer}>
-          <Image source={{ uri: photo }} style={styles.preview} />
-          <View style={styles.controls}>
-            <TouchableOpacity style={styles.iconButton} onPress={() => setPhoto(null)}>
-              <RefreshCw color="#fff" size={32} />
-              <Text style={styles.iconText}>Retake</Text>
-            </TouchableOpacity>
+        <View className="flex-1">
+          <Image source={{ uri: photo }} className="flex-1" />
+          <View className="absolute bottom-10 left-0 right-0 flex-row justify-around px-10 items-center">
             <TouchableOpacity 
-              style={[styles.iconButton, styles.confirmButton]} 
+              className="items-center gap-2 bg-black/40 p-4 rounded-full" 
+              onPress={() => setPhoto(null)}
+            >
+              <RefreshCw color="#fff" size={28} />
+              <Text className="text-white font-bold text-xs">Retake</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              className={`items-center gap-2 bg-emerald-500 p-5 rounded-full min-w-[140px] flex-row justify-center shadow-lg shadow-emerald-500/30 ${isUploading ? 'opacity-70' : ''}`}
               onPress={handleConfirm}
               disabled={isUploading}
             >
@@ -103,27 +110,33 @@ export default function CameraScreen() {
                 <ActivityIndicator color="#fff" />
               ) : (
                 <>
-                  <Check color="#fff" size={32} />
-                  <Text style={styles.iconText}>Confirm</Text>
+                  <Check color="#fff" size={28} />
+                  <Text className="text-white font-bold text-base ml-2">Confirm</Text>
                 </>
               )}
             </TouchableOpacity>
           </View>
         </View>
       ) : (
-        <CameraView style={styles.camera} ref={cameraRef}>
-          <View style={styles.overlay}>
-            <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
+        <CameraView className="flex-1" ref={cameraRef}>
+          <View className="flex-1 bg-transparent justify-between p-5 pt-15">
+            <TouchableOpacity 
+              className="self-start w-12 h-12 rounded-full bg-black/50 justify-center items-center" 
+              onPress={() => router.back()}
+            >
               <X color="#fff" size={24} />
             </TouchableOpacity>
             
-            <View style={styles.guideline}>
-              <Text style={styles.guidelineText}>Align package within frame</Text>
+            <View className="border-2 border-white/40 border-dashed h-[45%] rounded-[40px] justify-center items-center">
+              <Text className="text-white bg-black/40 px-4 py-2 rounded-lg font-medium">Align package within frame</Text>
             </View>
 
-            <View style={styles.bottomControls}>
-              <TouchableOpacity style={styles.captureButton} onPress={takePicture}>
-                <View style={styles.captureButtonInner}>
+            <View className="items-center mb-10">
+              <TouchableOpacity 
+                className="w-20 h-20 rounded-full bg-white/20 justify-center items-center border-2 border-white/40" 
+                onPress={takePicture}
+              >
+                <View className="w-16 h-16 rounded-full bg-indigo-500 justify-center items-center shadow-lg shadow-indigo-500/50">
                   <Camera color="#fff" size={32} />
                 </View>
               </TouchableOpacity>
@@ -134,112 +147,3 @@ export default function CameraScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
-  message: {
-    textAlign: 'center',
-    paddingBottom: 10,
-    color: '#fff',
-  },
-  camera: {
-    flex: 1,
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'transparent',
-    justifyContent: 'space-between',
-    padding: 20,
-    paddingTop: 60,
-  },
-  closeButton: {
-    alignSelf: 'flex-start',
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  guideline: {
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.5)',
-    borderStyle: 'dashed',
-    height: '40%',
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  guidelineText: {
-    color: '#fff',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 4,
-  },
-  bottomControls: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  captureButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  captureButtonInner: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#6366f1',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  previewContainer: {
-    flex: 1,
-  },
-  preview: {
-    flex: 1,
-  },
-  controls: {
-    position: 'absolute',
-    bottom: 40,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: 40,
-  },
-  iconButton: {
-    alignItems: 'center',
-    gap: 8,
-  },
-  confirmButton: {
-    backgroundColor: '#10b981',
-    padding: 15,
-    borderRadius: 40,
-    minWidth: 120,
-  },
-  iconText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  button: {
-    backgroundColor: '#6366f1',
-    padding: 15,
-    borderRadius: 8,
-    alignSelf: 'center',
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  loader: {
-    marginVertical: 10,
-  }
-});

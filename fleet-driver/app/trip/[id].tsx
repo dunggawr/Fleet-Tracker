@@ -1,18 +1,20 @@
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Linking, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Linking, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
-import { MapPin, Calendar, Clock, ChevronLeft, Package, Truck, CheckCircle2, AlertTriangle, Navigation, Camera } from 'lucide-react-native';
+import { MapPin, Calendar, Clock, ChevronLeft, Package, Truck, CheckCircle2, AlertTriangle, Navigation, Camera, Fuel, Route } from 'lucide-react-native';
 import { useTripStore, TripStatus } from '../../store/useTripStore';
 import Toast from 'react-native-toast-message';
 import { SosButton } from '@/components/SosButton';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 
-const getStatusColor = (status: TripStatus) => {
+const getStatusColors = (status: TripStatus): [string, string] => {
   switch (status) {
-    case TripStatus.PENDING: return '#94a3b8';
-    case TripStatus.ACCEPTED: return '#6366f1';
-    case TripStatus.IN_PROGRESS: return '#3b82f6';
-    case TripStatus.COMPLETED: return '#10b981';
-    case TripStatus.CANCELLED: return '#ef4444';
-    default: return '#94a3b8';
+    case TripStatus.PENDING: return ['#64748b', '#475569'];
+    case TripStatus.ACCEPTED: return ['#6366f1', '#4f46e5'];
+    case TripStatus.IN_PROGRESS: return ['#3b82f6', '#2563eb'];
+    case TripStatus.COMPLETED: return ['#10b981', '#059669'];
+    case TripStatus.CANCELLED: return ['#ef4444', '#dc2626'];
+    default: return ['#64748b', '#475569'];
   }
 };
 
@@ -21,18 +23,21 @@ export default function TripDetails() {
   const router = useRouter();
   const { tripHistory, activeTrip, pendingTrips, updateTripStatus, isLoading } = useTripStore();
   
-  // Search in all categories
   const trip = activeTrip?.id === id ? activeTrip : 
                pendingTrips.find(t => t.id === id) || 
                tripHistory.find(t => t.id === id);
 
   if (!trip) {
     return (
-      <View style={styles.container}>
+      <View className="flex-1 bg-slate-950 justify-center items-center px-10">
         <Stack.Screen options={{ title: 'Trip Not Found', headerShown: true }} />
-        <Text style={styles.errorText}>Trip not found or has been removed.</Text>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>Go Back</Text>
+        <AlertTriangle size={64} color="#ef4444" />
+        <Text className="text-red-500 text-center mt-5 text-lg font-medium">Trip not found or has been removed.</Text>
+        <TouchableOpacity 
+          className="mt-8 bg-indigo-500 px-8 py-3 rounded-xl"
+          onPress={() => router.back()}
+        >
+          <Text className="text-white font-bold">Go Back</Text>
         </TouchableOpacity>
       </View>
     );
@@ -41,7 +46,7 @@ export default function TripDetails() {
   const handleStatusUpdate = (newStatus: TripStatus) => {
     Alert.alert(
       'Update Status',
-      `Change trip status to ${newStatus}?`,
+      `Change trip status to ${newStatus.replace('_', ' ')}?`,
       [
         { text: 'Cancel', style: 'cancel' },
         { 
@@ -52,7 +57,7 @@ export default function TripDetails() {
               Toast.show({
                 type: 'success',
                 text1: 'Status Updated',
-                text2: `Trip is now ${newStatus}`
+                text2: `Trip is now ${newStatus.replace('_', ' ')}`
               });
               if (newStatus === TripStatus.COMPLETED) {
                 router.replace('/(tabs)');
@@ -84,323 +89,209 @@ export default function TripDetails() {
   };
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-slate-950">
       <Stack.Screen options={{ 
         headerShown: true, 
-        title: 'Trip Details',
+        title: 'TRIP DETAILS',
         headerStyle: { backgroundColor: '#0f172a' },
+        headerTitleStyle: { color: '#fff', fontWeight: '900', fontSize: 16 },
         headerTintColor: '#fff',
         headerLeft: () => (
-          <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 10 }}>
-            <ChevronLeft color="#fff" size={24} />
+          <TouchableOpacity onPress={() => router.back()} className="ml-2 p-2 bg-white/5 rounded-full">
+            <ChevronLeft color="#fff" size={20} />
           </TouchableOpacity>
         )
       }} />
-      
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Text style={styles.tripId}>#{trip.id}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(trip.status) }]}>
-            <Text style={styles.statusText}>{trip.status.toUpperCase()}</Text>
-          </View>
-        </View>
 
-        <View style={styles.section}>
-          <View style={styles.infoRow}>
-            <Calendar size={20} color="#94a3b8" />
-            <Text style={styles.infoText}>{new Date(trip.createdAt).toLocaleDateString()}</Text>
+      <LinearGradient colors={["#0f172a", "#1e293b"]} className="flex-1">
+        {/* Background Glow */}
+        <View className="absolute top-[-50] right-[-50] w-[300px] h-[300px] bg-indigo-500/10 rounded-full blur-[80px]" />
+        
+        <ScrollView 
+          contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header Info */}
+          <View className="flex-row justify-between items-end mb-8">
+            <View>
+              <Text className="text-slate-500 text-xs font-black tracking-[2px] uppercase mb-1">TRIP ID</Text>
+              <Text className="text-white text-3xl font-black italic">#{trip.id.substring(0, 8).toUpperCase()}</Text>
+            </View>
+            <LinearGradient 
+              colors={getStatusColors(trip.status)}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              className="px-4 py-2 rounded-2xl shadow-lg"
+            >
+              <Text className="text-white text-[10px] font-black uppercase tracking-[1px]">{trip.status.replace('_', ' ')}</Text>
+            </LinearGradient>
           </View>
-          <View style={styles.infoRow}>
-            <Clock size={20} color="#94a3b8" />
-            <Text style={styles.infoText}>{new Date(trip.createdAt).toLocaleTimeString()}</Text>
-          </View>
-        </View>
 
-        <Text style={styles.sectionTitle}>Orders ({trip.orders.length})</Text>
-        {trip.orders.map((order) => (
-          <View key={order.id} style={styles.orderCard}>
-            <View style={styles.orderHeader}>
-              <Package size={20} color="#6366f1" />
-              <Text style={styles.customerName}>{order.customerName}</Text>
-            </View>
-            <View style={styles.addressContainer}>
-              <MapPin size={16} color="#ef4444" />
-              <Text style={styles.addressText}>{order.address}</Text>
-            </View>
-            <View style={styles.orderFooter}>
-              <View style={[styles.miniBadge, { backgroundColor: order.status === 'delivered' ? '#10b981' : '#f59e0b' }]}>
-                <Text style={styles.miniBadgeText}>{order.status}</Text>
+          {/* Quick Info Card */}
+          <BlurView 
+            intensity={20} 
+            tint="dark" 
+            className="rounded-[32px] p-6 mb-8 border border-white/10 overflow-hidden"
+          >
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center gap-4">
+                <View className="w-12 h-12 rounded-2xl bg-indigo-500/20 items-center justify-center border border-indigo-500/30">
+                  <Calendar size={22} color="#818cf8" />
+                </View>
+                <View>
+                  <Text className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-0.5">DATE</Text>
+                  <Text className="text-white text-base font-bold">{new Date(trip.createdAt).toLocaleDateString()}</Text>
+                </View>
               </View>
-              {order.deliveryLocation && (
+              <View className="w-px h-10 bg-white/10" />
+              <View className="flex-row items-center gap-4">
+                <View className="w-12 h-12 rounded-2xl bg-blue-500/20 items-center justify-center border border-blue-500/30">
+                  <Clock size={22} color="#60a5fa" />
+                </View>
+                <View>
+                  <Text className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-0.5">TIME</Text>
+                  <Text className="text-white text-base font-bold">{new Date(trip.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                </View>
+              </View>
+            </View>
+          </BlurView>
+
+          {/* Orders Section */}
+          <View className="flex-row items-center gap-2 mb-4 ml-1">
+            <Package size={16} color="#6366f1" />
+            <Text className="text-slate-400 text-xs font-black uppercase tracking-[2px]">DELIVERIES ({trip.orders.length})</Text>
+          </View>
+
+          {trip.orders.map((order, index) => (
+            <BlurView 
+              key={order.id} 
+              intensity={10} 
+              tint="light"
+              className="rounded-[32px] p-5 mb-5 border border-white/5 overflow-hidden"
+            >
+              <View className="flex-row items-center justify-between mb-4">
+                <View className="flex-row items-center gap-3">
+                  <View className="w-10 h-10 rounded-full bg-indigo-500/20 items-center justify-center">
+                    <Text className="text-indigo-400 font-black text-xs">{index + 1}</Text>
+                  </View>
+                  <Text className="text-white text-lg font-black">{order.customerName}</Text>
+                </View>
+                <View className={`px-3 py-1 rounded-full ${order.status === 'delivered' ? 'bg-emerald-500/20' : 'bg-amber-500/20'}`}>
+                  <Text className={`text-[10px] font-black uppercase ${order.status === 'delivered' ? 'text-emerald-400' : 'text-amber-400'}`}>
+                    {order.status}
+                  </Text>
+                </View>
+              </View>
+
+              <View className="flex-row items-start gap-3 mb-6 bg-white/5 p-4 rounded-2xl border border-white/5">
+                <MapPin size={18} color="#f87171" className="mt-1" />
+                <Text className="text-slate-300 text-sm leading-5 flex-1 font-medium">{order.address}</Text>
+              </View>
+              
+              <View className="flex-row gap-3">
+                {order.deliveryLocation && (
+                  <TouchableOpacity 
+                    className="flex-1 flex-row items-center justify-center gap-2 bg-indigo-500 h-12 rounded-xl"
+                    activeOpacity={0.8}
+                    onPress={() => openNavigation(order.deliveryLocation!.latitude, order.deliveryLocation!.longitude)}
+                  >
+                    <Navigation size={16} color="#fff" />
+                    <Text className="text-white text-sm font-bold">NAVIGATE</Text>
+                  </TouchableOpacity>
+                )}
+                {trip.status === TripStatus.IN_PROGRESS && order.status !== 'delivered' && (
+                  <TouchableOpacity 
+                    className="flex-1 flex-row items-center justify-center gap-2 bg-emerald-500 h-12 rounded-xl"
+                    activeOpacity={0.8}
+                    onPress={() => router.push({ pathname: '/camera', params: { orderId: order.id } })}
+                  >
+                    <Camera size={16} color="#fff" />
+                    <Text className="text-white text-sm font-bold">PROOF</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </BlurView>
+          ))}
+
+          {/* Stats Summary */}
+          <BlurView 
+            intensity={30} 
+            tint="dark" 
+            className="rounded-[32px] p-6 mt-4 border border-indigo-500/20 bg-indigo-500/5 overflow-hidden"
+          >
+            <Text className="text-white text-lg font-black italic mb-5">TRIP SUMMARY</Text>
+            
+            <View className="flex-row gap-4">
+              <View className="flex-1 bg-white/5 p-4 rounded-2xl border border-white/5">
+                <Route size={20} color="#94a3b8" className="mb-2" />
+                <Text className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">TOTAL DISTANCE</Text>
+                <Text className="text-white text-xl font-black">{trip.totalDistanceKm} <Text className="text-sm font-medium">KM</Text></Text>
+              </View>
+              
+              <View className="flex-1 bg-white/5 p-4 rounded-2xl border border-white/5">
+                <Fuel size={20} color="#94a3b8" className="mb-2" />
+                <Text className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">EST. FUEL</Text>
+                <Text className="text-white text-xl font-black">{(trip.totalDistanceKm * 0.1).toFixed(1)} <Text className="text-sm font-medium">L</Text></Text>
+              </View>
+            </View>
+          </BlurView>
+
+          {/* Action Buttons */}
+          {activeTrip?.id === id && (
+            <View className="mt-10 gap-4">
+              {trip.status === TripStatus.ACCEPTED && (
                 <TouchableOpacity 
-                  style={styles.navigateMiniButton}
-                  onPress={() => openNavigation(order.deliveryLocation!.latitude, order.deliveryLocation!.longitude)}
+                  activeOpacity={0.9}
+                  onPress={() => handleStatusUpdate(TripStatus.IN_PROGRESS)}
+                  disabled={isLoading}
                 >
-                  <Navigation size={14} color="#6366f1" />
-                  <Text style={styles.navigateMiniButtonText}>Navigate</Text>
+                  <LinearGradient
+                    colors={["#6366f1", "#4f46e5"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    className="h-20 rounded-[32px] flex-row items-center justify-center gap-4 shadow-xl shadow-indigo-500/40"
+                  >
+                    {isLoading ? <ActivityIndicator color="#fff" /> : (
+                      <>
+                        <View className="w-10 h-10 rounded-full bg-white/20 items-center justify-center">
+                          <Truck size={20} color="#fff" />
+                        </View>
+                        <Text className="text-white text-xl font-black italic tracking-widest">START DELIVERY</Text>
+                      </>
+                    )}
+                  </LinearGradient>
                 </TouchableOpacity>
               )}
+
               {trip.status === TripStatus.IN_PROGRESS && (
                 <TouchableOpacity 
-                  style={styles.cameraMiniButton}
-                  onPress={() => router.push({ pathname: '/camera', params: { orderId: order.id } })}
+                  activeOpacity={0.9}
+                  onPress={() => handleStatusUpdate(TripStatus.COMPLETED)}
+                  disabled={isLoading}
                 >
-                  <Camera size={14} color="#10b981" />
-                  <Text style={styles.cameraMiniButtonText}>Photo</Text>
+                  <LinearGradient
+                    colors={["#10b981", "#059669"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    className="h-20 rounded-[32px] flex-row items-center justify-center gap-4 shadow-xl shadow-emerald-500/40"
+                  >
+                    {isLoading ? <ActivityIndicator color="#fff" /> : (
+                      <>
+                        <View className="w-10 h-10 rounded-full bg-white/20 items-center justify-center">
+                          <CheckCircle2 size={20} color="#fff" />
+                        </View>
+                        <Text className="text-white text-xl font-black italic tracking-widest">COMPLETE TRIP</Text>
+                      </>
+                    )}
+                  </LinearGradient>
                 </TouchableOpacity>
               )}
+              
+              <SosButton tripId={id as string} />
             </View>
-          </View>
-        ))}
-
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>Trip Summary</Text>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Total Distance</Text>
-            <Text style={styles.summaryValue}>{trip.totalDistanceKm} km</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Fuel Consumption</Text>
-            <Text style={styles.summaryValue}>~{(trip.totalDistanceKm * 0.1).toFixed(1)} L</Text>
-          </View>
-        </View>
-
-        {/* Status Control Buttons - Only for Active Trip */}
-        {activeTrip?.id === id && (
-          <View style={styles.controls}>
-            {trip.status === TripStatus.ACCEPTED && (
-              <TouchableOpacity 
-                style={[styles.actionButton, { backgroundColor: '#6366f1' }]}
-                onPress={() => handleStatusUpdate(TripStatus.IN_PROGRESS)}
-                disabled={isLoading}
-              >
-                {isLoading ? <ActivityIndicator color="#fff" /> : (
-                  <>
-                    <Truck size={20} color="#fff" />
-                    <Text style={styles.actionButtonText}>Start Delivery</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            )}
-
-            {trip.status === TripStatus.IN_PROGRESS && (
-              <TouchableOpacity 
-                style={[styles.actionButton, { backgroundColor: '#10b981' }]}
-                onPress={() => handleStatusUpdate(TripStatus.COMPLETED)}
-                disabled={isLoading}
-              >
-                {isLoading ? <ActivityIndicator color="#fff" /> : (
-                  <>
-                    <CheckCircle2 size={20} color="#fff" />
-                    <Text style={styles.actionButtonText}>Complete Trip</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            )}
-            
-            <SosButton tripId={id as string} />
-          </View>
-        )}
-      </ScrollView>
+          )}
+        </ScrollView>
+      </LinearGradient>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0f172a',
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  tripId: {
-    color: '#f8fafc',
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  statusBadge: {
-    backgroundColor: '#10b981',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  statusText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-  },
-  section: {
-    backgroundColor: '#1e293b',
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 20,
-    gap: 10,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  infoText: {
-    color: '#f8fafc',
-    fontSize: 16,
-  },
-  sectionTitle: {
-    color: '#94a3b8',
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    textTransform: 'uppercase',
-  },
-  orderCard: {
-    backgroundColor: '#1e293b',
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#6366f1',
-  },
-  orderHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 8,
-  },
-  customerName: {
-    color: '#f8fafc',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  addressContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-    marginBottom: 12,
-  },
-  addressText: {
-    color: '#94a3b8',
-    fontSize: 14,
-    flex: 1,
-  },
-  orderFooter: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-  },
-  miniBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  miniBadgeText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  navigateMiniButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginLeft: 15,
-  },
-  navigateMiniButtonText: {
-    color: '#6366f1',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  cameraMiniButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginLeft: 15,
-  },
-  cameraMiniButtonText: {
-    color: '#10b981',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  summaryCard: {
-    marginTop: 20,
-    backgroundColor: '#1e293b',
-    borderRadius: 12,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.2)',
-  },
-  summaryTitle: {
-    color: '#f8fafc',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 15,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  summaryLabel: {
-    color: '#94a3b8',
-    fontSize: 14,
-  },
-  summaryValue: {
-    color: '#f8fafc',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  controls: {
-    marginTop: 30,
-    gap: 15,
-  },
-  actionButton: {
-    height: 56,
-    borderRadius: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-  },
-  actionButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  sosButton: {
-    height: 56,
-    borderRadius: 12,
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.2)',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-  },
-  sosButtonText: {
-    color: '#ef4444',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  errorText: {
-    color: '#ef4444',
-    textAlign: 'center',
-    marginTop: 100,
-    fontSize: 16,
-  },
-  backButton: {
-    alignSelf: 'center',
-    marginTop: 20,
-    padding: 10,
-  },
-  backButtonText: {
-    color: '#6366f1',
-    fontWeight: 'bold',
-  }
-});

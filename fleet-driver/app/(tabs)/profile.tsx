@@ -1,6 +1,19 @@
 import React, { useState } from 'react';
-import { StyleSheet, TouchableOpacity, Image, ScrollView, Alert, TextInput, Modal, ActivityIndicator } from 'react-native';
-import { Text, View } from '@/components/Themed';
+import { 
+  TouchableOpacity, 
+  Image, 
+  ScrollView, 
+  Alert, 
+  TextInput, 
+  Modal, 
+  ActivityIndicator, 
+  View, 
+  Text,
+  SafeAreaView,
+  StatusBar,
+  Platform,
+  StyleSheet
+} from 'react-native';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useTripStore } from '@/store/useTripStore';
 import { 
@@ -16,15 +29,19 @@ import {
   CreditCard,
   Trophy,
   Activity,
-  Clock,
-  Map,
+  Map as MapIcon,
   Lock,
   X,
-  Check
+  Check,
+  Award,
+  Bell,
+  Navigation
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { authFetch } from '@/lib/authFetch';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
@@ -125,13 +142,9 @@ export default function ProfileScreen() {
   };
 
   const completedTrips = tripHistory.filter(t => t.status === 'completed');
-  const performanceValue = tripHistory.length > 0 
-    ? Math.round((completedTrips.length / tripHistory.length) * 100) 
-    : 100;
   
   const totalDistance = tripHistory.reduce((acc, trip) => acc + (trip.totalDistanceKm || 0), 0);
   
-  // Calculate real avg speed based on completed trips duration and distance
   const calculateAvgSpeed = () => {
     if (completedTrips.length === 0) return 0;
     
@@ -159,540 +172,385 @@ export default function ProfileScreen() {
 
   const stats = [
     { label: 'Completed', value: completedTrips.length, icon: Trophy, color: '#fbbf24' },
-    { label: 'Total Km', value: totalDistance.toFixed(1), icon: Map, color: '#10b981' },
-    { label: 'Avg Speed', value: `${avgSpeed} km/h`, icon: Activity, color: '#6366f1' },
+    { label: 'Total Km', value: totalDistance.toFixed(1), icon: MapIcon, color: '#10b981' },
+    { label: 'Avg Speed', value: `${avgSpeed}`, icon: Activity, color: '#6366f1', unit: 'km/h' },
   ];
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.profileImageContainer}>
-          <View style={styles.profileImagePlaceholder}>
-            <User size={40} color="#6366f1" />
-          </View>
-        </View>
-        <Text style={styles.userName}>{user?.fullName || 'Driver Name'}</Text>
-        <View style={styles.roleBadge}>
-          <Shield size={14} color="#6366f1" />
-          <Text style={styles.roleText}>{user?.role?.toUpperCase() || 'DRIVER'}</Text>
-        </View>
-      </View>
+    <View className="flex-1 bg-slate-950">
+      <StatusBar barStyle="light-content" />
+      
+      {/* Background Glows */}
+      <View style={styles.glow} />
+      <View style={[styles.glow, { top: 400, left: -150, backgroundColor: 'rgba(79, 70, 229, 0.05)' }]} />
 
-      <View style={styles.statsContainer}>
-        {stats.map((stat, index) => (
-          <View key={index} style={styles.statBox}>
-            <View style={[styles.statIconContainer, { backgroundColor: `${stat.color}15` }]}>
-              <stat.icon size={20} color={stat.color} />
-            </View>
-            <Text style={styles.statValue}>{stat.value}</Text>
-            <Text style={styles.statLabel}>{stat.label}</Text>
-          </View>
-        ))}
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account Information</Text>
-        <View style={styles.infoCard}>
-          <View style={styles.infoRow}>
-            <Mail size={20} color="#94a3b8" />
-            <View style={styles.infoTextContainer}>
-              <Text style={styles.infoLabel}>Email</Text>
-              <Text style={styles.infoValue}>{user?.email || 'N/A'}</Text>
-            </View>
-          </View>
-          
-          <View style={styles.divider} />
-          
-          <View style={styles.infoRow}>
-            <Phone size={20} color="#94a3b8" />
-            <View style={styles.infoTextContainer}>
-              <Text style={styles.infoLabel}>Phone Number</Text>
-              <Text style={styles.infoValue}>+84 912 345 678</Text>
-            </View>
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.infoRow}>
-            <CreditCard size={20} color="#94a3b8" />
-            <View style={styles.infoTextContainer}>
-              <Text style={styles.infoLabel}>License Class</Text>
-              <Text style={styles.infoValue}>Class C • 24-558291</Text>
-            </View>
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.infoRow}>
-            <Truck size={20} color="#94a3b8" />
-            <View style={styles.infoTextContainer}>
-              <Text style={styles.infoLabel}>Active Vehicle</Text>
-              <Text style={styles.infoValue}>
-                {activeTrip ? `Vehicle ID: ${activeTrip.vehicleId.substring(0, 8).toUpperCase()}` : 'No active vehicle'}
-              </Text>
-            </View>
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recent Trip History</Text>
-        <View style={styles.historyCard}>
-          {tripHistory.length > 0 ? (
-            tripHistory.slice(0, 5).map((trip, idx) => (
-              <View key={trip.id} style={[styles.historyItem, idx !== 0 && styles.borderTop]}>
-                <View>
-                  <Text style={styles.historyId}>TRIP #{trip.id.substring(0, 8).toUpperCase()}</Text>
-                  <Text style={styles.historyDate}>{new Date(trip.createdAt).toLocaleDateString()}</Text>
+      <ScrollView 
+        className="flex-1" 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
+        {/* Profile Hero */}
+        <View className="pt-16 pb-12 overflow-hidden">
+          <View className="items-center px-6">
+            <View className="w-28 h-28 relative mb-6">
+              <LinearGradient
+                colors={['#6366f1', '#a855f7']}
+                className="absolute inset-0 rounded-full opacity-20"
+                style={{ transform: [{ scale: 1.2 }] }}
+              />
+              <View className="w-full h-full rounded-full p-1 bg-slate-900 border border-white/10 overflow-hidden shadow-2xl">
+                <View className="flex-1 rounded-full bg-slate-800 justify-center items-center">
+                  <User size={56} color="#6366f1" />
                 </View>
-                <View style={[
-                  styles.statusBadge, 
-                  { backgroundColor: trip.status === 'completed' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)' }
-                ]}>
-                  <Text style={[
-                    styles.statusText,
-                    { color: trip.status === 'completed' ? '#4ade80' : '#f87171' }
-                  ]}>
-                    {trip.status.toUpperCase()}
+              </View>
+              <View className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-emerald-500 border-4 border-slate-950 items-center justify-center">
+                <Check size={14} color="white" strokeWidth={3} />
+              </View>
+            </View>
+
+            <Text className="text-3xl font-black text-white text-center tracking-tight mb-2">
+              {user?.fullName || 'Driver Name'}
+            </Text>
+            
+            <BlurView intensity={20} className="rounded-full overflow-hidden border border-white/10">
+              <LinearGradient
+                colors={['rgba(99, 102, 241, 0.1)', 'rgba(168, 85, 247, 0.1)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                className="flex-row items-center px-4 py-1.5 gap-2"
+              >
+                <Award size={14} color="#6366f1" />
+                <Text className="text-indigo-400 text-[10px] font-black uppercase tracking-[2px]">
+                  {user?.role?.toUpperCase() || 'PREMIUM DRIVER'}
+                </Text>
+              </LinearGradient>
+            </BlurView>
+          </View>
+        </View>
+
+        {/* Stats Row */}
+        <View className="flex-row justify-between px-5 -mt-4 mb-8">
+          {stats.map((stat, index) => (
+            <BlurView 
+              key={index} 
+              intensity={Platform.OS === 'ios' ? 40 : 100}
+              tint="dark"
+              className="w-[31%] rounded-xl overflow-hidden border border-white/5"
+              style={{ backgroundColor: Platform.OS === 'android' ? 'rgba(15, 23, 42, 0.8)' : 'transparent' }}
+            >
+              <View className="p-4 items-center">
+                <View 
+                  className="w-10 h-10 rounded-2xl justify-center items-center mb-3"
+                  style={{ backgroundColor: `${stat.color}15` }}
+                >
+                  <stat.icon size={20} color={stat.color} />
+                </View>
+                <View className="flex-row items-baseline">
+                  <Text className="text-white text-lg font-black">{stat.value}</Text>
+                  {stat.unit && <Text className="text-slate-500 text-[8px] ml-0.5 font-bold">{stat.unit}</Text>}
+                </View>
+                <Text className="text-slate-500 text-[9px] uppercase font-black tracking-widest mt-1">{stat.label}</Text>
+              </View>
+            </BlurView>
+          ))}
+        </View>
+
+        {/* Account Information */}
+        <View className="px-5 mt-4">
+          <View className="flex-row items-center mb-4 ml-1">
+            <View className="w-1.5 h-1.5 rounded-full bg-indigo-500 mr-2" />
+            <Text className="text-slate-500 text-[10px] font-black uppercase tracking-[2px]">Fleet Credentials</Text>
+          </View>
+          
+          <BlurView 
+            intensity={20} 
+            tint="dark"
+            className="rounded-[32px] overflow-hidden border border-white/5 bg-slate-900/40"
+          >
+            <View className="p-2">
+              <View className="flex-row items-center gap-4 p-4">
+                <View className="w-12 h-12 rounded-2xl bg-indigo-500/10 items-center justify-center border border-indigo-500/10">
+                  <Mail size={22} color="#6366f1" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-0.5">Primary Email</Text>
+                  <Text className="text-white text-base font-bold tracking-tight">{user?.email || 'N/A'}</Text>
+                </View>
+              </View>
+              
+              <View className="h-1px bg-white/5 mx-4" />
+              
+              <View className="flex-row items-center gap-4 p-4">
+                <View className="w-12 h-12 rounded-2xl bg-emerald-500/10 items-center justify-center border border-emerald-500/10">
+                  <Phone size={22} color="#10b981" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-0.5">Mobile Number</Text>
+                  <Text className="text-white text-base font-bold tracking-tight">+84 912 345 678</Text>
+                </View>
+              </View>
+
+              <View className="h-1px bg-white/5 mx-4" />
+
+              <View className="flex-row items-center gap-4 p-4">
+                <View className="w-12 h-12 rounded-2xl bg-amber-500/10 items-center justify-center border border-amber-500/10">
+                  <CreditCard size={22} color="#fbbf24" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-0.5">Operator License</Text>
+                  <Text className="text-white text-base font-bold tracking-tight">Class C • 24-558291</Text>
+                </View>
+              </View>
+
+              <View className="h-1px bg-white/5 mx-4" />
+
+              <View className="flex-row items-center gap-4 p-4">
+                <View className="w-12 h-12 rounded-2xl bg-indigo-500/10 items-center justify-center border border-indigo-500/10">
+                  <Truck size={22} color="#6366f1" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-0.5">Active Assignment</Text>
+                  <Text className="text-white text-base font-bold tracking-tight">
+                    {activeTrip ? `Vehicle ${activeTrip.vehicleId.substring(0, 8).toUpperCase()}` : 'No active vehicle'}
                   </Text>
                 </View>
               </View>
-            ))
-          ) : (
-            <Text style={styles.emptyText}>No trip history yet.</Text>
-          )}
-        </View>
-      </View>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Settings & Support</Text>
-        <View style={styles.menuCard}>
-          <TouchableOpacity style={styles.menuItem}>
-            <View style={styles.menuItemLeft}>
-              <Settings size={20} color="#94a3b8" />
-              <Text style={styles.menuItemText}>App Settings</Text>
             </View>
-            <ChevronRight size={20} color="#475569" />
-          </TouchableOpacity>
+          </BlurView>
+        </View>
+
+        {/* History Section */}
+        <View className="px-5 mt-10">
+          <View className="flex-row items-center justify-between mb-4 ml-1">
+            <View className="flex-row items-center">
+              <View className="w-1.5 h-1.5 rounded-full bg-slate-500 mr-2" />
+              <Text className="text-slate-500 text-[10px] font-black uppercase tracking-[2px]">Mission History</Text>
+            </View>
+            <TouchableOpacity>
+              <Text className="text-indigo-400 text-[10px] font-black uppercase">View All</Text>
+            </TouchableOpacity>
+          </View>
           
-          <TouchableOpacity 
-            style={[styles.menuItem, styles.borderTop]}
-            onPress={() => setShowPasswordModal(true)}
+          <View className="bg-slate-900/40 rounded-[32px] overflow-hidden border border-white/5">
+            {tripHistory.length > 0 ? (
+              tripHistory.slice(0, 3).map((trip, idx) => (
+                <TouchableOpacity 
+                  key={trip.id} 
+                  className={`flex-row items-center justify-between p-5 ${idx !== 0 ? 'border-t border-white/5' : ''}`}
+                >
+                  <View className="flex-row items-center gap-4">
+                    <View className="w-10 h-10 rounded-full bg-slate-800 items-center justify-center">
+                      <Navigation size={18} color={trip.status === 'completed' ? '#10b981' : '#6366f1'} />
+                    </View>
+                    <View>
+                      <Text className="text-white text-sm font-bold mb-0.5 tracking-tight">
+                        TRIP #{trip.id.substring(0, 8).toUpperCase()}
+                      </Text>
+                      <Text className="text-slate-500 text-[10px] font-medium uppercase tracking-wider">
+                        {new Date(trip.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </Text>
+                    </View>
+                  </View>
+                  <View 
+                    className={`px-3 py-1 rounded-full border ${trip.status === 'completed' ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-slate-500/10 border-slate-500/20'}`}
+                  >
+                    <Text className={`text-[8px] font-black uppercase tracking-widest ${trip.status === 'completed' ? 'text-emerald-400' : 'text-slate-400'}`}>
+                      {trip.status}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View className="p-10 items-center">
+                <Text className="text-slate-600 font-bold text-sm">No activity recorded yet</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Settings Section */}
+        <View className="px-5 mt-10">
+          <View className="flex-row items-center mb-4 ml-1">
+            <View className="w-1.5 h-1.5 rounded-full bg-slate-500 mr-2" />
+            <Text className="text-slate-500 text-[10px] font-black uppercase tracking-[2px]">System Preferences</Text>
+          </View>
+          
+          <View className="bg-slate-900/40 rounded-[32px] overflow-hidden border border-white/5">
+            <TouchableOpacity className="flex-row items-center justify-between p-5">
+              <View className="flex-row items-center gap-4">
+                <View className="w-10 h-10 rounded-2xl bg-slate-800 items-center justify-center border border-white/5">
+                  <Settings size={20} color="#94a3b8" />
+                </View>
+                <Text className="text-slate-100 text-base font-bold tracking-tight">App Configuration</Text>
+              </View>
+              <ChevronRight size={18} color="#475569" />
+            </TouchableOpacity>
+            
+            <View className="h-1px bg-white/5 mx-5" />
+            
+            <TouchableOpacity 
+              className="flex-row items-center justify-between p-5"
+              onPress={() => setShowPasswordModal(true)}
+            >
+              <View className="flex-row items-center gap-4">
+                <View className="w-10 h-10 rounded-2xl bg-slate-800 items-center justify-center border border-white/5">
+                  <Lock size={20} color="#94a3b8" />
+                </View>
+                <Text className="text-slate-100 text-base font-bold tracking-tight">Security & Access</Text>
+              </View>
+              <ChevronRight size={18} color="#475569" />
+            </TouchableOpacity>
+            
+            <View className="h-1px bg-white/5 mx-5" />
+            
+            <TouchableOpacity className="flex-row items-center justify-between p-5">
+              <View className="flex-row items-center gap-4">
+                <View className="w-10 h-10 rounded-2xl bg-slate-800 items-center justify-center border border-white/5">
+                  <Info size={20} color="#94a3b8" />
+                </View>
+                <Text className="text-slate-100 text-base font-bold tracking-tight">Support Center</Text>
+              </View>
+              <ChevronRight size={18} color="#475569" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Logout Button */}
+        <TouchableOpacity 
+          className="mx-5 mt-12 overflow-hidden rounded-xl"
+          onPress={handleLogout}
+        >
+          <LinearGradient
+            colors={['rgba(239, 68, 68, 0.1)', 'rgba(239, 68, 68, 0.05)']}
+            className="flex-row items-center justify-center p-5 gap-3 border border-red-500/20"
           >
-            <View style={styles.menuItemLeft}>
-              <Lock size={20} color="#94a3b8" />
-              <Text style={styles.menuItemText}>Change Password</Text>
-            </View>
-            <ChevronRight size={20} color="#475569" />
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={[styles.menuItem, styles.borderTop]}>
-            <View style={styles.menuItemLeft}>
-              <Info size={20} color="#94a3b8" />
-              <Text style={styles.menuItemText}>Help & Support</Text>
-            </View>
-            <ChevronRight size={20} color="#475569" />
-          </TouchableOpacity>
-        </View>
-      </View>
+            <LogOut size={20} color="#ef4444" />
+            <Text className="text-red-500 text-base font-black uppercase tracking-widest">Terminate Session</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+        
+        <Text className="text-center text-slate-600 text-[10px] font-black uppercase tracking-[2px] mt-8">
+          System v1.0.2 • Build 20240510
+        </Text>
+      </ScrollView>
 
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <LogOut size={20} color="#ef4444" />
-        <Text style={styles.logoutButtonText}>Logout</Text>
-      </TouchableOpacity>
-      
-      <Text style={styles.versionText}>Version 1.0.2 (Build 20240510)</Text>
-
+      {/* Password Modal */}
       <Modal
         visible={showPasswordModal}
         transparent={true}
         animationType="slide"
         onRequestClose={() => !isChanging && setShowPasswordModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Change Password</Text>
+        <View className="flex-1 justify-end bg-black/60">
+          <BlurView intensity={80} tint="dark" className="bg-slate-900/90 rounded-t-[40px] p-8 border-t border-white/10">
+            <View className="flex-row justify-between items-center mb-10">
+              <View>
+                <Text className="text-2xl font-black text-white tracking-tight">Security</Text>
+                <Text className="text-slate-500 text-xs font-bold uppercase tracking-wider mt-1">Update Access Key</Text>
+              </View>
               <TouchableOpacity 
                 onPress={() => !isChanging && setShowPasswordModal(false)}
                 disabled={isChanging}
+                className="bg-white/5 p-2.5 rounded-full border border-white/5"
               >
-                <X size={24} color="#e2e8f0" />
+                <X size={20} color="#94a3b8" />
               </TouchableOpacity>
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Current Password</Text>
-              <View style={styles.passwordInputContainer}>
-                <Lock size={16} color="#94a3b8" />
-                <TextInput
-                  style={styles.passwordInput}
-                  placeholder="Enter current password"
-                  placeholderTextColor="#64748b"
-                  secureTextEntry={true}
-                  value={oldPassword}
-                  onChangeText={setOldPassword}
-                  editable={!isChanging}
-                />
+            <View className="gap-6">
+              <View>
+                <Text className="text-slate-500 text-[10px] font-black mb-2 uppercase tracking-[2px] ml-1">Current Password</Text>
+                <View className="flex-row items-center bg-black/40 rounded-2xl px-5 border border-white/5 focus:border-indigo-500">
+                  <Lock size={18} color="#475569" />
+                  <TextInput
+                    className="flex-1 text-white text-base py-4 ml-4"
+                    placeholder="Verification required"
+                    placeholderTextColor="#334155"
+                    secureTextEntry={true}
+                    value={oldPassword}
+                    onChangeText={setOldPassword}
+                    editable={!isChanging}
+                  />
+                </View>
+              </View>
+
+              <View>
+                <Text className="text-slate-500 text-[10px] font-black mb-2 uppercase tracking-[2px] ml-1">New Access Key</Text>
+                <View className="flex-row items-center bg-black/40 rounded-2xl px-5 border border-white/5 focus:border-indigo-500">
+                  <Lock size={18} color="#475569" />
+                  <TextInput
+                    className="flex-1 text-white text-base py-4 ml-4"
+                    placeholder="Min 6 characters"
+                    placeholderTextColor="#334155"
+                    secureTextEntry={true}
+                    value={newPassword}
+                    onChangeText={setNewPassword}
+                    editable={!isChanging}
+                  />
+                </View>
+              </View>
+
+              <View>
+                <Text className="text-slate-500 text-[10px] font-black mb-2 uppercase tracking-[2px] ml-1">Confirm Identity</Text>
+                <View className="flex-row items-center bg-black/40 rounded-2xl px-5 border border-white/5 focus:border-indigo-500">
+                  <Lock size={18} color="#475569" />
+                  <TextInput
+                    className="flex-1 text-white text-base py-4 ml-4"
+                    placeholder="Repeat new access key"
+                    placeholderTextColor="#334155"
+                    secureTextEntry={true}
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    editable={!isChanging}
+                  />
+                </View>
               </View>
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>New Password</Text>
-              <View style={styles.passwordInputContainer}>
-                <Lock size={16} color="#94a3b8" />
-                <TextInput
-                  style={styles.passwordInput}
-                  placeholder="Enter new password (min 6 chars)"
-                  placeholderTextColor="#64748b"
-                  secureTextEntry={true}
-                  value={newPassword}
-                  onChangeText={setNewPassword}
-                  editable={!isChanging}
-                />
-              </View>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Confirm Password</Text>
-              <View style={styles.passwordInputContainer}>
-                <Lock size={16} color="#94a3b8" />
-                <TextInput
-                  style={styles.passwordInput}
-                  placeholder="Confirm new password"
-                  placeholderTextColor="#64748b"
-                  secureTextEntry={true}
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  editable={!isChanging}
-                />
-              </View>
-            </View>
-
-            <View style={styles.modalButtonContainer}>
+            <View className="flex-row gap-4 mt-12 pb-6">
               <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
+                className="flex-1 h-16 rounded-3xl bg-white/5 justify-center items-center border border-white/5"
                 onPress={() => setShowPasswordModal(false)}
                 disabled={isChanging}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text className="text-slate-400 text-base font-black uppercase tracking-widest">Abort</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalButton, styles.confirmButton, isChanging && styles.disabledButton]}
+                className={`flex-2 h-16 rounded-3xl overflow-hidden ${isChanging ? 'opacity-70' : ''}`}
                 onPress={handleChangePassword}
                 disabled={isChanging}
               >
-                {isChanging ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <>
-                    <Check size={16} color="#fff" />
-                    <Text style={styles.confirmButtonText}>Update Password</Text>
-                  </>
-                )}
+                <LinearGradient
+                  colors={['#6366f1', '#4f46e5']}
+                  className="flex-1 justify-center items-center"
+                >
+                  {isChanging ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <View className="flex-row items-center gap-2">
+                      <Check size={20} color="#fff" strokeWidth={3} />
+                      <Text className="text-white text-base font-black uppercase tracking-widest">Apply Key</Text>
+                    </View>
+                  )}
+                </LinearGradient>
               </TouchableOpacity>
             </View>
-          </View>
+          </BlurView>
         </View>
       </Modal>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0f172a',
-  },
-  header: {
-    alignItems: 'center',
-    paddingTop: 60,
-    paddingBottom: 30,
-    backgroundColor: '#1e293b',
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-  },
-  profileImageContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    padding: 3,
-    backgroundColor: 'rgba(99, 102, 241, 0.2)',
-    marginBottom: 15,
-  },
-  profileImagePlaceholder: {
-    flex: 1,
-    borderRadius: 47,
-    backgroundColor: '#0f172a',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  userName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 8,
-  },
-  roleBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(99, 102, 241, 0.1)',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 20,
-    gap: 6,
-  },
-  roleText: {
-    color: '#818cf8',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: 20,
-    marginTop: -25,
-  },
-  statBox: {
-    backgroundColor: '#1e293b',
-    width: '30%',
-    padding: 15,
-    borderRadius: 15,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 5,
-  },
-  statValue: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  statLabel: {
-    color: '#94a3b8',
-    fontSize: 12,
-  },
-  section: {
-    paddingHorizontal: 20,
-    marginTop: 30,
-  },
-  sectionTitle: {
-    color: '#64748b',
-    fontSize: 12,
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-    marginBottom: 12,
-    letterSpacing: 1,
-  },
-  infoCard: {
-    backgroundColor: '#1e293b',
-    borderRadius: 15,
-    padding: 15,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 15,
-  },
-  infoTextContainer: {
-    flex: 1,
-  },
-  infoLabel: {
-    color: '#64748b',
-    fontSize: 12,
-  },
-  infoValue: {
-    color: '#f8fafc',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    marginVertical: 12,
-    marginLeft: 35,
-  },
-  statIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  menuCard: {
-    backgroundColor: '#1e293b',
-    borderRadius: 15,
-    overflow: 'hidden',
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 15,
-  },
-  menuItemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 15,
-  },
-  menuItemText: {
-    color: '#f8fafc',
-    fontSize: 16,
-  },
-  borderTop: {
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.05)',
-  },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    marginHorizontal: 20,
-    marginTop: 40,
-    padding: 15,
-    borderRadius: 15,
-    gap: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.2)',
-  },
-  logoutButtonText: {
-    color: '#ef4444',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  versionText: {
-    textAlign: 'center',
-    color: '#475569',
-    fontSize: 12,
-    marginTop: 20,
-    marginBottom: 40,
-  },
-  historyCard: {
-    backgroundColor: '#1e293b',
-    borderRadius: 15,
-    overflow: 'hidden',
-  },
-  historyItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 15,
-  },
-  historyId: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  historyDate: {
-    color: '#64748b',
-    fontSize: 12,
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  statusText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  emptyText: {
-    color: '#64748b',
-    padding: 20,
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#1e293b',
-    borderTopLeftRadius: 25,
-    borderTopRightRadius: 25,
-    padding: 25,
-    maxHeight: '90%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 25,
-    paddingBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  inputGroup: {
-    marginBottom: 20,
-  },
-  inputLabel: {
-    color: '#94a3b8',
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  passwordInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#0f172a',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.2)',
-    gap: 10,
-  },
-  passwordInput: {
-    flex: 1,
-    color: '#fff',
-    fontSize: 14,
-    paddingVertical: 12,
-  },
-  modalButtonContainer: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 30,
-  },
-  modalButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-  },
-  cancelButton: {
-    backgroundColor: '#334155',
-    borderWidth: 1,
-    borderColor: '#475569',
-  },
-  cancelButtonText: {
-    color: '#e2e8f0',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  confirmButton: {
-    backgroundColor: '#6366f1',
-  },
-  confirmButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  disabledButton: {
-    opacity: 0.6,
-  },
+  glow: {
+    position: 'absolute',
+    top: -150,
+    right: -150,
+    width: 400,
+    height: 400,
+    borderRadius: 200,
+    backgroundColor: 'rgba(99, 102, 241, 0.08)',
+    filter: Platform.OS === 'ios' ? 'blur(100px)' : 'none',
+  }
 });

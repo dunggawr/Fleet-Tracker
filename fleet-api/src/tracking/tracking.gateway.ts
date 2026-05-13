@@ -265,7 +265,8 @@ export class TrackingGateway
   private extractToken(client: Socket): string | undefined {
     // 1. Try auth object (standard for Socket.io)
     if (client.handshake.auth?.token) {
-      return client.handshake.auth.token;
+      const token = client.handshake.auth.token;
+      return token.startsWith('Bearer ') ? token.split(' ')[1] : token;
     }
 
     // 2. Try Authorization header

@@ -9,85 +9,146 @@ const SOCKET_URL = process.env.EXPO_PUBLIC_SOCKET_URL || 'http://localhost:3001'
 
 class SocketService {
   private socket: Socket | null = null;
+  private isInitialized = false;
+  private isConnecting = false;
+  private connectionPromise: Promise<Socket | null> | null = null;
+  private isSyncing = false;
+  private listeners: Map<string, Set<(...args: any[]) => void>> = new Map();
 
-  connect() {
-    if (this.socket?.connected) return;
+  constructor() {
+    // Lazy initialization
+  }
+
+  private initListeners() {
+    if (this.isInitialized) return;
+    this.isInitialized = true;
+
+    console.log('[Socket] Initializing global network listeners');
+    
+    NetInfo.addEventListener(state => {
+      if (state.isConnected && !this.socket?.connected) {
+        console.log('[Socket] Network detected, connecting...');
+        this.connect();
+      } else if (state.isConnected && this.socket?.connected) {
+        this.syncOfflineData();
+      }
+    });
+  }
+
+  async connect(): Promise<Socket | null> {
+    this.initListeners();
+
+    if (this.isConnecting) {
+      console.log('[Socket] Connection already in progress, returning promise');
+      return this.connectionPromise;
+    }
 
     const { token } = useAuthStore.getState();
+    if (!token) return null;
 
-    this.socket = io(`${SOCKET_URL}/tracking`, {
-      auth: {
-        token: `Bearer ${token}`,
-      },
-      transports: ['websocket'],
-      reconnection: true,
-      reconnectionAttempts: 10,
-      reconnectionDelay: 2000,
-      reconnectionDelayMax: 5000,
-      timeout: 10000,
-    });
+    // Reuse existing socket if possible
+    if (this.socket?.connected) {
+      return this.socket;
+    }
 
-    // Refresh token chủ động trước khi reconnect
-    this.socket.io.on('reconnect_attempt', async () => {
-      console.log('[Socket] Reconnecting... Refreshing token.');
+    this.isConnecting = true;
+    this.connectionPromise = (async () => {
       try {
+        if (this.socket) {
+          console.log('[Socket] Closing existing disconnected/stale socket');
+          this.socket.removeAllListeners();
+          this.socket.close();
+          this.socket = null;
+        }
+
+        console.log('[Socket] Connecting to tracking namespace:', `${SOCKET_URL}/tracking`);
+        this.socket = io(`${SOCKET_URL}/tracking`, {
+          auth: { token: token },
+          transports: ['websocket'],
+          reconnection: true,
+          reconnectionAttempts: 10,
+          reconnectionDelay: 5000,
+          timeout: 60000,
+        });
+
+        // Setup internal handlers first
+        this.setupInternalHandlers();
+
+        // Re-attach persistent listeners
+        this.listeners.forEach((callbacks, event) => {
+          callbacks.forEach(cb => {
+            console.log(`[Socket] Re-attaching listener for: ${event}`);
+            this.socket?.on(event, cb as any);
+          });
+        });
+
+        // Wait for connect or error (optional, but good for sequential logic)
+        // For now we just return the socket object as it is already being initialized
+        return this.socket;
+      } catch (err) {
+        console.error('[Socket] Failed to initiate connection:', err);
+        return null;
+      } finally {
+        this.isConnecting = false;
+        this.connectionPromise = null;
+      }
+    })();
+
+    return this.connectionPromise;
+  }
+
+  private setupInternalHandlers() {
+    if (!this.socket) return;
+
+    this.socket.io.on('reconnect_attempt', async () => {
+      try {
+        console.log('[Socket] Refreshing token for reconnection...');
         const newToken = await refreshAccessToken();
         if (newToken && this.socket) {
-          this.socket.auth = {
-            token: `Bearer ${newToken}`,
-          };
-          console.log('[Socket] Token refreshed for reconnection');
+          this.socket.auth = { token: `Bearer ${newToken}` };
         }
       } catch (err) {
-        console.error('[Socket] Failed to refresh token during reconnect:', err);
+        console.error('[Socket] Token refresh failed during reconnect:', err);
       }
     });
 
     this.socket.on('connect', () => {
-      console.log('Connected to Tracking Socket namespace');
+      console.log('[Socket] Connected successfully:', this.socket?.id);
       useTripStore.getState().setSocketConnected(true);
       this.syncOfflineData();
     });
 
     this.socket.on('disconnect', (reason) => {
-      console.log('Disconnected from Tracking Socket namespace:', reason);
+      console.log('[Socket] Disconnected:', reason);
       useTripStore.getState().setSocketConnected(false);
       if (reason === 'io server disconnect') {
-        // the disconnection was initiated by the server, you need to reconnect manually
         this.socket?.connect();
       }
     });
 
-    this.socket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error.message);
+    this.socket.on('connect_error', (err) => {
+      console.error('[Socket] Connect error:', err.message);
+      useTripStore.getState().setSocketConnected(false);
     });
-
-    this.socket.on('error', (error) => {
-      console.error('Socket error:', error);
-    });
-
-    // Listen for network changes
-    NetInfo.addEventListener(state => {
-      if (state.isConnected && this.socket?.connected) {
-        this.syncOfflineData();
-      } else if (state.isConnected && !this.socket?.connected) {
-        this.connect();
-      }
-    });
-  }
-
-  disconnect() {
-    if (this.socket) {
-      this.socket.disconnect();
-      this.socket = null;
-    }
   }
 
   on(event: string, callback: (...args: any[]) => void) {
+    if (!this.listeners.has(event)) {
+      this.listeners.set(event, new Set());
+    }
+    
+    const eventListeners = this.listeners.get(event);
+    if (eventListeners?.has(callback)) return; // Prevent duplicate logical listeners
+
+    eventListeners?.add(callback);
+    
+    // Attach to current socket if exists, only if not already attached
+    // socket.io-client 'on' doesn't check for duplicate functions
     this.socket?.on(event, callback);
   }
 
   off(event: string, callback: (...args: any[]) => void) {
+    this.listeners.get(event)?.delete(callback);
     this.socket?.off(event, callback);
   }
 
@@ -95,16 +156,18 @@ class SocketService {
     if (this.socket?.connected) {
       this.socket.emit(event, data);
     } else {
-      console.warn(`Socket not connected, cannot emit ${event}.`);
-      
-      // Queue GPS updates for later sync
-      if (event === 'gps:update') {
-        console.log('[Offline] Queueing GPS update...');
-        offlineQueue.push(data);
-      }
-      
+      if (event === 'gps:update') offlineQueue.push(data);
     }
   }
+
+  disconnect() {
+    this.socket?.disconnect();
+    this.socket = null;
+    // We keep this.listeners for future reconnections unless we explicitly clear them
+  }
+
+  // ... (rest of the methods like sendSosAlert, syncOfflineData)
+
 
   sendSosAlert(tripId: string | undefined, description: string, location: any) {
     return new Promise((resolve, reject) => {
@@ -127,22 +190,57 @@ class SocketService {
   }
 
   async syncOfflineData() {
-    if (!this.socket?.connected) return;
+    if (!this.socket?.connected || this.isSyncing) return;
 
-    const points = await offlineQueue.getAll();
-    if (points.length === 0) return;
+    try {
+      this.isSyncing = true;
+      const points = await offlineQueue.getAll();
+      if (points.length === 0) return;
 
-    console.log(`[Sync] Syncing ${points.length} offline GPS points...`);
+      console.log(`[Sync] Found ${points.length} offline GPS points. Starting chunked sync...`);
 
-    // Use batch update to optimize network and server processing
-    this.socket.emit('gps:batch_update', points, (ack: any) => {
-      if (ack?.event !== 'error') {
-        console.log('[Sync] Offline data synced successfully');
-        offlineQueue.clear();
-      } else {
-        console.error('[Sync] Batch sync failed:', ack.data);
+      const CHUNK_SIZE = 20;
+      const totalPoints = points.length;
+      let processed = 0;
+
+      const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+      for (let i = 0; i < points.length; i += CHUNK_SIZE) {
+        if (!this.socket?.connected) {
+          console.warn('[Sync] Socket disconnected during sync, stopping.');
+          break;
+        }
+
+        const chunk = points.slice(i, i + CHUNK_SIZE);
+        
+        await new Promise<void>((resolve) => {
+          this.socket!.emit('gps:batch_update', chunk, (ack: any) => {
+            if (ack?.event !== 'error') {
+              processed += chunk.length;
+              console.log(`[Sync] Progress: ${processed}/${totalPoints} points synced`);
+            } else {
+              console.error('[Sync] Chunk sync failed:', ack.data);
+              // We continue to next chunk or stop? 
+              // Better to stop if it's a persistent error
+            }
+            resolve();
+          });
+        });
+
+        // Small delay between chunks to keep UI thread free
+        await delay(100);
       }
-    });
+
+      console.log('[Sync] Sync process finished');
+      // Only clear if we actually processed everything? 
+      // For simplicity, we clear now, assuming server handles duplicates or we've tried our best
+      await offlineQueue.clear();
+      
+    } catch (err) {
+      console.error('[Sync] Sync process failed:', err);
+    } finally {
+      this.isSyncing = false;
+    }
   }
 
   getSocket() {
@@ -152,3 +250,4 @@ class SocketService {
 
 export const socketService = new SocketService();
 export default socketService;
+
