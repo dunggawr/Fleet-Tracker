@@ -3,8 +3,9 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import 'react-native-reanimated';
+import '../global.css';
 
 import { useColorScheme } from '@/components/useColorScheme';
 
@@ -56,10 +57,18 @@ import Toast from 'react-native-toast-message';
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
-  const { isAuthenticated } = useAuthStore();
-  const { activeTrip, fetchTrips } = useTripStore();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const activeTrip = useTripStore((state) => state.activeTrip);
+  const fetchTrips = useTripStore((state) => state.fetchTrips);
+  
+  const activeTripRef = useRef(activeTrip);
   const segments = useSegments();
   const router = useRouter();
+
+  // Keep ref in sync
+  useEffect(() => {
+    activeTripRef.current = activeTrip;
+  }, [activeTrip]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -83,8 +92,8 @@ function RootLayoutNav() {
           visibilityTime: 6000,
         });
         fetchTrips();
-        // If the cancelled trip was the active one, redirect to trips list
-        if (activeTrip?.id === data.tripId) {
+        // Use ref to check the latest activeTrip
+        if (activeTripRef.current?.id === data.tripId) {
           router.replace('/(tabs)');
         }
       };
@@ -96,18 +105,23 @@ function RootLayoutNav() {
         socketService.off('trip:assigned', handleTripAssigned);
         socketService.off('trip:cancelled', handleTripCancelled);
       };
+    } else {
+      // Disconnect socket when not authenticated
+      socketService.disconnect();
     }
   }, [isAuthenticated]);
 
   useEffect(() => {
-    const inAuthGroup = segments[0] === '(tabs)';
+    const rootSegment = segments[0];
+    const inAuthGroup = rootSegment === '(tabs)';
     
+    // Use a single stable check for redirection to avoid loops
     if (!isAuthenticated && inAuthGroup) {
       router.replace('/login');
-    } else if (isAuthenticated && segments[0] === 'login') {
+    } else if (isAuthenticated && rootSegment === 'login') {
       router.replace('/(tabs)');
     }
-  }, [isAuthenticated, segments]);
+  }, [isAuthenticated, segments[0]]); // Only depend on isAuthenticated and the first segment
 
   useEffect(() => {
     if (activeTrip && activeTrip.status === TripStatus.IN_PROGRESS) {
@@ -115,7 +129,7 @@ function RootLayoutNav() {
     } else {
       stopBackgroundLocation();
     }
-  }, [activeTrip?.status]);
+  }, [activeTrip?.id, activeTrip?.status]);
 
   return (
     <ThemeProvider value={DarkTheme}>

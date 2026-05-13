@@ -91,45 +91,55 @@ export const useTripStore = create<TripState>()(
           };
 
           const parseLineString = (geo: any) => {
-            if (!geo || !geo.coordinates) return undefined;
+            if (!geo || !Array.isArray(geo.coordinates)) return undefined;
             return geo.coordinates.map((coord: any) => ({
               latitude: coord[1],
               longitude: coord[0],
             }));
           };
 
-          // Transform backend response
-          const transformedTrips = trips.map((t: any) => ({
-            ...t,
-            plannedRoute: parseLineString(t.plannedRoute),
-            startedAt: t.startedAt,
-            completedAt: t.completedAt,
-            orders: t.tripOrders?.map((to: any) => ({
-              id: to.order.id,
-              customerName: to.order.customerName,
-              address: to.order.address,
-              status: to.order.status,
-              pickupLocation: parsePoint(to.order.pickupLocation),
-              deliveryLocation: parsePoint(to.order.deliveryLocation),
-              photoUrl: to.order.photoUrl,
-              signatureUrl: to.order.signatureUrl,
-            })) || []
-          }));
+          // Transform backend response with defensive checks
+          const transformedTrips = (Array.isArray(trips) ? trips : []).map((t: any) => {
+            if (!t) return null;
+            
+            return {
+              ...t,
+              plannedRoute: t.plannedRoute ? parseLineString(t.plannedRoute) : undefined,
+              startedAt: t.startedAt,
+              completedAt: t.completedAt,
+              orders: (t.tripOrders || []).map((to: any) => {
+                if (!to || !to.order) return null;
+                
+                return {
+                  id: to.order.id,
+                  customerName: to.order.customerName || 'Unknown Customer',
+                  address: to.order.address || 'No address',
+                  status: to.order.status || 'pending',
+                  pickupLocation: parsePoint(to.order.pickupLocation),
+                  deliveryLocation: parsePoint(to.order.deliveryLocation),
+                  photoUrl: to.order.photoUrl,
+                  signatureUrl: to.order.signatureUrl,
+                };
+              }).filter(Boolean) || []
+            };
+          }).filter(Boolean);
 
           const active = transformedTrips.find((t: any) => 
             t.status === TripStatus.ACCEPTED || t.status === TripStatus.IN_PROGRESS
           );
           
           const pending = transformedTrips.filter((t: any) => t.status === TripStatus.PENDING);
-          const history = transformedTrips.filter((t: any) => 
-            t.status === TripStatus.COMPLETED || t.status === TripStatus.CANCELLED
-          );
+          const history = transformedTrips
+            .filter((t: any) => t.status === TripStatus.COMPLETED || t.status === TripStatus.CANCELLED)
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+            .slice(0, 20);
 
           set({ 
             activeTrip: active || null, 
             pendingTrips: pending, 
             tripHistory: history,
-            isLoading: false 
+            isLoading: false,
+            error: null
           });
         } catch (error: any) {
           set({ error: error.message, isLoading: false });
@@ -231,6 +241,9 @@ export const useTripStore = create<TripState>()(
     {
       name: 'trip-storage',
       storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({ 
+        activeTrip: state.activeTrip 
+      }),
     }
   )
 );

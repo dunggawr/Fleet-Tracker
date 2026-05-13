@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { StyleSheet, TouchableOpacity, Text, View, Alert, ActivityIndicator, Modal, Platform, TextInput } from 'react-native';
-import { AlertTriangle, Phone, X, ShieldAlert } from 'lucide-react-native';
+import { TouchableOpacity, Text, View, ActivityIndicator, Modal, Platform, TextInput, StyleSheet } from 'react-native';
+import { AlertTriangle, Phone, X, ShieldAlert, Navigation } from 'lucide-react-native';
 import * as Linking from 'expo-linking';
 import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
 import Toast from 'react-native-toast-message';
 import { authFetch } from '../lib/authFetch';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface SosButtonProps {
   tripId?: string;
@@ -76,196 +78,120 @@ export const SosButton: React.FC<SosButtonProps> = ({ tripId }) => {
   return (
     <>
       <TouchableOpacity 
-        style={styles.sosTrigger} 
         onPress={handleOpenModal}
+        activeOpacity={0.85}
+        className="shadow-2xl shadow-red-500/50"
       >
-        <AlertTriangle size={24} color="#fff" />
-        <Text style={styles.sosTriggerText}>SOS</Text>
+        <LinearGradient
+          colors={['#ef4444', '#b91c1c']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          className="h-16 rounded-2xl flex-row items-center justify-center gap-3 px-6"
+        >
+          <View className="bg-white/20 p-2 rounded-full">
+            <AlertTriangle size={24} color="#fff" strokeWidth={2.5} />
+          </View>
+          <Text className="text-white font-black text-lg uppercase tracking-widest">Emergency SOS</Text>
+        </LinearGradient>
       </TouchableOpacity>
 
       <Modal
         visible={isModalVisible}
         transparent
-        animationType="slide"
-        onRequestClose={() => setIsModalVisible(false)}
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={() => !isSending && setIsModalVisible(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <ShieldAlert size={32} color="#ef4444" />
-              <Text style={styles.modalTitle}>Emergency SOS</Text>
-              <TouchableOpacity onPress={() => setIsModalVisible(false)}>
-                <X size={24} color="#94a3b8" />
-              </TouchableOpacity>
-            </View>
+        <View className="flex-1">
+          <BlurView intensity={40} tint="dark" className="flex-1 justify-center p-6">
+            <View className="bg-[#0f172a] rounded-[40px] p-8 border border-white/10 shadow-2xl overflow-hidden">
+              <View className="absolute -top-24 -right-24 w-48 h-48 bg-red-500/10 rounded-full blur-3xl" />
+              
+              <View className="flex-row items-center justify-between mb-8">
+                <View className="flex-row items-center gap-4">
+                  <View className="w-12 h-12 rounded-2xl bg-red-500/20 items-center justify-center border border-red-500/30">
+                    <ShieldAlert size={28} color="#ef4444" strokeWidth={2.5} />
+                  </View>
+                  <View>
+                    <Text className="text-white text-2xl font-black">SOS Alert</Text>
+                    <Text className="text-slate-500 text-xs font-bold uppercase tracking-widest">Emergency Services</Text>
+                  </View>
+                </View>
+                <TouchableOpacity 
+                  onPress={() => setIsModalVisible(false)}
+                  disabled={isSending}
+                  className="bg-slate-800/50 w-10 h-10 rounded-full items-center justify-center border border-white/5"
+                >
+                  <X size={20} color="#94a3b8" />
+                </TouchableOpacity>
+              </View>
 
-            <Text style={styles.modalDescription}>
-              This will notify the dispatch center and share your current GPS location.
-            </Text>
+              <Text className="text-slate-400 text-base leading-relaxed mb-8">
+                By sending this alert, the dispatch center will receive your <Text className="text-white font-bold">exact GPS location</Text> and immediate assistance will be coordinated.
+              </Text>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>What happened? (Optional)</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Accident, breakdown, medical emergency..."
-                placeholderTextColor="#64748b"
-                value={description}
-                onChangeText={setDescription}
-                multiline
-                numberOfLines={3}
-              />
-            </View>
+              <View className="mb-8">
+                <View className="flex-row justify-between items-center mb-3 px-1">
+                  <Text className="text-slate-500 text-[10px] font-black uppercase tracking-[2px]">Incident Details</Text>
+                  <Text className="text-slate-600 text-[10px]">Optional</Text>
+                </View>
+                <TextInput
+                  className="bg-slate-950/50 rounded-2xl p-5 text-slate-50 text-base border border-white/5 min-h-[120px]"
+                  placeholder="Accident, breakdown, medical emergency..."
+                  placeholderTextColor="#334155"
+                  value={description}
+                  onChangeText={setDescription}
+                  multiline
+                  numberOfLines={4}
+                  editable={!isSending}
+                  style={{ textAlignVertical: 'top' }}
+                />
+              </View>
 
-            <View style={styles.buttonGroup}>
+              <View className="flex-row gap-4 mb-6">
+                <TouchableOpacity 
+                  className="flex-1 h-16 rounded-2xl justify-center items-center bg-slate-800/50 border border-white/5" 
+                  onPress={() => setIsModalVisible(false)}
+                  disabled={isSending}
+                >
+                  <Text className="text-slate-400 font-black uppercase tracking-widest text-xs">Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  activeOpacity={0.8}
+                  onPress={triggerSos}
+                  disabled={isSending}
+                  className="flex-[2]"
+                >
+                  <LinearGradient
+                    colors={['#ef4444', '#b91c1c']}
+                    className={`h-16 rounded-2xl justify-center items-center flex-row gap-3 ${isSending ? 'opacity-70' : ''}`}
+                  >
+                    {isSending ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <>
+                        <Navigation size={20} color="#fff" strokeWidth={2.5} />
+                        <Text className="text-white font-black uppercase tracking-widest text-sm">Send Alert</Text>
+                      </>
+                    )}
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+
               <TouchableOpacity 
-                style={[styles.button, styles.cancelButton]} 
-                onPress={() => setIsModalVisible(false)}
-                disabled={isSending}
+                activeOpacity={0.7}
+                className="bg-emerald-500/10 h-16 rounded-2xl flex-row justify-center items-center gap-3 border border-emerald-500/20"
+                onPress={() => Linking.openURL('tel:911')}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={[styles.button, styles.confirmButton]} 
-                onPress={triggerSos}
-                disabled={isSending}
-              >
-                {isSending ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <>
-                    <AlertTriangle size={20} color="#fff" />
-                    <Text style={styles.confirmButtonText}>Send SOS</Text>
-                  </>
-                )}
+                <Phone size={20} color="#10b981" strokeWidth={2.5} />
+                <Text className="text-emerald-500 font-black uppercase tracking-widest text-xs">Emergency Call 911</Text>
               </TouchableOpacity>
             </View>
-
-            <TouchableOpacity 
-              style={styles.directCallButton}
-              onPress={() => Linking.openURL('tel:911')}
-            >
-              <Phone size={20} color="#fff" />
-              <Text style={styles.directCallText}>Direct Call 911</Text>
-            </TouchableOpacity>
-          </View>
+          </BlurView>
         </View>
       </Modal>
     </>
   );
 };
 
-const styles = StyleSheet.create({
-  sosTrigger: {
-    backgroundColor: '#ef4444',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderRadius: 30,
-    gap: 8,
-    shadowColor: '#ef4444',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  sosTriggerText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalContent: {
-    backgroundColor: '#1e293b',
-    borderRadius: 20,
-    padding: 25,
-    width: '100%',
-    maxWidth: 400,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  modalTitle: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginLeft: -40, // Offset for centering with icon
-  },
-  modalDescription: {
-    color: '#94a3b8',
-    fontSize: 16,
-    lineHeight: 24,
-    marginBottom: 30,
-    textAlign: 'center',
-  },
-  buttonGroup: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 15,
-  },
-  button: {
-    flex: 1,
-    height: 50,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  cancelButton: {
-    backgroundColor: 'rgba(148, 163, 184, 0.1)',
-  },
-  cancelButtonText: {
-    color: '#94a3b8',
-    fontWeight: 'bold',
-  },
-  confirmButton: {
-    backgroundColor: '#ef4444',
-  },
-  confirmButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  directCallButton: {
-    backgroundColor: '#334155',
-    height: 50,
-    borderRadius: 12,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 10,
-  },
-  directCallText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  inputContainer: {
-    marginBottom: 25,
-  },
-  inputLabel: {
-    color: '#94a3b8',
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  textInput: {
-    backgroundColor: 'rgba(15, 23, 42, 0.5)',
-    borderRadius: 12,
-    padding: 12,
-    color: '#f8fafc',
-    fontSize: 16,
-    textAlignVertical: 'top',
-    borderWidth: 1,
-    borderColor: 'rgba(51, 65, 85, 0.5)',
-    minHeight: 80,
-  }
-});
