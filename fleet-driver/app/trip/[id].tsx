@@ -105,7 +105,7 @@ export default function TripDetails() {
 
       <LinearGradient colors={["#0f172a", "#1e293b"]} className="flex-1">
         {/* Background Glow */}
-        <View className="absolute top-[-50] right-[-50] w-[300px] h-[300px] bg-indigo-500/10 rounded-full blur-[80px]" />
+        <View className="absolute top-[-50px] right-[-50px] w-[300px] h-[300px] bg-indigo-500/10 rounded-full blur-[80px]" />
         
         <ScrollView 
           contentContainerStyle={{ padding: 20, paddingBottom: 100 }}

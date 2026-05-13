@@ -278,7 +278,7 @@ export default function ProfileScreen() {
                 </View>
               </View>
               
-              <View className="h-1px bg-white/5 mx-4" />
+              <View className="h-px bg-white/5 mx-4" />
               
               <View className="flex-row items-center gap-4 p-4">
                 <View className="w-12 h-12 rounded-2xl bg-emerald-500/10 items-center justify-center border border-emerald-500/10">
@@ -290,7 +290,7 @@ export default function ProfileScreen() {
                 </View>
               </View>
 
-              <View className="h-1px bg-white/5 mx-4" />
+              <View className="h-px bg-white/5 mx-4" />
 
               <View className="flex-row items-center gap-4 p-4">
                 <View className="w-12 h-12 rounded-2xl bg-amber-500/10 items-center justify-center border border-amber-500/10">
@@ -302,7 +302,7 @@ export default function ProfileScreen() {
                 </View>
               </View>
 
-              <View className="h-1px bg-white/5 mx-4" />
+              <View className="h-px bg-white/5 mx-4" />
 
               <View className="flex-row items-center gap-4 p-4">
                 <View className="w-12 h-12 rounded-2xl bg-indigo-500/10 items-center justify-center border border-indigo-500/10">
@@ -386,7 +386,7 @@ export default function ProfileScreen() {
               <ChevronRight size={18} color="#475569" />
             </TouchableOpacity>
             
-            <View className="h-1px bg-white/5 mx-5" />
+            <View className="h-px bg-white/5 mx-5" />
             
             <TouchableOpacity 
               className="flex-row items-center justify-between p-5"
@@ -401,7 +401,7 @@ export default function ProfileScreen() {
               <ChevronRight size={18} color="#475569" />
             </TouchableOpacity>
             
-            <View className="h-1px bg-white/5 mx-5" />
+            <View className="h-px bg-white/5 mx-5" />
             
             <TouchableOpacity className="flex-row items-center justify-between p-5">
               <View className="flex-row items-center gap-4">
@@ -516,7 +516,7 @@ export default function ProfileScreen() {
                 <Text className="text-slate-400 text-base font-black uppercase tracking-widest">Abort</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className={`flex-2 h-16 rounded-3xl overflow-hidden ${isChanging ? 'opacity-70' : ''}`}
+                className={`flex-[2] h-16 rounded-3xl overflow-hidden ${isChanging ? 'opacity-70' : ''}`}
                 onPress={handleChangePassword}
                 disabled={isChanging}
               >

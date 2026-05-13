@@ -105,7 +105,8 @@ class SocketService {
         console.log('[Socket] Refreshing token for reconnection...');
         const newToken = await refreshAccessToken();
         if (newToken && this.socket) {
-          this.socket.auth = { token: `Bearer ${newToken}` };
+          // Send raw token to match connect() behavior and backend expectation
+          this.socket.auth = { token: newToken };
         }
       } catch (err) {
         console.error('[Socket] Token refresh failed during reconnect:', err);
@@ -129,6 +130,14 @@ class SocketService {
     this.socket.on('connect_error', (err) => {
       console.error('[Socket] Connect error:', err.message);
       useTripStore.getState().setSocketConnected(false);
+      
+      // User-facing differentiation as promised in CHANGELOG
+      if (err.message === 'xhr poll error') {
+        console.warn('[Socket] Connection timeout or server unreachable');
+      } else if (err.message === 'Not authorized' || err.message === 'jwt expired') {
+        console.warn('[Socket] Authentication failed - logging out');
+        useAuthStore.getState().logout();
+      }
     });
   }
 
@@ -213,28 +222,40 @@ class SocketService {
 
         const chunk = points.slice(i, i + CHUNK_SIZE);
         
-        await new Promise<void>((resolve) => {
+        const success = await new Promise<boolean>((resolve) => {
+          const timeout = setTimeout(() => {
+            console.warn('[Sync] Chunk sync timed out');
+            resolve(false);
+          }, 10000); // 10s timeout per chunk
+
           this.socket!.emit('gps:batch_update', chunk, (ack: any) => {
+            clearTimeout(timeout);
             if (ack?.event !== 'error') {
               processed += chunk.length;
               console.log(`[Sync] Progress: ${processed}/${totalPoints} points synced`);
+              resolve(true);
             } else {
               console.error('[Sync] Chunk sync failed:', ack.data);
-              // We continue to next chunk or stop? 
-              // Better to stop if it's a persistent error
+              resolve(false);
             }
-            resolve();
           });
         });
+
+        if (!success) {
+          console.warn('[Sync] Stopping sync due to chunk failure/timeout');
+          break;
+        }
 
         // Small delay between chunks to keep UI thread free
         await delay(100);
       }
 
-      console.log('[Sync] Sync process finished');
-      // Only clear if we actually processed everything? 
-      // For simplicity, we clear now, assuming server handles duplicates or we've tried our best
-      await offlineQueue.clear();
+      console.log(`[Sync] Sync process finished. Processed ${processed}/${totalPoints} points.`);
+      
+      // Remove only the successfully processed items from the queue
+      if (processed > 0) {
+        await offlineQueue.removeItems(processed);
+      }
       
     } catch (err) {
       console.error('[Sync] Sync process failed:', err);

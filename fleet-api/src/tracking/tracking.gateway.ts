@@ -264,15 +264,15 @@ export class TrackingGateway
 
   private extractToken(client: Socket): string | undefined {
     // 1. Try auth object (standard for Socket.io)
-    if (client.handshake.auth?.token) {
-      const token = client.handshake.auth.token;
-      return token.startsWith('Bearer ') ? token.split(' ')[1] : token;
+    const token = client.handshake.auth?.token;
+    if (typeof token === 'string') {
+      return token.startsWith('Bearer ') ? token.slice(7).trim() : token;
     }
 
     // 2. Try Authorization header
     const authHeader = client.handshake.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      return authHeader.split(' ')[1];
+    if (typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+      return authHeader.slice(7).trim();
     }
 
     // 3. Try Cookies (for Web Admin with HttpOnly cookies)

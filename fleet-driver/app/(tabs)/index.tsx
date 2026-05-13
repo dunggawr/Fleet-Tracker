@@ -123,134 +123,6 @@ export default function TripsScreen() {
     const dateStr = createdAtDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     const timeStr = createdAtDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    const CardContent = () => (
-      <>
-        {/* Glow effect for active trip */}
-        {isActive && (
-          <View className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl" />
-        )}
-
-        {/* Card Header */}
-        <View className="flex-row justify-between items-center mb-6">
-          <View className="flex-row items-center gap-4">
-            <View className={`w-12 h-12 rounded-2xl justify-center items-center ${isActive ? 'bg-indigo-500 shadow-xl shadow-indigo-500/50' : 'bg-slate-800/80 border border-white/5'}`}>
-              <Truck size={24} color="#fff" strokeWidth={2.5} />
-            </View>
-            <View>
-              <Text className="text-white font-black text-lg tracking-tight">Trip #{item.id.substring(0, 8).toUpperCase()}</Text>
-              <Text className="text-slate-500 text-[10px] font-black uppercase tracking-[1.5px]">{dateStr} • {timeStr}</Text>
-            </View>
-          </View>
-          
-          <View className={`px-4 py-1.5 rounded-full border ${
-            isActive ? 'bg-indigo-500/20 border-indigo-500/30' : 
-            isHistory ? (item.status === 'completed' ? 'bg-emerald-500/15 border-emerald-500/25' : 'bg-red-500/15 border-red-500/25') :
-            'bg-amber-500/15 border-amber-500/25'
-          }`}>
-            <Text className={`text-[10px] font-black uppercase tracking-widest ${
-              isActive ? 'text-indigo-400' : 
-              isHistory ? (item.status === 'completed' ? 'text-emerald-400' : 'text-red-400') :
-              'text-amber-400'
-            }`}>
-              {isActive ? 'Live' : item.status.toUpperCase()}
-            </Text>
-          </View>
-        </View>
-
-        {/* Path Info */}
-        <View className="flex-row mb-8 px-1">
-          <View className="items-center w-6 mr-5">
-            <View className="w-4 h-4 rounded-full bg-indigo-500 border-4 border-slate-900 z-10 shadow-sm" />
-            <View className="w-px flex-1 bg-slate-800 my-1 border-l border-white/10" />
-            <View className="w-4 h-4 rounded-lg bg-emerald-500 border-4 border-slate-900 z-10 shadow-sm" />
-          </View>
-          <View className="flex-1 gap-6">
-            <View>
-              <Text className="text-slate-500 text-[9px] font-black uppercase tracking-[2px] mb-1">Origin Hub</Text>
-              <Text className="text-white text-[15px] font-bold" numberOfLines={1}>Global Logistics Center - A4</Text>
-            </View>
-            <View>
-              <Text className="text-slate-500 text-[9px] font-black uppercase tracking-[2px] mb-1">Final Destination</Text>
-              <Text className="text-white text-[15px] font-bold" numberOfLines={1}>
-                {item.orders?.length > 0 ? item.orders[item.orders.length - 1].address : 'Unassigned Destination'}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Footer Stats */}
-        <View className="flex-row items-center justify-between pt-5 border-t border-white/5">
-          <View className="flex-row gap-6">
-            <View className="flex-row items-center gap-2">
-              <View className="bg-white/5 p-2 rounded-xl border border-white/5">
-                <Package size={16} color="#818cf8" strokeWidth={2} />
-              </View>
-              <View>
-                <Text className="text-white font-bold text-xs">{item.orders?.length || 0}</Text>
-                <Text className="text-slate-600 text-[8px] font-black uppercase tracking-widest">Orders</Text>
-              </View>
-            </View>
-            <View className="flex-row items-center gap-2">
-              <View className="bg-white/5 p-2 rounded-xl border border-white/5">
-                <Route size={16} color="#10b981" strokeWidth={2} />
-              </View>
-              <View>
-                <Text className="text-white font-bold text-xs">{item.totalDistanceKm || 0}</Text>
-                <Text className="text-slate-600 text-[8px] font-black uppercase tracking-widest">KM</Text>
-              </View>
-            </View>
-          </View>
-
-          {isActive && (
-            <TouchableOpacity 
-              activeOpacity={0.7}
-              onPress={() => router.push('/(tabs)/map')}
-              className="bg-indigo-500/10 pl-4 pr-3 py-2.5 rounded-2xl flex-row items-center gap-2 border border-indigo-500/20"
-            >
-              <Text className="text-indigo-400 text-[10px] font-black uppercase tracking-widest">Active Map</Text>
-              <ChevronRight size={14} color="#818cf8" strokeWidth={2.5} />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Actions for Pending */}
-        {section.title === 'Pending Trips' && (
-          <View className="flex-row gap-4 mt-8">
-            <TouchableOpacity 
-              activeOpacity={0.6}
-              className="flex-1 bg-slate-800/30 h-14 rounded-2xl justify-center items-center border border-white/5"
-              onPress={() => handleRejectTrip(item.id)}
-              disabled={isLoading}
-            >
-              <Text className="text-slate-500 font-black uppercase tracking-widest text-xs">Decline</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              activeOpacity={0.8}
-              className="flex-2 h-14 rounded-2xl justify-center items-center shadow-2xl shadow-indigo-500/30 overflow-hidden"
-              onPress={() => handleAcceptTrip(item.id)}
-              disabled={isLoading}
-            >
-              <LinearGradient
-                colors={['#6366f1', '#4f46e5']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={StyleSheet.absoluteFill}
-              />
-              {isLoading ? (
-                <ActivityIndicator color="#fff" size="small" />
-              ) : (
-                <View className="flex-row items-center gap-2">
-                  <CheckCircle2 size={16} color="#fff" strokeWidth={2.5} />
-                  <Text className="text-white font-black text-xs uppercase tracking-[2px]">Accept Assignment</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
-        )}
-      </>
-    );
-
     return (
       <View className="px-6 mb-6">
         <TouchableOpacity 
@@ -262,7 +134,129 @@ export default function TripsScreen() {
             <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
           )}
           <View className="p-8">
-            <CardContent />
+            {/* Glow effect for active trip */}
+            {isActive && (
+              <View className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl" />
+            )}
+
+            {/* Card Header */}
+            <View className="flex-row justify-between items-center mb-6">
+              <View className="flex-row items-center gap-4">
+                <View className={`w-12 h-12 rounded-2xl justify-center items-center ${isActive ? 'bg-indigo-500 shadow-xl shadow-indigo-500/50' : 'bg-slate-800/80 border border-white/5'}`}>
+                  <Truck size={24} color="#fff" strokeWidth={2.5} />
+                </View>
+                <View>
+                  <Text className="text-white font-black text-lg tracking-tight">Trip #{item.id.substring(0, 8).toUpperCase()}</Text>
+                  <Text className="text-slate-500 text-[10px] font-black uppercase tracking-[1.5px]">{dateStr} • {timeStr}</Text>
+                </View>
+              </View>
+              
+              <View className={`px-4 py-1.5 rounded-full border ${
+                isActive ? 'bg-indigo-500/20 border-indigo-500/30' : 
+                isHistory ? (item.status === 'completed' ? 'bg-emerald-500/15 border-emerald-500/25' : 'bg-red-500/15 border-red-500/25') :
+                'bg-amber-500/15 border-amber-500/25'
+              }`}>
+                <Text className={`text-[10px] font-black uppercase tracking-widest ${
+                  isActive ? 'text-indigo-400' : 
+                  isHistory ? (item.status === 'completed' ? 'text-emerald-400' : 'text-red-400') :
+                  'text-amber-400'
+                }`}>
+                  {isActive ? 'Live' : item.status.toUpperCase()}
+                </Text>
+              </View>
+            </View>
+
+            {/* Path Info */}
+            <View className="flex-row mb-8 px-1">
+              <View className="items-center w-6 mr-5">
+                <View className="w-4 h-4 rounded-full bg-indigo-500 border-4 border-slate-900 z-10 shadow-sm" />
+                <View className="w-px flex-1 bg-slate-800 my-1 border-l border-white/10" />
+                <View className="w-4 h-4 rounded-lg bg-emerald-500 border-4 border-slate-900 z-10 shadow-sm" />
+              </View>
+              <View className="flex-1 gap-6">
+                <View>
+                  <Text className="text-slate-500 text-[9px] font-black uppercase tracking-[2px] mb-1">Origin Hub</Text>
+                  <Text className="text-white text-[15px] font-bold" numberOfLines={1}>Global Logistics Center - A4</Text>
+                </View>
+                <View>
+                  <Text className="text-slate-500 text-[9px] font-black uppercase tracking-[2px] mb-1">Final Destination</Text>
+                  <Text className="text-white text-[15px] font-bold" numberOfLines={1}>
+                    {item.orders?.length > 0 ? item.orders[item.orders.length - 1].address : 'Unassigned Destination'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Footer Stats */}
+            <View className="flex-row items-center justify-between pt-5 border-t border-white/5">
+              <View className="flex-row gap-6">
+                <View className="flex-row items-center gap-2">
+                  <View className="bg-white/5 p-2 rounded-xl border border-white/5">
+                    <Package size={16} color="#818cf8" strokeWidth={2} />
+                  </View>
+                  <View>
+                    <Text className="text-white font-bold text-xs">{item.orders?.length || 0}</Text>
+                    <Text className="text-slate-600 text-[8px] font-black uppercase tracking-widest">Orders</Text>
+                  </View>
+                </View>
+                <View className="flex-row items-center gap-2">
+                  <View className="bg-white/5 p-2 rounded-xl border border-white/5">
+                    <Route size={16} color="#10b981" strokeWidth={2} />
+                  </View>
+                  <View>
+                    <Text className="text-white font-bold text-xs">{item.totalDistanceKm || 0}</Text>
+                    <Text className="text-slate-600 text-[8px] font-black uppercase tracking-widest">KM</Text>
+                  </View>
+                </View>
+              </View>
+
+              {isActive && (
+                <TouchableOpacity 
+                  activeOpacity={0.7}
+                  onPress={() => router.push('/(tabs)/map')}
+                  className="bg-indigo-500/10 pl-4 pr-3 py-2.5 rounded-2xl flex-row items-center gap-2 border border-indigo-500/20"
+                >
+                  <Text className="text-indigo-400 text-[10px] font-black uppercase tracking-widest">Active Map</Text>
+                  <ChevronRight size={14} color="#818cf8" strokeWidth={2.5} />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Actions for Pending */}
+            {section.title === 'Pending Trips' && (
+              <View className="flex-row gap-4 mt-8">
+                <TouchableOpacity 
+                  activeOpacity={0.6}
+                  className="flex-1 bg-slate-800/30 h-14 rounded-2xl justify-center items-center border border-white/5"
+                  onPress={() => handleRejectTrip(item.id)}
+                  disabled={isLoading}
+                >
+                  <Text className="text-slate-500 font-black uppercase tracking-widest text-xs">Decline</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  activeOpacity={0.8}
+                  className="flex-[2] h-14 rounded-2xl justify-center items-center shadow-2xl shadow-indigo-500/30 overflow-hidden"
+                  onPress={() => handleAcceptTrip(item.id)}
+                  disabled={isLoading}
+                >
+                  <LinearGradient
+                    colors={['#6366f1', '#4f46e5']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={StyleSheet.absoluteFill}
+                  />
+                  {isLoading ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <View className="flex-row items-center gap-2">
+                      <CheckCircle2 size={16} color="#fff" strokeWidth={2.5} />
+                      <Text className="text-white font-black text-xs uppercase tracking-[2px]">Accept Assignment</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         </TouchableOpacity>
       </View>
@@ -280,8 +274,8 @@ export default function TripsScreen() {
       <StatusBar barStyle="light-content" />
       
       {/* Background Decorative Elements */}
-      <View className="absolute top-[-100] right-[-100] w-[400] h-[400] bg-indigo-600/10 rounded-full blur-[100px]" />
-      <View className="absolute bottom-[-150] left-[-150] w-[500] h-[500] bg-blue-600/5 rounded-full blur-[120px]" />
+      <View className="absolute top-[-100px] right-[-100px] w-[400px] h-[400px] bg-indigo-600/10 rounded-full blur-[100px]" />
+      <View className="absolute bottom-[-150px] left-[-150px] w-[500px] h-[500px] bg-blue-600/5 rounded-full blur-[120px]" />
 
       <SafeAreaView className="flex-1">
         {/* Header */}

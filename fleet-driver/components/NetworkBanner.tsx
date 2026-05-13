@@ -7,7 +7,7 @@ import { BlurView } from 'expo-blur';
 
 export const NetworkBanner = () => {
   const [isOffline, setIsOffline] = useState(false);
-  const translateY = new Animated.Value(-120);
+  const translateY = React.useRef(new Animated.Value(-120)).current;
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
@@ -24,11 +24,11 @@ export const NetworkBanner = () => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [translateY]);
 
   return (
     <Animated.View 
-      className="absolute top-0 left-0 right-0 z-9999 overflow-hidden"
+      className="absolute top-0 left-0 right-0 z-[9999] overflow-hidden"
       style={[
         { transform: [{ translateY }] },
       ]}

@@ -518,7 +518,7 @@ export default function ActiveTripMap() {
             <View className="flex-row gap-4">
               {activeTrip.status === TripStatus.ACCEPTED && (
                 <TouchableOpacity 
-                  className="flex-1 h-18 rounded-xl overflow-hidden shadow-2xl shadow-indigo-500/30"
+                  className="flex-1 h-[72px] rounded-xl overflow-hidden shadow-2xl shadow-indigo-500/30"
                   onPress={() => handleStatusUpdate(TripStatus.IN_PROGRESS)}
                   activeOpacity={0.8}
                 >
@@ -538,7 +538,7 @@ export default function ActiveTripMap() {
                 if (!currentOrder) {
                   return (
                     <TouchableOpacity 
-                      className="flex-1 h-18 rounded-xl overflow-hidden shadow-2xl shadow-blue-500/30"
+                      className="flex-1 h-[72px] rounded-xl overflow-hidden shadow-2xl shadow-blue-500/30"
                       onPress={() => handleStatusUpdate(TripStatus.COMPLETED)}
                       activeOpacity={0.8}
                     >
@@ -558,7 +558,7 @@ export default function ActiveTripMap() {
                 if (currentOrder.status === OrderStatus.ASSIGNED || currentOrder.status === OrderStatus.PENDING) {
                   return (
                     <TouchableOpacity 
-                      className="flex-1 h-18 rounded-xl overflow-hidden shadow-2xl shadow-amber-500/30"
+                      className="flex-1 h-[72px] rounded-xl overflow-hidden shadow-2xl shadow-amber-500/30"
                       onPress={() => handleOrderStatusUpdate(currentOrder.id, OrderStatus.PICKED_UP)}
                       activeOpacity={0.8}
                     >
@@ -578,7 +578,7 @@ export default function ActiveTripMap() {
                 if (currentOrder.status === OrderStatus.PICKED_UP) {
                   return (
                     <TouchableOpacity 
-                      className="flex-1 h-18 rounded-xl overflow-hidden shadow-2xl shadow-violet-500/30"
+                      className="flex-1 h-[72px] rounded-xl overflow-hidden shadow-2xl shadow-violet-500/30"
                       onPress={() => handleOrderStatusUpdate(currentOrder.id, OrderStatus.DELIVERING)}
                       activeOpacity={0.8}
                     >
@@ -597,7 +597,7 @@ export default function ActiveTripMap() {
 
                 return (
                   <TouchableOpacity 
-                    className="flex-1 h-18 rounded-xl overflow-hidden shadow-2xl shadow-emerald-500/30"
+                    className="flex-1 h-[72px] rounded-xl overflow-hidden shadow-2xl shadow-emerald-500/30"
                     onPress={() => {
                       router.push({
                         pathname: '/camera',

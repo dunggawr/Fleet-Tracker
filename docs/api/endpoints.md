@@ -126,32 +126,32 @@ Dùng để tìm kiếm vị trí và bay đến (Fly-to) trên bản đồ Disp
  
  ---
  
-+## 🔌 Real-time Tracking (WebSockets)
-+
-+### Connection Handshake
-+Sử dụng **Socket.io** để duy trì kết nối thời gian thực giữa Driver App và Backend.
-+
-+**Endpoint:** `wss://api.example.com/tracking` (Gateway: `TrackingGateway`)
-+
-+**Authentication:**
-+- Token được gửi qua trường `auth` trong handshake object.
-+- **Robust Format:** Backend hỗ trợ cả raw token và token có tiền tố `Bearer `. 
-+- **Handshake Example:**
-+```javascript
-+const socket = io(URL, {
-+  auth: { token: "your_jwt_token" }
-+});
-+```
-+
-+**Stability Settings:**
-+- `connectionTimeout`: 60,000ms (Hỗ trợ mạng di động yếu).
-+- `transports`: `['websocket']`.
-+
-+**Events:**
-+- `gps:update`: Gửi vị trí đơn lẻ.
-+- `gps:batch_update`: Gửi danh sách vị trí (Offline sync).
-+- `sos:alert`: Báo cáo sự cố khẩn cấp.
-+
-+---
-+
+## 🔌 Real-time Tracking (WebSockets)
+
+### Connection Handshake
+Sử dụng **Socket.io** để duy trì kết nối thời gian thực giữa Driver App và Backend.
+
+**Endpoint:** `wss://api.example.com/tracking` (Gateway: `TrackingGateway`)
+
+**Authentication:**
+- Token được gửi qua trường `auth` trong handshake object.
+- **Robust Format:** Backend hỗ trợ cả raw token và token có tiền tố `Bearer `. 
+- **Handshake Example:**
+```javascript
+const socket = io(URL, {
+  auth: { token: "your_jwt_token" }
+});
+```
+
+**Stability Settings:**
+- `connectionTimeout`: 60,000ms (Hỗ trợ mạng di động yếu).
+- `transports`: `['websocket']`.
+
+**Events:**
+- `gps:update`: Gửi vị trí đơn lẻ.
+- `gps:batch_update`: Gửi danh sách vị trí (Offline sync).
+- `sos:alert`: Báo cáo sự cố khẩn cấp.
+
+---
+
  # API Documentation - Dispatch Module

@@ -161,7 +161,7 @@ export const SosButton: React.FC<SosButtonProps> = ({ tripId }) => {
                   activeOpacity={0.8}
                   onPress={triggerSos}
                   disabled={isSending}
-                  className="flex-2"
+                  className="flex-[2]"
                 >
                   <LinearGradient
                     colors={['#ef4444', '#b91c1c']}

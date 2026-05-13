@@ -234,7 +234,7 @@ export default function LoginScreen() {
               {!isForgotMode ? (
                 <View className="gap-6">
                   <View className="gap-5">
-                    <View className="flex-row items-center bg-black/40 rounded-3xl px-6 h-18 border border-white/5 shadow-inner">
+                    <View className="flex-row items-center bg-black/40 rounded-3xl px-6 h-[72px] border border-white/5 shadow-inner">
                       <Mail size={20} color="#6366f1" />
                       <TextInput
                         className="flex-1 text-white text-lg ml-4 font-medium"
@@ -248,7 +248,7 @@ export default function LoginScreen() {
                       />
                     </View>
 
-                    <View className="flex-row items-center bg-black/40 rounded-3xl px-6 h-18 border border-white/5 shadow-inner">
+                    <View className="flex-row items-center bg-black/40 rounded-3xl px-6 h-[72px] border border-white/5 shadow-inner">
                       <Lock size={20} color="#6366f1" />
                       <TextInput
                         className="flex-1 text-white text-lg ml-4 font-medium"
@@ -271,7 +271,7 @@ export default function LoginScreen() {
                       colors={["#6366f1", "#4f46e5"]}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
-                      className="h-18 rounded-3xl justify-center items-center shadow-2xl shadow-indigo-500/40"
+                      className="h-[72px] rounded-3xl justify-center items-center shadow-2xl shadow-indigo-500/40"
                     >
                       {isLoading ? (
                         <ActivityIndicator color="#fff" />
@@ -301,7 +301,7 @@ export default function LoginScreen() {
                     <Text className="text-slate-500 text-sm font-medium mb-6">Enter your registered email below</Text>
                   </View>
                   
-                  <View className="flex-row items-center bg-black/40 rounded-3xl px-6 h-18 border border-white/5 shadow-inner">
+                  <View className="flex-row items-center bg-black/40 rounded-3xl px-6 h-[72px] border border-white/5 shadow-inner">
                     <Mail size={20} color="#6366f1" />
                     <TextInput
                       className="flex-1 text-white text-lg ml-4 font-medium"
@@ -322,7 +322,7 @@ export default function LoginScreen() {
                   >
                     <LinearGradient
                       colors={["#6366f1", "#4f46e5"]}
-                      className="h-18 rounded-3xl justify-center items-center shadow-2xl shadow-indigo-500/40"
+                      className="h-[72px] rounded-3xl justify-center items-center shadow-2xl shadow-indigo-500/40"
                     >
                       {isLoading ? (
                         <ActivityIndicator color="#fff" />
@@ -339,7 +339,7 @@ export default function LoginScreen() {
                     <Text className="text-slate-500 text-sm font-medium mb-6">Enter the 6-digit code sent to you</Text>
                   </View>
 
-                  <View className="flex-row items-center bg-black/40 rounded-3xl px-6 h-18 border border-white/5 shadow-inner">
+                  <View className="flex-row items-center bg-black/40 rounded-3xl px-6 h-[72px] border border-white/5 shadow-inner">
                     <Lock size={20} color="#6366f1" />
                     <TextInput
                       className="flex-1 text-white text-2xl font-black tracking-[12px] ml-4"
@@ -359,7 +359,7 @@ export default function LoginScreen() {
                   >
                     <LinearGradient
                       colors={["#6366f1", "#4f46e5"]}
-                      className="h-18 rounded-3xl justify-center items-center shadow-2xl shadow-indigo-500/40"
+                      className="h-[72px] rounded-3xl justify-center items-center shadow-2xl shadow-indigo-500/40"
                     >
                       <Text className="text-white text-lg font-black uppercase tracking-widest">Verify Identity</Text>
                     </LinearGradient>
@@ -373,7 +373,7 @@ export default function LoginScreen() {
                   </View>
 
                   <View className="gap-4">
-                    <View className="flex-row items-center bg-black/40 rounded-3xl px-6 h-18 border border-white/5 shadow-inner">
+                    <View className="flex-row items-center bg-black/40 rounded-3xl px-6 h-[72px] border border-white/5 shadow-inner">
                       <Lock size={20} color="#6366f1" />
                       <TextInput
                         className="flex-1 text-white text-lg ml-4 font-medium"
@@ -384,7 +384,7 @@ export default function LoginScreen() {
                         secureTextEntry
                       />
                     </View>
-                    <View className="flex-row items-center bg-black/40 rounded-3xl px-6 h-18 border border-white/5 shadow-inner">
+                    <View className="flex-row items-center bg-black/40 rounded-3xl px-6 h-[72px] border border-white/5 shadow-inner">
                       <Lock size={20} color="#6366f1" />
                       <TextInput
                         className="flex-1 text-white text-lg ml-4 font-medium"
@@ -404,7 +404,7 @@ export default function LoginScreen() {
                   >
                     <LinearGradient
                       colors={["#6366f1", "#4f46e5"]}
-                      className="h-18 rounded-3xl justify-center items-center shadow-2xl shadow-indigo-500/40"
+                      className="h-[72px] rounded-3xl justify-center items-center shadow-2xl shadow-indigo-500/40"
                     >
                       {isLoading ? (
                         <ActivityIndicator color="#fff" />

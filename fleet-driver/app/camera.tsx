@@ -119,7 +119,7 @@ export default function CameraScreen() {
         </View>
       ) : (
         <CameraView className="flex-1" ref={cameraRef}>
-          <View className="flex-1 bg-transparent justify-between p-5 pt-15">
+          <View className="flex-1 bg-transparent justify-between p-5 pt-16">
             <TouchableOpacity 
               className="self-start w-12 h-12 rounded-full bg-black/50 justify-center items-center" 
               onPress={() => router.back()}

@@ -62,5 +62,16 @@ export const offlineQueue = {
     } catch (e) {
       console.error('Failed to clear offline queue', e);
     }
+  },
+
+  async removeItems(count: number) {
+    try {
+      const queue = await this.getQueue();
+      memoryQueue = queue.slice(count);
+      await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(memoryQueue));
+      console.log(`[Queue] Removed ${count} items. Remaining: ${memoryQueue.length}`);
+    } catch (e) {
+      console.error('Failed to remove items from offline queue', e);
+    }
   }
 };
