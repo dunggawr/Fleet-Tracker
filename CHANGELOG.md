@@ -1,3 +1,13 @@
+## [2026-05-13] - Socket Connection Stabilization & Robust Authentication
+### Fixed
+- **Core (Infrastructure)**:
+    - **WebSocket Gateway (`TrackingGateway`)**: Cập nhật cơ chế `extractToken` để tự động bóc tách tiền tố `Bearer ` nếu có, tăng tính ổn định cho quá trình Handshake.
+    - **Driver App (Socket Client)**: Đồng bộ hóa cấu hình để gửi token "sạch" (raw token) về server, tránh lỗi mismatch prefix gây ngắt kết nối.
+    - **Connection Reliability**: Tăng `connectionTimeout` lên **60s** cho Driver App để hỗ trợ tốt hơn trên môi trường mạng 4G/LTE không ổn định.
+
+### Changed
+- Cải thiện thông báo lỗi kết nối trong Driver App, giúp phân biệt rõ lỗi Timeout và lỗi Xác thực (Authentication).
+
 ## [2026-05-12] - Driver App Web Login & CORS Hardening
 ### Added
 - **Mobile (Driver App)**:
