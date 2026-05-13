@@ -154,7 +154,7 @@ export default function VehiclesPage() {
       if (selectedVehicle) {
         const payload = {
           ...data,
-          driverId: data.driverId || undefined,
+          driverId: data.driverId || null,
         };
         await updateVehicle({ id: selectedVehicle.id, ...payload });
       } else {
@@ -182,7 +182,7 @@ export default function VehiclesPage() {
 
       await updateVehicle({
         id: vehicleToAssign.id,
-        driverId: assignedDriverId || undefined,
+        driverId: assignedDriverId || null,
       });
 
       closeAssignModal();
@@ -213,23 +213,25 @@ export default function VehiclesPage() {
     {
       header: 'Actions',
       accessor: (v: Vehicle) => (
-        <Dropdown align="right" trigger={
-          <Button variant="ghost" size="sm" icon={<MoreVertical size={16} />} />
-        }>
-            <button className="dropdown-item" onClick={() => openAssignModal(v)}>
-              <UserPlus size={16} /> {v.driver ? 'Change Driver' : 'Assign Driver'}
+        <div onClick={(e) => e.stopPropagation()}>
+          <Dropdown align="right" trigger={
+            <Button variant="ghost" size="sm" icon={<MoreVertical size={16} />} />
+          }>
+              <button className="dropdown-item" onClick={(e) => { e.stopPropagation(); openAssignModal(v); }}>
+                <UserPlus size={16} /> {v.driver ? 'Change Driver' : 'Assign Driver'}
+              </button>
+            <button className="dropdown-item" onClick={(e) => { e.stopPropagation(); router.push(`/dispatch?vehicleId=${v.id}`); }}>
+              <Navigation size={16} /> Track Vehicle
             </button>
-          <button className="dropdown-item" onClick={() => router.push(`/dispatch?vehicleId=${v.id}`)}>
-            <Navigation size={16} /> Track Vehicle
-          </button>
-          <button className="dropdown-item" onClick={() => openEditModal(v)}>
-            <Edit2 size={16} /> Edit Details
-          </button>
-          <div className="dropdown-divider" />
-          <button className="dropdown-item danger" onClick={() => setVehicleToDelete(v)}>
-            <Trash2 size={16} /> Delete Vehicle
-          </button>
-        </Dropdown>
+            <button className="dropdown-item" onClick={(e) => { e.stopPropagation(); openEditModal(v); }}>
+              <Edit2 size={16} /> Edit Details
+            </button>
+            <div className="dropdown-divider" />
+            <button className="dropdown-item danger" onClick={(e) => { e.stopPropagation(); setVehicleToDelete(v); }}>
+              <Trash2 size={16} /> Delete Vehicle
+            </button>
+          </Dropdown>
+        </div>
       )
     }
   ];

@@ -163,7 +163,7 @@ export default function DriverKpiDetailPage() {
                 </span>
                 <span className="flex items-center gap-md">
                   <Star size={14} className="text-warning fill-warning" />
-                  {kpi?.kpiScore != null ? kpi.kpiScore.toFixed(1) : 'N/A'} Performance Rating
+                  {kpi?.kpiScore != null ? Number(kpi.kpiScore).toFixed(1) : 'N/A'} Performance Rating
                 </span>
                 <span className="flex items-center gap-md">
                   <Phone size={14} />
@@ -204,7 +204,7 @@ export default function DriverKpiDetailPage() {
         />
         <StatCard 
           label="Performance Score" 
-          value={`${kpi?.kpiScore || 0}`} 
+          value={`${kpi?.kpiScore != null ? Number(kpi.kpiScore).toFixed(1) : 0}`} 
           icon={TrendingUp} 
           color="var(--color-warning)" 
           trend={{ value: 1.2, isUp: true }}
