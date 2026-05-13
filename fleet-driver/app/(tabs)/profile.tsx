@@ -441,8 +441,8 @@ export default function ProfileScreen() {
         animationType="slide"
         onRequestClose={() => !isChanging && setShowPasswordModal(false)}
       >
-        <View className="flex-1 justify-end bg-black/60">
-          <BlurView intensity={80} tint="dark" className="bg-slate-900/90 rounded-t-[40px] p-8 border-t border-white/10">
+        <View className="flex-1 justify-end bg-black/80">
+          <BlurView intensity={100} tint="dark" className="bg-slate-900 rounded-t-[40px] p-8 border-t border-white/10">
             <View className="flex-row justify-between items-center mb-10">
               <View>
                 <Text className="text-2xl font-black text-white tracking-tight">Security</Text>
@@ -460,7 +460,7 @@ export default function ProfileScreen() {
             <View className="gap-6">
               <View>
                 <Text className="text-slate-500 text-[10px] font-black mb-2 uppercase tracking-[2px] ml-1">Current Password</Text>
-                <View className="flex-row items-center bg-black/40 rounded-2xl px-5 border border-white/5 focus:border-indigo-500">
+                <View className="flex-row items-center bg-slate-950 rounded-2xl px-5 border border-white/10 focus:border-indigo-500">
                   <Lock size={18} color="#475569" />
                   <TextInput
                     className="flex-1 text-white text-base py-4 ml-4"
@@ -476,7 +476,7 @@ export default function ProfileScreen() {
 
               <View>
                 <Text className="text-slate-500 text-[10px] font-black mb-2 uppercase tracking-[2px] ml-1">New Access Key</Text>
-                <View className="flex-row items-center bg-black/40 rounded-2xl px-5 border border-white/5 focus:border-indigo-500">
+                <View className="flex-row items-center bg-slate-950 rounded-2xl px-5 border border-white/10 focus:border-indigo-500">
                   <Lock size={18} color="#475569" />
                   <TextInput
                     className="flex-1 text-white text-base py-4 ml-4"
@@ -492,7 +492,7 @@ export default function ProfileScreen() {
 
               <View>
                 <Text className="text-slate-500 text-[10px] font-black mb-2 uppercase tracking-[2px] ml-1">Confirm Identity</Text>
-                <View className="flex-row items-center bg-black/40 rounded-2xl px-5 border border-white/5 focus:border-indigo-500">
+                <View className="flex-row items-center bg-slate-950 rounded-2xl px-5 border border-white/10 focus:border-indigo-500">
                   <Lock size={18} color="#475569" />
                   <TextInput
                     className="flex-1 text-white text-base py-4 ml-4"
