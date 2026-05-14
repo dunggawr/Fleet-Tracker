@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useCallback } from 'react';
-import { Map, Marker, Popup, NavigationControl, FullscreenControl } from 'react-map-gl/mapbox';
+import { Map, Marker, NavigationControl, FullscreenControl } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Truck, Activity } from 'lucide-react';
 
@@ -183,53 +183,10 @@ export default function LiveTrackingMap({
               </div>
             </Marker>
 
-            {selectedVehicle?.vehicleId === vehicle.vehicleId && (
-              <Popup
-                longitude={vehicle.longitude}
-                latitude={vehicle.latitude}
-                anchor="bottom"
-                offset={24}
-                closeButton={true}
-                onClose={() => onVehicleSelect(null)}
-                maxWidth="300px"
-              >
-                <div className="p-3 min-w-[200px] bg-surface-high text-text rounded-lg border border-border shadow-2xl">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Truck size={16} className={STATUS_CONFIG[vehicle.status].textClass} />
-                    <strong className="text-sm font-bold truncate">{vehicle.licensePlate}</strong>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap ml-auto ${STATUS_CONFIG[vehicle.status].lightBgClass} ${STATUS_CONFIG[vehicle.status].textClass}`}>
-                      {STATUS_CONFIG[vehicle.status].label}
-                    </span>
-                  </div>
-                  
-                  <div className="text-[12px] text-text-muted space-y-1">
-                    <div className="flex justify-between">
-                      <span className="text-text-dim">Tài xế:</span>
-                      <span className="font-medium text-text">{vehicle.driverName}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-text-dim">Tốc độ:</span>
-                      <span className="font-medium text-text">{vehicle.speed.toFixed(0)} km/h</span>
-                    </div>
-                    {vehicle.ordersCount !== undefined && (
-                      <div className="flex justify-between">
-                        <span className="text-text-dim">Đơn hàng:</span>
-                        <span className="font-medium text-text">{vehicle.ordersCount} đơn</span>
-                      </div>
-                    )}
-                    {vehicle.currentTripId && (
-                      <div className="flex justify-between">
-                        <span className="text-text-dim">Mã chuyến:</span>
-                        <span className="font-medium text-primary-light">#{vehicle.currentTripId.slice(0, 8)}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </Popup>
-            )}
           </React.Fragment>
         ))}
       </Map>
     </div>
   );
 }
+
