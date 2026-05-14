@@ -148,7 +148,7 @@ export function MapBox({
         });
       }
     }
-  }, [selectedMarkerId]);
+  }, [selectedMarkerId, markers.length]);
 
   // Create GeoJSON for path rendering
   const routeData: any = useMemo(() => {

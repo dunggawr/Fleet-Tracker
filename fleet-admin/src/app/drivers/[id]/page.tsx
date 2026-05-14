@@ -278,7 +278,7 @@ export default function DriverKpiDetailPage() {
 
         {/* Recent Violations */}
         <div className="lg:col-span-1">
-          <div className="card h-full flex flex-col gap-xl p-xl">
+          <div className="card h-full flex flex-col gap-xl p-xl transition-all duration-300 hover:shadow-glow hover:border-primary/30">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-bold">Recent Violations</h3>
               <Badge variant="danger">{alerts.length} New</Badge>
@@ -292,7 +292,7 @@ export default function DriverKpiDetailPage() {
                 </div>
               ) : (
                 alerts.slice(0, 5).map((alert: Alert) => (
-                  <div key={alert.id} className="flex flex-col gap-md p-lg bg-surface-low rounded-xl border border-border group hover:border-primary/50 transition-all cursor-pointer">
+                  <div key={alert.id} className="flex flex-col gap-md p-lg bg-surface-low rounded-xl border border-border group hover:shadow-glow hover:border-primary/50 transition-all duration-300 cursor-pointer">
                     <div className="flex justify-between items-start">
                       <div className="flex items-center gap-md text-danger">
                         <AlertTriangle size={16} />
@@ -373,7 +373,7 @@ export default function DriverKpiDetailPage() {
 
             <div className="space-y-2">
               <p className="text-xs text-text-dim uppercase font-bold tracking-wider">Timeline</p>
-              <div className="p-md bg-surface-low rounded-xl border border-border space-y-md">
+              <div className="p-md bg-surface-low rounded-xl border border-border space-y-md transition-all duration-300 hover:shadow-glow hover:border-primary/30">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-text-dim">Created At</span>
                   <span className="text-sm font-medium">{format(new Date(selectedTrip.createdAt), 'MMM dd, HH:mm')}</span>
@@ -398,7 +398,7 @@ export default function DriverKpiDetailPage() {
                 <p className="text-xs text-text-dim uppercase font-bold tracking-wider">Orders ({selectedTrip.orders.length})</p>
                 <div className="max-h-[200px] overflow-y-auto space-y-md pr-md">
                   {selectedTrip.orders.map((order, i) => (
-                    <div key={order.id} className="p-md bg-surface-low rounded-xl border border-border flex justify-between items-start">
+                    <div key={order.id} className="p-md bg-surface-low rounded-xl border border-border flex justify-between items-start transition-all duration-300 hover:shadow-glow hover:border-primary/30">
                       <div className="space-y-1">
                         <p className="text-sm font-bold">Order #{order.id.substring(0, 8)}</p>
                         <p className="text-xs text-text-dim">{order.deliveryAddress}</p>

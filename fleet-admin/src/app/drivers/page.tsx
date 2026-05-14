@@ -223,7 +223,7 @@ export default function DriversPage() {
         />
       </section>
 
-      <section className="card flex justify-between items-center px-xl py-lg gap-xl mb-xl shadow-glow border-primary/10">
+      <section className="card flex justify-between items-center px-xl py-lg gap-xl mb-xl shadow-glow border-primary/10 transition-all duration-300 hover:border-primary/30 hover:shadow-glow-lg">
         <SearchInput
           placeholder="Search by name, email or phone..."
           value={searchQuery}
@@ -366,27 +366,27 @@ export default function DriversPage() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-lg">
-              <div className="flex flex-col gap-md p-lg bg-surface-low border border-border rounded-default">
+              <div className="flex flex-col gap-md p-lg bg-surface-low border border-border rounded-default transition-all duration-300 hover:border-primary/30 hover:-translate-y-0.5 hover:shadow-glow">
                 <span className="text-xs font-bold text-dim uppercase tracking-wider">Phone</span>
                 <div className="flex items-center gap-md">
                   <Phone size={16} className="text-primary-light" />
                   <span className="font-semibold">{viewingDriver.phone}</span>
                 </div>
               </div>
-              <div className="flex flex-col gap-md p-lg bg-surface-low border border-border rounded-default">
+              <div className="flex flex-col gap-md p-lg bg-surface-low border border-border rounded-default transition-all duration-300 hover:border-primary/30 hover:-translate-y-0.5 hover:shadow-glow">
                 <span className="text-xs font-bold text-dim uppercase tracking-wider">Status</span>
                 <Badge variant={viewingDriver.status === 'available' ? 'success' : viewingDriver.status === 'on_trip' ? 'primary' : 'neutral'}>
                   {viewingDriver.status.replace('_', ' ')}
                 </Badge>
               </div>
-              <div className="flex flex-col gap-md p-lg bg-surface-low border border-border rounded-default">
+              <div className="flex flex-col gap-md p-lg bg-surface-low border border-border rounded-default transition-all duration-300 hover:border-primary/30 hover:-translate-y-0.5 hover:shadow-glow">
                 <span className="text-xs font-bold text-dim uppercase tracking-wider">License Class</span>
                 <div className="flex items-center gap-md">
                   <CreditCard size={16} className="text-primary-light" />
                   <span className="font-semibold">{viewingDriver.licenseClass || 'N/A'}</span>
                 </div>
               </div>
-              <div className="flex flex-col gap-md p-lg bg-surface-low border border-border rounded-default">
+              <div className="flex flex-col gap-md p-lg bg-surface-low border border-border rounded-default transition-all duration-300 hover:border-primary/30 hover:-translate-y-0.5 hover:shadow-glow">
                 <span className="text-xs font-bold text-dim uppercase tracking-wider">Expiry Date</span>
                 <div className="flex items-center gap-md">
                   <Calendar size={16} className="text-primary-light" />

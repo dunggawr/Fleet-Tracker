@@ -81,7 +81,7 @@ export function DateRangeFilter({ onRangeChange }: DateRangeFilterProps) {
       </div>
 
       {isOpen && (
-        <div className="absolute top-[calc(100%+8px)] left-0 w-[320px] bg-surface/95 backdrop-blur-xl border border-border rounded-xl shadow-2xl z-[200] p-md animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute top-[calc(100%+8px)] left-0 w-[320px] bg-surface/95 backdrop-blur-xl border border-border rounded-xl shadow-2xl z-200 p-md animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="grid grid-cols-2 gap-2 mb-md">
             {PRESET_RANGES.map((preset) => (
               <div 
