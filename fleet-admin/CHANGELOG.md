@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-05-14] - Profile & Security Refinement
+### Added
+- **Profile Settings**: Implemented modern profile page with read-only email restriction for enhanced security.
+- **Security**: Finalized `ChangePasswordModal` with full-screen overlay and smooth animations.
+- **UX**: Added glassmorphic design and `animate-fade-in` transitions to profile module.
+
 ## [2026-05-14] - UI Refinement
 ### Refactored
 - `DatePicker`: Implemented dynamic viewport-aware positioning.

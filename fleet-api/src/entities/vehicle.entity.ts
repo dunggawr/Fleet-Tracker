@@ -60,7 +60,7 @@ export class Vehicle {
   imageUrl: string;
 
   @Index()
-  @Column({ name: 'device_id', nullable: true, unique: true })
+  @Column({ name: 'device_id', type: 'varchar', nullable: true, unique: true })
   deviceId: string | null;
 
   @Column({

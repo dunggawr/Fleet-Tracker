@@ -49,7 +49,7 @@ export class AuthService {
     const { email, password } = loginDto;
     const user = await this.userRepository.findOne({
       where: { email, isActive: true },
-      select: ['id', 'email', 'passwordHash', 'role'],
+      select: ['id', 'email', 'passwordHash', 'role', 'fullName', 'phone', 'avatarUrl'],
       relations: ['driver'],
     });
 
@@ -66,6 +66,9 @@ export class AuthService {
           id: user.id,
           email: user.email,
           role: user.role,
+          fullName: user.fullName,
+          phone: user.phone,
+          avatarUrl: user.avatarUrl,
           driver: user.driver,
         },
       };
@@ -83,7 +86,7 @@ export class AuthService {
       const userId = payload.sub;
       const user = await this.userRepository.findOne({
         where: { id: userId, isActive: true },
-        select: ['id', 'email', 'role', 'refreshTokenHash'],
+        select: ['id', 'email', 'role', 'refreshTokenHash', 'fullName', 'phone', 'avatarUrl'],
         relations: ['driver'],
       });
 
@@ -106,6 +109,9 @@ export class AuthService {
           id: user.id,
           email: user.email,
           role: user.role,
+          fullName: user.fullName,
+          phone: user.phone,
+          avatarUrl: user.avatarUrl,
           driver: user.driver,
         },
       };
