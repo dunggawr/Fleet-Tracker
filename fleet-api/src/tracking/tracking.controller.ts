@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Query, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Query, UnauthorizedException, Headers } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TrackingService } from './tracking.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -17,13 +17,16 @@ export class TrackingController {
   ) {}
 
   @Post('device')
-  async updateFromDevice(@Body() data: DeviceGpsUpdateDto) {
+  async updateFromDevice(
+    @Body() data: DeviceGpsUpdateDto,
+    @Headers('x-device-api-key') headerApiKey?: string,
+  ) {
     // Security check: Verify API Key
     const configuredApiKey = this.configService.get<string>('DEVICE_API_KEY');
     
-    // Only enforce if an API key is configured in env
-    if (configuredApiKey && data.apiKey !== configuredApiKey) {
-      throw new UnauthorizedException('Invalid Device API Key');
+    // API Key is mandatory and must match
+    if (!configuredApiKey || headerApiKey !== configuredApiKey) {
+      throw new UnauthorizedException('Invalid or missing Device API Key');
     }
 
     const result = await this.trackingService.processDeviceGpsUpdate(data);

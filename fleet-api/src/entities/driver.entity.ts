@@ -27,12 +27,6 @@ export class Driver {
   @Column({ name: 'user_id' })
   userId: string;
 
-  @Column({ name: 'full_name' })
-  fullName: string;
-
-  @Column()
-  phone: string;
-
   @Column({ name: 'license_class', nullable: true })
   licenseClass: string;
 
@@ -45,9 +39,6 @@ export class Driver {
     default: DriverStatus.AVAILABLE,
   })
   status: DriverStatus;
-
-  @Column({ name: 'avatar_url', nullable: true })
-  avatarUrl: string;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

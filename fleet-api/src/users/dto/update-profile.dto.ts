@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEmail, IsPhoneNumber } from 'class-validator';
+import { IsString, IsOptional, IsUrl, IsPhoneNumber } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateProfileDto {
@@ -8,17 +8,12 @@ export class UpdateProfileDto {
   fullName?: string;
 
   @ApiProperty({ required: false })
-  @IsString()
+  @IsPhoneNumber(undefined)
   @IsOptional()
   phone?: string;
 
   @ApiProperty({ required: false })
-  @IsString()
+  @IsUrl({ protocols: ['http', 'https'], require_protocol: true })
   @IsOptional()
   avatarUrl?: string;
-
-  @ApiProperty({ required: false })
-  @IsEmail()
-  @IsOptional()
-  email?: string;
 }

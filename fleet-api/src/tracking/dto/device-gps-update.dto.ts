@@ -32,8 +32,4 @@ export class DeviceGpsUpdateDto {
   @Max(360)
   heading?: number;
 
-  @ApiProperty({ example: 'SECRET_KEY_123', required: false })
-  @IsString()
-  @IsOptional()
-  apiKey?: string;
 }

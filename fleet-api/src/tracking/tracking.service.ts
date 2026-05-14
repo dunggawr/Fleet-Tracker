@@ -120,7 +120,7 @@ export class TrackingService implements OnModuleDestroy {
     // 5. Fetch vehicle details for broadcasting
     const vehicle = await this.vehicleRepository.findOne({
       where: { id: vehicleId },
-      relations: ['driver'],
+      relations: ['driver', 'driver.user'],
     });
 
     return {
@@ -133,7 +133,7 @@ export class TrackingService implements OnModuleDestroy {
       timestamp,
       status: vehicle?.status || 'available',
       licensePlate: vehicle?.plateNumber || `VH-${vehicleId.slice(0, 6)}`,
-      driverName: vehicle?.driver?.fullName || 'Unknown Driver',
+      driverName: vehicle?.driver?.user?.fullName || 'Unknown Driver',
     };
   }
 
@@ -204,7 +204,7 @@ export class TrackingService implements OnModuleDestroy {
     // 1. Find vehicle by deviceId
     const vehicle = await this.vehicleRepository.findOne({
       where: { deviceId },
-      relations: ['driver'],
+      relations: ['driver', 'driver.user'],
     });
 
     if (!vehicle) {
@@ -233,6 +233,23 @@ export class TrackingService implements OnModuleDestroy {
     });
     this.gpsBuffer.push(gpsLocation);
 
+    // 5. Trigger Violation Detection (Async)
+    if (activeTrip) {
+      this.violationDetector
+        .checkViolations({
+          vehicleId: vehicle.id,
+          tripId: activeTrip.id,
+          latitude,
+          longitude,
+          speed,
+          heading,
+          timestamp: new Date().toISOString(),
+        })
+        .catch((err) =>
+          this.logger.error(`Violation check failed: ${err.message}`),
+        );
+    }
+
     // 5. Update Vehicle's last known location
     await this.vehicleRepository
       .createQueryBuilder()
@@ -254,7 +271,7 @@ export class TrackingService implements OnModuleDestroy {
       timestamp: new Date().toISOString(),
       status: vehicle.status,
       licensePlate: vehicle.plateNumber,
-      driverName: vehicle.driver?.fullName || 'Unknown Driver',
+      driverName: vehicle.driver?.user?.fullName || 'Unknown Driver',
     };
   }
 

@@ -25,16 +25,10 @@ export class UsersService {
   async updateProfile(id: string, updateProfileDto: UpdateProfileDto): Promise<User> {
     const user = await this.findOne(id);
 
-    if (updateProfileDto.email && updateProfileDto.email !== user.email) {
-      const existingUser = await this.userRepository.findOne({
-        where: { email: updateProfileDto.email },
-      });
-      if (existingUser) {
-        throw new ConflictException('Email already exists');
-      }
-    }
-
-    Object.assign(user, updateProfileDto);
+    // Note: email is not updatable via profile
+    const { ...updateData } = updateProfileDto;
+    
+    Object.assign(user, updateData);
     return await this.userRepository.save(user);
   }
 }
