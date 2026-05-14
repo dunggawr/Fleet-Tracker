@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useEffect, useRef, useCallback } from 'react';
-import { Map, Marker, NavigationControl, FullscreenControl } from 'react-map-gl/mapbox';
+import { Map, Marker, NavigationControl, FullscreenControl, Source, Layer } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { Truck, Activity } from 'lucide-react';
+import { Truck, Activity, Users } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
@@ -65,6 +66,17 @@ export default function LiveTrackingMap({
   onVehicleSelect,
 }: LiveTrackingMapProps) {
   const mapRef = useRef<any>(null);
+  const [pitch, setPitch] = React.useState(0);
+  const [mapStyle, setMapStyle] = React.useState('mapbox://styles/mapbox/streets-v12');
+  const [showTraffic, setShowTraffic] = React.useState(false);
+
+  const togglePitch = () => setPitch(p => p === 0 ? 60 : 0);
+  const toggleStyle = () => setMapStyle(s => 
+    s.includes('satellite') 
+      ? 'mapbox://styles/mapbox/streets-v12' 
+      : 'mapbox://styles/mapbox/satellite-streets-v12'
+  );
+  const toggleTraffic = () => setShowTraffic(t => !t);
 
   // Auto-center and resize on selected vehicle
   useEffect(() => {
@@ -146,12 +158,38 @@ export default function LiveTrackingMap({
           longitude: center.lng,
           latitude: center.lat,
           zoom: 12,
+          pitch: pitch
         }}
+        pitch={pitch}
         style={{ width: '100%', height: '100%' }}
-        mapStyle="mapbox://styles/mapbox/streets-v12"
+        mapStyle={mapStyle}
       >
         <NavigationControl position="top-right" />
         <FullscreenControl position="top-right" />
+
+        {/* Traffic Layer */}
+        {showTraffic && (
+          <Source id="traffic" type="vector" url="mapbox://mapbox.mapbox-traffic-v1">
+            <Layer
+              id="traffic-layer"
+              type="line"
+              source-layer="traffic"
+              paint={{
+                'line-color': [
+                  'match',
+                  ['get', 'congestion'],
+                  'low', '#22c55e',
+                  'moderate', '#f59e0b',
+                  'heavy', '#ef4444',
+                  'severe', '#7f1d1d',
+                  '#6366f1'
+                ],
+                'line-width': 2,
+                'line-opacity': 0.8
+              }}
+            />
+          </Source>
+        )}
 
         {vehicles.map(vehicle => (
           <React.Fragment key={vehicle.vehicleId}>
@@ -186,6 +224,37 @@ export default function LiveTrackingMap({
           </React.Fragment>
         ))}
       </Map>
+
+      {/* Map Controls */}
+      <div className="absolute bottom-4 right-4 z-10">
+        <div className="flex gap-1.5 p-2 bg-surface/80 backdrop-blur-md rounded-xl border border-white/10 shadow-2xl">
+          <Button 
+            variant={pitch > 0 ? "primary" : "secondary"} 
+            size="sm" 
+            onClick={togglePitch}
+            className="h-8 text-[10px] font-bold px-3"
+          >
+            2D/3D
+          </Button>
+          <Button 
+            variant={mapStyle.includes('satellite') ? "primary" : "secondary"} 
+            size="sm" 
+            onClick={toggleStyle}
+            className="h-8 text-[10px] font-bold px-3"
+          >
+            Satellite
+          </Button>
+          <div className="w-px bg-white/10 my-1.5" />
+          <Button 
+            variant={showTraffic ? "primary" : "secondary"} 
+            size="sm" 
+            onClick={toggleTraffic}
+            className="h-8 text-[10px] font-bold px-3"
+          >
+            Traffic
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
