@@ -44,6 +44,7 @@ export interface Vehicle {
   currentLoadKg: number;
   driverId?: string | null;
   driver?: Driver | null;
+  deviceId?: string | null;
   status: VehicleStatus;
   imageUrl?: string;
   lastKnownLocation?: GeoPoint;

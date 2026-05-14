@@ -47,6 +47,7 @@ const vehicleSchema = z.object({
   status: z.enum(['available', 'delivering', 'maintenance']),
   maxCapacityKg: z.number().min(100, 'Minimum capacity is 100kg'),
   driverId: z.string().uuid().or(z.literal('')).optional().nullable(),
+  deviceId: z.string().optional().nullable(),
 });
 
 type VehicleFormValues = z.infer<typeof vehicleSchema>;
@@ -108,6 +109,7 @@ export default function VehiclesPage() {
       type: 'medium',
       maxCapacityKg: 1000,
       driverId: '',
+      deviceId: '',
     }
   });
 
@@ -126,7 +128,7 @@ export default function VehiclesPage() {
 
   const openCreateModal = () => {
     setSelectedVehicle(null);
-    reset({ plateNumber: '', type: 'medium', status: 'available', maxCapacityKg: 1000, driverId: '' });
+    reset({ plateNumber: '', type: 'medium', status: 'available', maxCapacityKg: 1000, driverId: '', deviceId: '' });
     setIsModalOpen(true);
   };
 
@@ -138,6 +140,7 @@ export default function VehiclesPage() {
       status: vehicle.status,
       maxCapacityKg: vehicle.maxCapacityKg || 1000,
       driverId: vehicle.driverId || '',
+      deviceId: vehicle.deviceId || '',
     });
     setIsModalOpen(true);
   };
@@ -174,6 +177,7 @@ export default function VehiclesPage() {
           plateNumber: data.plateNumber,
           type: data.type,
           maxCapacityKg: data.maxCapacityKg,
+          deviceId: data.deviceId || null,
         };
         await createVehicle(payload);
         
@@ -220,6 +224,7 @@ export default function VehiclesPage() {
       )
     },
     { header: 'Driver', accessor: (v: Vehicle) => v.driver?.fullName || 'Unassigned' },
+    { header: 'Device ID', accessor: (v: Vehicle) => v.deviceId || <span className="text-text-dim italic">No hardware</span> },
     { header: 'Capacity (kg)', accessor: 'maxCapacityKg' as keyof Vehicle },
     {
       header: 'Actions',
@@ -283,6 +288,13 @@ export default function VehiclesPage() {
               type="number"
               {...register('maxCapacityKg', { valueAsNumber: true })}
               error={errors.maxCapacityKg?.message}
+            />
+            <Input 
+              label="Hardware Device ID" 
+              placeholder="e.g. GPS-V1-001" 
+              {...register('deviceId')}
+              error={errors.deviceId?.message}
+              helpText="Identifier for the physical GPS tracking chip."
             />
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium text-text-dim">Vehicle Type</label>

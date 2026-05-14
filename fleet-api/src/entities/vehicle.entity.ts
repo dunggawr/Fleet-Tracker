@@ -59,6 +59,10 @@ export class Vehicle {
   @Column({ name: 'image_url', nullable: true })
   imageUrl: string;
 
+  @Index()
+  @Column({ name: 'device_id', nullable: true, unique: true })
+  deviceId: string | null;
+
   @Column({
     name: 'last_known_location',
     type: 'geography',
