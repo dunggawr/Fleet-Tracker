@@ -116,7 +116,12 @@ export class TrackingService implements OnModuleDestroy {
         );
     }
 
-    // 5. Return processed data for broadcasting
+    // 5. Fetch vehicle details for broadcasting
+    const vehicle = await this.vehicleRepository.findOne({
+      where: { id: vehicleId },
+      relations: ['driver'],
+    });
+
     return {
       vehicleId,
       tripId,
@@ -125,6 +130,9 @@ export class TrackingService implements OnModuleDestroy {
       speed,
       heading,
       timestamp,
+      status: vehicle?.status || 'available',
+      licensePlate: vehicle?.plateNumber || `VH-${vehicleId.slice(0, 6)}`,
+      driverName: vehicle?.driver?.fullName || 'Unknown Driver',
     };
   }
 

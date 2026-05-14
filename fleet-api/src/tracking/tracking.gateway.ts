@@ -186,7 +186,7 @@ export class TrackingGateway
       const result = await this.trackingService.processGpsUpdate(data);
 
       // Broadcast to all admins
-      this.server.to('admin').emit('vehicle:location', result);
+      this.server.to('admin').emit('gps:update', result);
 
       // Also broadcast to the specific trip room if implemented
       this.server.to(`trip:${data.tripId}`).emit('trip:location', result);

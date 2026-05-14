@@ -16,7 +16,7 @@ interface VehiclePosition {
   longitude: number;
   speed: number;
   heading: number;
-  status: 'active' | 'idle' | 'offline';
+  status: 'active' | 'idle' | 'offline' | 'maintenance';
   lastUpdate: string;
   currentTripId?: string;
   ordersCount?: number;
@@ -50,6 +50,13 @@ const STATUS_CONFIG = {
     lightBgClass: 'bg-text-dim/20',
     label: 'Offline'
   },
+  maintenance: {
+    color: 'var(--color-error)',
+    bgClass: 'bg-error',
+    textClass: 'text-error',
+    lightBgClass: 'bg-error/20',
+    label: 'Bảo trì'
+  },
 };
 
 export default function LiveTrackingMap({
@@ -59,17 +66,31 @@ export default function LiveTrackingMap({
 }: LiveTrackingMapProps) {
   const mapRef = useRef<any>(null);
 
-  // Auto-center on selected vehicle
+  // Auto-center and resize on selected vehicle
   useEffect(() => {
-    if (selectedVehicle && mapRef.current) {
-      mapRef.current.flyTo({
-        center: [selectedVehicle.longitude, selectedVehicle.latitude],
-        zoom: 15,
-        duration: 1500,
-        essential: true
-      });
+    if (mapRef.current) {
+      const map = mapRef.current.getMap();
+      
+      // Force resize to fill container growth
+      map.resize();
+
+      if (selectedVehicle) {
+        map.flyTo({
+          center: [selectedVehicle.longitude, selectedVehicle.latitude],
+          zoom: 15,
+          duration: 1500,
+          essential: true
+        });
+      }
     }
   }, [selectedVehicle?.vehicleId]);
+
+  // Resize when list changes
+  useEffect(() => {
+    if (mapRef.current) {
+      mapRef.current.getMap().resize();
+    }
+  }, [vehicles.length]);
   if (!MAPBOX_TOKEN) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center gap-3 bg-background text-text-dim">
