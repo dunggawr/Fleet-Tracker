@@ -1,3 +1,32 @@
+## [2026-05-13] - Driver Status Synchronization & API Hardening
+### Added
+- **Backend (API)**:
+    - **Entity Relations**: Thiết lập quan hệ `@OneToOne` hai chiều giữa `User` và `Driver` entities.
+    - **Auth Service**: Cập nhật `login`, `refreshTokens` và `validateUser` để tự động nạp (eager load) dữ liệu `driver`.
+    - **Payload Expansion**: Trả về đầy đủ đối tượng `driver` trong phản hồi đăng nhập/refresh để đồng bộ trạng thái UI ngay lập tức.
+
+### Fixed
+- **Backend (API)**:
+    - Khắc phục lỗi **500 Internal Server Error** khi truy cập hoặc cập nhật trạng thái tài xế do thiếu mapping quan hệ trong database.
+- **Frontend (Driver App)**:
+    - Xác định và hướng dẫn vị trí nút **Duty Status** (Switch) trong màn hình Profile.
+    - Xử lý vấn đề cache bundle/version mismatch khiến UI mới không hiển thị trên thiết bị.
+
+## [2026-05-13] - Vehicle Management & Driver Assignment Optimization
+### Added
+- **Backend (API)**:
+    - **Safety Checks**: Bổ sung kiểm tra trạng thái trước khi thay đổi/gỡ tài xế. Chặn thao tác nếu xe đang `DELIVERING` hoặc tài xế đang `ON_TRIP`.
+    - **VehiclesModule**: Tích hợp `Driver` entity để hỗ trợ kiểm tra trạng thái tài xế trực tiếp trong `VehiclesService`.
+- **Frontend (Admin Dashboard)**:
+    - **User Feedback**: Tích hợp `sonner` toast để hiển thị thông báo lỗi chi tiết khi vi phạm các ràng buộc nghiệp vụ (ví dụ: "Cannot unassign driver while vehicle is delivering").
+
+### Fixed
+- **Frontend (Admin Dashboard)**:
+    - **UI Interaction**: Khắc phục lỗi lồng Modal (Overlap) khi nhấn "Change Driver" hoặc "Unassign". Sử dụng `stopPropagation()` để ngăn chặn sự kiện mở Modal chi tiết xe.
+    - **Data Persistence**: Sửa lỗi không gỡ được tài xế bằng cách gửi giá trị `null` (thay vì `undefined`) cho `driverId`.
+- **Type Safety**:
+    - Đồng bộ hóa kiểu dữ liệu `nullable` cho `driver` và `driverId` trên cả Backend (TypeORM Entity) và Frontend (TypeScript Interface), đảm bảo quá trình build thành công 100%.
+
 ## [2026-05-13] - Socket Connection Stabilization & Robust Authentication
 ### Fixed
 - **Core (Infrastructure)**:

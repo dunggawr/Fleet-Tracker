@@ -16,7 +16,8 @@ import {
   TrendingUp,
   Clock,
   ExternalLink,
-  ChevronRight
+  ChevronRight,
+  Truck
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { 
@@ -39,6 +40,7 @@ import { DataTable, Column } from '@/components/ui/DataTable';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ReportChartWrapper } from '@/app/reports/components/ReportChartWrapper';
 import { Trip, Alert } from '@/types';
+import { Modal } from '@/components/ui/Modal';
 
 // Mock performance trend data
 const performanceData = [
@@ -60,6 +62,8 @@ export default function DriverKpiDetailPage() {
   const { data: kpi, isLoading: kpiLoading } = useDriverKpi(id);
   const { alerts, isLoading: alertsLoading } = useAlerts({ driverId: id });
   const { data: trips, isLoading: tripsLoading } = useTrips({ driverId: id });
+
+  const [selectedTrip, setSelectedTrip] = React.useState<Trip | null>(null);
 
   const isLoading = driverLoading || kpiLoading || alertsLoading || tripsLoading;
 
@@ -113,8 +117,13 @@ export default function DriverKpiDetailPage() {
     },
     {
       header: 'Actions',
-      accessor: () => (
-        <Button variant="ghost" size="sm" icon={<ExternalLink size={14} />}>
+      accessor: (trip) => (
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          icon={<ExternalLink size={14} />}
+          onClick={() => setSelectedTrip(trip)}
+        >
           Details
         </Button>
       )
@@ -326,6 +335,83 @@ export default function DriverKpiDetailPage() {
           isLoading={tripsLoading}
         />
       </section>
+
+      {/* Trip Details Modal */}
+      <Modal
+        isOpen={Boolean(selectedTrip)}
+        onClose={() => setSelectedTrip(null)}
+        title="Trip Details"
+      >
+        {selectedTrip && (
+          <div className="flex flex-col gap-xl">
+            <div className="flex justify-between items-center">
+              <Badge variant={
+                selectedTrip.status === 'completed' ? 'success' : 
+                selectedTrip.status === 'in_progress' ? 'primary' : 'warning'
+              }>
+                {selectedTrip.status.toUpperCase()}
+              </Badge>
+              <span className="font-mono text-xs text-text-dim">ID: {selectedTrip.id}</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-xl">
+              <div className="space-y-1">
+                <p className="text-xs text-text-dim uppercase font-bold tracking-wider">Vehicle</p>
+                <p className="font-semibold flex items-center gap-md">
+                  <Truck size={16} className="text-primary" />
+                  {selectedTrip.vehicle?.plateNumber || 'N/A'}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-text-dim uppercase font-bold tracking-wider">Distance</p>
+                <p className="font-semibold flex items-center gap-md">
+                  <Navigation size={16} className="text-primary" />
+                  {selectedTrip.totalDistanceKm || 0} km
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs text-text-dim uppercase font-bold tracking-wider">Timeline</p>
+              <div className="p-md bg-surface-low rounded-xl border border-border space-y-md">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-text-dim">Created At</span>
+                  <span className="text-sm font-medium">{format(new Date(selectedTrip.createdAt), 'MMM dd, HH:mm')}</span>
+                </div>
+                {selectedTrip.startedAt && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-text-dim">Started At</span>
+                    <span className="text-sm font-medium">{format(new Date(selectedTrip.startedAt), 'MMM dd, HH:mm')}</span>
+                  </div>
+                )}
+                {selectedTrip.completedAt && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-text-dim">Completed At</span>
+                    <span className="text-sm font-medium">{format(new Date(selectedTrip.completedAt), 'MMM dd, HH:mm')}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {selectedTrip.orders && selectedTrip.orders.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs text-text-dim uppercase font-bold tracking-wider">Orders ({selectedTrip.orders.length})</p>
+                <div className="max-h-[200px] overflow-y-auto space-y-md pr-md">
+                  {selectedTrip.orders.map((order, i) => (
+                    <div key={order.id} className="p-md bg-surface-low rounded-xl border border-border flex justify-between items-start">
+                      <div className="space-y-1">
+                        <p className="text-sm font-bold">Order #{order.id.substring(0, 8)}</p>
+                        <p className="text-xs text-text-dim">{order.deliveryAddress}</p>
+                      </div>
+                      <Badge variant="neutral">{order.status}</Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

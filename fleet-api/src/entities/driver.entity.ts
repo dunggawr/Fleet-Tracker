@@ -20,7 +20,7 @@ export class Driver {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @OneToOne(() => User, { cascade: true, onDelete: 'CASCADE' })
+  @OneToOne(() => User, (user) => user.driver, { cascade: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: User;
 
@@ -42,7 +42,7 @@ export class Driver {
   @Column({
     type: 'enum',
     enum: DriverStatus,
-    default: DriverStatus.OFF_DUTY,
+    default: DriverStatus.AVAILABLE,
   })
   status: DriverStatus;
 

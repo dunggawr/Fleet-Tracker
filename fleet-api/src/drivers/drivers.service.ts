@@ -164,4 +164,28 @@ export class DriversService {
     // Placeholder logic for Phase 03
     return [];
   }
+
+  async findByUserId(userId: string): Promise<Driver> {
+    const driver = await this.driversRepository.findOne({
+      where: { userId },
+    });
+
+    if (!driver) {
+      throw new NotFoundException(`Driver for user ID ${userId} not found`);
+    }
+
+    return driver;
+  }
+
+  async updateStatusByUserId(userId: string, status: DriverStatus): Promise<Driver> {
+    const driver = await this.findByUserId(userId);
+
+    // Prevent manual status change if currently on a trip
+    if (driver.status === DriverStatus.ON_TRIP) {
+      throw new ConflictException('Cannot change status while on a trip');
+    }
+
+    driver.status = status;
+    return this.driversRepository.save(driver);
+  }
 }

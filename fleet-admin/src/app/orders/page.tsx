@@ -219,9 +219,11 @@ export default function OrdersPage() {
         <Dropdown align="right" trigger={
           <Button variant="ghost" size="sm" icon={<MoreVertical size={16} />} />
         }>
-          <button className="dropdown-item" onClick={() => router.push(`/dispatch?orderId=${o.id}`)}>
-            <TruckIcon size={16} /> Dispatch Order
-          </button>
+          {o.status === 'pending' && (
+            <button className="dropdown-item" onClick={() => router.push(`/dispatch?orderId=${o.id}`)}>
+              <TruckIcon size={16} /> Dispatch Order
+            </button>
+          )}
           <button className="dropdown-item" onClick={() => setViewingOrder(o)}>
             <Eye size={16} /> View Details
           </button>
