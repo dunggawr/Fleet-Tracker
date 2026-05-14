@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-05-14]
+### Fixed
+- **Dispatch UI**: Resolved search bar overlap issue in `DispatchOrdersSidebar` and `DispatchVehiclesSidebar` by moving search inputs and status banners out of the scrollable container.
+- **Dispatch Logic**: Fixed the "Available Fleet" synchronization bug where assigned vehicles remained in the list. Added React Query cache invalidation (`vehicles`) on successful order assignment.
+
 ## [2026-05-12]
 ### Fixed
 - **UI Styling**: Resolved critical layout issues where padding and margins were not being applied in Tailwind CSS v4.

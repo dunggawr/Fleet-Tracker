@@ -52,6 +52,7 @@ export function useOrders() {
       api.post<Order>(`/dispatch/assign`, { orderId, vehicleId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
       toast.success('Order assigned to vehicle');
     },
     onError: (err: any) => {
