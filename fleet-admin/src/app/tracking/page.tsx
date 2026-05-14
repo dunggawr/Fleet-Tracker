@@ -180,7 +180,7 @@ export default function LiveTrackingPage() {
             vehicleId: v.id,
             driverId: v.driverId || "",
             licensePlate: v.plateNumber || v.licensePlate,
-            driverName: driver ? driver.fullName : "Chưa phân công",
+            driverName: driver ? (driver.user?.fullName || 'Unknown') : "Chưa phân công",
             latitude:
               v.lastKnownLocation?.coordinates?.[1] ||
               10.762622 + (Math.random() - 0.5) * 0.05,

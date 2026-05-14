@@ -146,11 +146,11 @@ export default function DriverKpiDetailPage() {
           <div className="flex items-center gap-xl">
             <div className="relative">
               <div className="w-20 h-20 rounded-2xl bg-surface-high border border-border flex items-center justify-center overflow-hidden shadow-glow/10">
-                {driver.avatarUrl ? (
-                  <img src={driver.avatarUrl} alt={driver.fullName} className="w-full h-full object-cover" />
+                {driver.user?.avatarUrl ? (
+                  <img src={driver.user?.avatarUrl} alt={driver.user?.fullName} className="w-full h-full object-cover" />
                 ) : (
                   <div className="text-2xl font-bold text-primary">
-                    {driver.fullName.charAt(0)}
+                    {driver.user?.fullName?.charAt(0) || '?'}
                   </div>
                 )}
               </div>
@@ -160,7 +160,7 @@ export default function DriverKpiDetailPage() {
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-md">
-                <h1 className="text-3xl font-bold tracking-tight">{driver.fullName}</h1>
+                <h1 className="text-3xl font-bold tracking-tight">{driver.user?.fullName}</h1>
                 <Badge variant={driver.status === 'on_trip' ? 'success' : driver.status === 'available' ? 'primary' : 'neutral'}>
                   {driver.status.replace('_', ' ')}
                 </Badge>
@@ -176,7 +176,7 @@ export default function DriverKpiDetailPage() {
                 </span>
                 <span className="flex items-center gap-md">
                   <Phone size={14} />
-                  {driver.phone}
+                  {driver.user?.phone}
                 </span>
               </div>
             </div>

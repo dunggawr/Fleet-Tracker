@@ -63,7 +63,7 @@ export default function DispatchPage() {
 
   const filteredVehicles = React.useMemo(() => {
     return availableVehicles.filter((vehicle: Vehicle) =>
-      [vehicle.id, vehicle.plateNumber, vehicle.type, vehicle.driver?.fullName]
+      [vehicle.id, vehicle.plateNumber, vehicle.type, vehicle.driver?.user?.fullName]
         .join(' ')
         .toLowerCase()
         .includes(vehicleSearchQuery.toLowerCase()),

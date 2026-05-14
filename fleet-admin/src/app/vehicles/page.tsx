@@ -344,7 +344,7 @@ export default function VehiclesPage() {
                     options={[
                       { label: 'Unassigned', value: '', icon: <UserPlus size={14} /> },
                       ...sortedDrivers.map(driver => ({
-                        label: `${driver.fullName} (${driver.status.replace('_', ' ')})`,
+                        label: `${driver.user?.fullName || 'Unknown'} (${driver.status.replace('_', ' ')})`,
                         value: driver.id,
                         icon: <UserPlus size={14} className={driver.status === 'available' ? 'text-success' : 'text-text-dim'} />
                       }))
@@ -380,7 +380,7 @@ export default function VehiclesPage() {
               options={[
                 { label: 'Unassigned', value: '', icon: <UserPlus size={14} /> },
                 ...sortedDrivers.map(driver => ({
-                  label: `${driver.fullName} (${driver.status.replace('_', ' ')})`,
+                  label: `${driver.user?.fullName || 'Unknown'} (${driver.status.replace('_', ' ')})`,
                   value: driver.id,
                   icon: <UserPlus size={14} className={driver.status === 'available' ? 'text-success' : 'text-text-dim'} />
                 }))

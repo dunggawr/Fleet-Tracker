@@ -39,7 +39,11 @@ import { useRouter } from 'next/navigation';
 
 // For typing the backend response which includes the joined user
 interface DriverWithUser extends Driver {
-  user?: { email: string };
+  user?: { 
+    email: string;
+    fullName?: string;
+    phone?: string;
+  };
 }
 
 const driverSchema = z.object({
@@ -76,10 +80,10 @@ export default function DriversPage() {
   React.useEffect(() => {
     if (editingDriver) {
       reset({
-        fullName: editingDriver.fullName,
+        fullName: editingDriver.user?.fullName || '',
         email: editingDriver.user?.email || '',
         password: '', // Password is never populated
-        phone: editingDriver.phone,
+        phone: editingDriver.user?.phone || '',
         licenseClass: editingDriver.licenseClass || '',
         licenseExpiry: editingDriver.licenseExpiry ? new Date(editingDriver.licenseExpiry).toISOString().split('T')[0] : '',
       });
@@ -88,9 +92,12 @@ export default function DriversPage() {
   }, [editingDriver, reset]);
 
   const filteredDrivers = (drivers as DriverWithUser[]).filter(d => {
-    const matchesSearch = d.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const fullName = d.user?.fullName || '';
+    const phone = d.user?.phone || '';
+    
+    const matchesSearch = fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (d.user?.email || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      d.phone.includes(searchQuery);
+      phone.includes(searchQuery);
     
     const matchesStatus = statusFilter === 'all' || d.status === statusFilter;
     
@@ -123,13 +130,13 @@ export default function DriversPage() {
             <UserIcon size={16} />
           </div>
           <div className="flex flex-col">
-            <span className="font-semibold text-text">{d.fullName}</span>
+            <span className="font-semibold text-text">{d.user?.fullName || 'N/A'}</span>
             <span className="text-xs text-dim">{d.user?.email || 'N/A'}</span>
           </div>
         </div>
       )
     },
-    { header: 'Phone', accessor: 'phone' as keyof DriverWithUser },
+    { header: 'Phone', accessor: (d: DriverWithUser) => d.user?.phone || 'N/A' },
     { 
       header: 'License', 
       accessor: (d: DriverWithUser) => (
@@ -155,7 +162,7 @@ export default function DriversPage() {
             variant="ghost" 
             size="sm" 
             icon={<Edit2 size={16} />} 
-            aria-label={`Edit ${d.fullName}`}
+            aria-label={`Edit ${d.user?.fullName || 'driver'}`}
             onClick={(e) => {
               e.stopPropagation();
               setEditingDriver(d);
@@ -166,7 +173,7 @@ export default function DriversPage() {
             size="sm" 
             icon={<Trash2 size={16} />} 
             className="text-danger hover:bg-danger/10" 
-            aria-label={`Delete ${d.fullName}`}
+            aria-label={`Delete ${d.user?.fullName || 'driver'}`}
             onClick={(e) => {
               e.stopPropagation();
               setDriverToDelete(d);
@@ -361,7 +368,7 @@ export default function DriversPage() {
                 <UserIcon size={28} />
               </div>
               <div>
-                <h3 className="text-xl font-bold">{viewingDriver.fullName}</h3>
+                <h3 className="text-xl font-bold">{viewingDriver.user?.fullName || 'N/A'}</h3>
                 <p className="text-dim">{viewingDriver.user?.email}</p>
               </div>
             </div>
@@ -370,7 +377,7 @@ export default function DriversPage() {
                 <span className="text-xs font-bold text-dim uppercase tracking-wider">Phone</span>
                 <div className="flex items-center gap-md">
                   <Phone size={16} className="text-primary-light" />
-                  <span className="font-semibold">{viewingDriver.phone}</span>
+                  <span className="font-semibold">{viewingDriver.user?.phone || 'N/A'}</span>
                 </div>
               </div>
               <div className="flex flex-col gap-md p-lg bg-surface-low border border-border rounded-default transition-all duration-300 hover:border-primary/30 hover:-translate-y-0.5 hover:shadow-glow">
@@ -401,7 +408,7 @@ export default function DriversPage() {
       <ConfirmDialog
         open={Boolean(driverToDelete)}
         title="Delete driver"
-        description={`Are you sure you want to delete ${driverToDelete?.fullName}? This action cannot be undone.`}
+        description={`Are you sure you want to delete ${driverToDelete?.user?.fullName || 'this driver'}? This action cannot be undone.`}
         confirmLabel="Delete"
         confirmVariant="danger"
         isLoading={isDeleting}

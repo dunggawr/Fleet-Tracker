@@ -80,7 +80,7 @@ export function DispatchVehiclesSidebar({
         {/* Tài xế */}
         <div className="flex items-center gap-1.5 text-xs text-text-dim mt-1.5">
           <Users size={13} className="text-text-muted shrink-0" />
-          <span>{vehicle.driver?.fullName || 'Chưa gán tài xế'}</span>
+          <span>{vehicle.driver?.user?.fullName || 'Chưa gán tài xế'}</span>
           {!licenseOk && (
             <span className="flex items-center gap-1 text-[11px] text-danger font-semibold ml-auto">
               <AlertTriangle size={12} /> Bằng lái hết hạn
