@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Check } from 'lucide-react';
 
 interface Option {
@@ -16,6 +17,7 @@ interface SelectProps {
   placeholder?: string;
   className?: string;
   label?: string;
+  align?: 'left' | 'right';
 }
 
 export function Select({ 
@@ -24,23 +26,90 @@ export function Select({
   onChange, 
   placeholder = 'Select...', 
   className = '',
-  label
+  label,
+  align = 'left'
 }: SelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [dropdownStyles, setDropdownStyles] = useState<React.CSSProperties>({});
 
   const selectedOption = options.find(opt => opt.value === value);
 
   useEffect(() => {
+    if (isOpen && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const scrollY = window.scrollY;
+      const scrollX = window.scrollX;
+
+      const styles: React.CSSProperties = {
+        position: 'absolute',
+        top: `${rect.bottom + scrollY + 8}px`,
+        width: `${Math.max(rect.width, 200)}px`,
+        zIndex: 9999,
+      };
+
+      if (align === 'left') {
+        styles.left = `${rect.left + scrollX}px`;
+      } else {
+        styles.right = `${window.innerWidth - (rect.right + scrollX)}px`;
+      }
+
+      setDropdownStyles(styles);
+    }
+  }, [isOpen, align]);
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (
+        containerRef.current && !containerRef.current.contains(event.target as Node) &&
+        dropdownRef.current && !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [isOpen]);
+
+  const dropdown = isOpen && (
+    <div 
+      ref={dropdownRef}
+      style={dropdownStyles}
+      className="bg-surface/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200 overflow-hidden ring-1 ring-black/5"
+    >
+      <div className="p-1.5 flex flex-col gap-1 max-h-[300px] overflow-y-auto custom-scrollbar">
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => {
+              onChange(option.value);
+              setIsOpen(false);
+            }}
+            className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-sm transition-all duration-150 ${
+              value === option.value 
+                ? 'bg-primary text-white font-semibold shadow-md shadow-primary/20' 
+                : 'text-text-dim hover:text-text hover:bg-white/5'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              {option.icon && (
+                <span className={value === option.value ? 'text-white' : 'text-primary-light/70'}>
+                  {option.icon}
+                </span>
+              )}
+              <span>{option.label}</span>
+            </div>
+            {value === option.value && <Check size={14} className="text-white" />}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div className={`flex flex-col gap-1.5 ${className}`} ref={containerRef}>
@@ -66,37 +135,7 @@ export function Select({
           />
         </button>
 
-        {isOpen && (
-          <div className="absolute top-[calc(100%+8px)] left-0 w-full min-w-[200px] bg-surface/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] z-50 animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200 overflow-hidden ring-1 ring-black/5">
-            <div className="p-1.5 flex flex-col gap-1 max-h-[300px] overflow-y-auto custom-scrollbar">
-              {options.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => {
-                    onChange(option.value);
-                    setIsOpen(false);
-                  }}
-                  className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-sm transition-all duration-150 ${
-                    value === option.value 
-                      ? 'bg-primary text-white font-semibold shadow-md shadow-primary/20' 
-                      : 'text-text-dim hover:text-text hover:bg-white/5'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    {option.icon && (
-                      <span className={value === option.value ? 'text-white' : 'text-primary-light/70'}>
-                        {option.icon}
-                      </span>
-                    )}
-                    <span>{option.label}</span>
-                  </div>
-                  {value === option.value && <Check size={14} className="text-white" />}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+        {typeof document !== 'undefined' && createPortal(dropdown, document.body)}
       </div>
     </div>
   );

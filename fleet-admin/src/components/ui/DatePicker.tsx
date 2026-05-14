@@ -350,7 +350,7 @@ export function DatePicker({
               minWidth: 320,
               transform: coords.placement === 'top' ? 'translateY(-100%)' : 'none'
             }}
-            className={`bg-surface/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] z-[9999] animate-in fade-in zoom-in-95 duration-200 overflow-hidden ring-1 ring-black/5 ${
+            className={`bg-surface/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] z-9999 animate-in fade-in zoom-in-95 duration-200 overflow-hidden ring-1 ring-black/5 ${
               coords.placement === 'top' ? 'slide-in-from-bottom-2' : 'slide-in-from-top-2'
             }`}
           >
