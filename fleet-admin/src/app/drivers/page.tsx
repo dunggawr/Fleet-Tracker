@@ -28,6 +28,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { StatCard } from '@/components/ui/StatCard';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -327,10 +328,10 @@ export default function DriversPage() {
               value={watch('licenseClass')}
               onChange={(val) => setValue('licenseClass', val)}
             />
-            <Input 
+            <DatePicker 
               label="License Expiry" 
-              type="date"
-              {...register('licenseExpiry')}
+              value={watch('licenseExpiry')}
+              onChange={(val) => setValue('licenseExpiry', val)}
               error={errors.licenseExpiry?.message}
             />
           </div>

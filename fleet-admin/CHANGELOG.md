@@ -2,7 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2026-05-14]
+## [2026-05-14] - UI Refinement
+### Refactored
+- `DatePicker`: Implemented dynamic viewport-aware positioning.
+- `DatePicker`: Added horizontal overflow protection and automatic vertical flipping (above/below trigger).
+- `DatePicker`: Fixed state synchronization bugs and added window resize/scroll listeners for stable portal placement.
+
+## [2026-05-14] - Maps & Dispatch
 ### Fixed
 - **Dispatch UI**: Resolved search bar overlap issue in `DispatchOrdersSidebar` and `DispatchVehiclesSidebar` by moving search inputs and status banners out of the scrollable container.
 - **Dispatch Logic**: Fixed the "Available Fleet" synchronization bug where assigned vehicles remained in the list. Added React Query cache invalidation (`vehicles`) on successful order assignment.
