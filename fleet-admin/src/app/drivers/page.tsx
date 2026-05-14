@@ -11,7 +11,12 @@ import {
   Star,
   Mail,
   CreditCard,
-  Calendar
+  Calendar,
+  Activity,
+  CheckCircle,
+  Navigation,
+  CloudOff,
+  Briefcase
 } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
 import { Badge } from '@/components/ui/Badge';
@@ -22,6 +27,7 @@ import { Modal } from '@/components/ui/Modal';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { StatCard } from '@/components/ui/StatCard';
 import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -56,7 +62,7 @@ export default function DriversPage() {
   const [driverToDelete, setDriverToDelete] = React.useState<DriverWithUser | null>(null);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
 
-  const { register, handleSubmit, reset, formState: { errors }, setValue } = useForm<DriverFormValues>({
+  const { register, handleSubmit, reset, formState: { errors }, setValue, watch } = useForm<DriverFormValues>({
     resolver: zodResolver(driverSchema),
   });
   const [mounted, setMounted] = React.useState(false);
@@ -225,17 +231,17 @@ export default function DriversPage() {
         />
         <div className="flex items-center gap-lg">
           <div className="flex items-center gap-md">
-            <Filter size={16} className="text-dim" />
-            <select 
-              className="bg-surface-low border border-border rounded-default text-text px-lg py-md font-medium text-sm outline-none cursor-pointer transition-all focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm" 
-              value={statusFilter} 
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="all">All Status</option>
-              <option value="available">Available</option>
-              <option value="on_trip">On Trip</option>
-              <option value="offline">Offline</option>
-            </select>
+            <Select
+              options={[
+                { label: 'All Status', value: 'all', icon: <Activity size={14} /> },
+                { label: 'Available', value: 'available', icon: <CheckCircle size={14} className="text-success" /> },
+                { label: 'On Trip', value: 'on_trip', icon: <Navigation size={14} className="text-primary" /> },
+                { label: 'Offline', value: 'offline', icon: <CloudOff size={14} className="text-dim" /> },
+              ]}
+              value={statusFilter}
+              onChange={setStatusFilter}
+              className="min-w-[150px]"
+            />
           </div>
           <div className="w-px h-8 bg-border" />
           <span className="text-xs text-dim font-medium">Total <b className="text-text">{filteredDrivers.length}</b> drivers</span>
@@ -309,11 +315,17 @@ export default function DriversPage() {
               {...register('phone')}
               error={errors.phone?.message}
             />
-            <Input 
+            <Select 
               label="License Class" 
-              placeholder="e.g. B2, C, D" 
-              {...register('licenseClass')}
-              error={errors.licenseClass?.message}
+              options={[
+                { label: 'Class B2', value: 'B2', icon: <CreditCard size={14} /> },
+                { label: 'Class C', value: 'C', icon: <CreditCard size={14} /> },
+                { label: 'Class D', value: 'D', icon: <CreditCard size={14} /> },
+                { label: 'Class E', value: 'E', icon: <CreditCard size={14} /> },
+                { label: 'Class F', value: 'F', icon: <CreditCard size={14} /> },
+              ]}
+              value={watch('licenseClass')}
+              onChange={(val) => setValue('licenseClass', val)}
             />
             <Input 
               label="License Expiry" 

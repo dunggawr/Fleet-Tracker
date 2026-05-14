@@ -1,7 +1,14 @@
-## [2026-05-14] - Tracking UI Refinement & Map Optimization
+## [2026-05-14] - UI Standardization & Premium Components
 ### Added
 - **Frontend (Admin Dashboard)**:
+    - **Premium Select Component**: Implemented a custom, glassmorphic dropdown component with smooth animations (`framer-motion` style feel), icon support, and improved UX focus states.
+    - **UI Consistency**: Standardized filter bars across `Vehicles`, `Orders`, and `Drivers` pages using the new `Select` component.
+    - **Iconography**: Integrated `lucide-react` icons for status and type indicators in dropdown menus.
+
+### Added (Earlier today)
+- **Frontend (Admin Dashboard)**:
     - **Enhanced Tracking UI**: Refined vehicle cards with modern glassmorphism design and real-time "ping" status animations for active transport.
+
     - **Responsive Map Control**: Optimized map container height (3/4 h-screen) and implemented automatic `map.resize()` on selection events to ensure visual stability.
 - **Backend (API)**:
     - **Operational State Mapping**: Synchronized `statusMap` to include `transporting`, `off_duty`, and `completed` states, improving tracking accuracy.
