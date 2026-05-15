@@ -115,14 +115,17 @@ export default function VehiclesPage() {
 
   const sortedDrivers = React.useMemo(() => {
     return [...drivers].sort((left, right) => {
+      const leftName = left.fullName || '';
+      const rightName = right.fullName || '';
+      
       if (left.status === right.status) {
-        return left.fullName.localeCompare(right.fullName);
+        return leftName.localeCompare(rightName);
       }
 
       if (left.status === 'available') return -1;
       if (right.status === 'available') return 1;
 
-      return left.fullName.localeCompare(right.fullName);
+      return leftName.localeCompare(rightName);
     });
   }, [drivers]);
 

@@ -88,9 +88,13 @@ export default function DriversPage() {
   }, [editingDriver, reset]);
 
   const filteredDrivers = (drivers as DriverWithUser[]).filter(d => {
-    const matchesSearch = d.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (d.user?.email || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      d.phone.includes(searchQuery);
+    const fullName = d.fullName || '';
+    const email = d.user?.email || '';
+    const phone = d.phone || '';
+
+    const matchesSearch = fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      phone.includes(searchQuery);
     
     const matchesStatus = statusFilter === 'all' || d.status === statusFilter;
     
