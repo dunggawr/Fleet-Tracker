@@ -35,7 +35,6 @@ export function DriverTable({
         </div>
       )
     },
-    { header: 'Phone', accessor: 'phone' as keyof DriverWithUser },
     { 
       header: 'License', 
       accessor: (d: DriverWithUser) => (

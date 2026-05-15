@@ -57,7 +57,14 @@ export class VehiclesService {
       order: { createdAt: 'DESC' },
       take: limit,
       skip: skip,
-      relations: ['driver'],
+      relations: ['driver', 'driver.user'],
+    });
+
+    // Map fullName to driver for convenience
+    data.forEach((vehicle) => {
+      if (vehicle.driver && vehicle.driver.user) {
+        (vehicle.driver as any).fullName = vehicle.driver.user.fullName;
+      }
     });
 
     return {
@@ -72,11 +79,17 @@ export class VehiclesService {
   async findOne(id: string): Promise<Vehicle> {
     const vehicle = await this.vehicleRepository.findOne({
       where: { id },
-      relations: ['driver'],
+      relations: ['driver', 'driver.user'],
     });
+
     if (!vehicle) {
       throw new NotFoundException(`Vehicle with ID ${id} not found`);
     }
+
+    if (vehicle.driver && vehicle.driver.user) {
+      (vehicle.driver as any).fullName = vehicle.driver.user.fullName;
+    }
+
     return vehicle;
   }
 
