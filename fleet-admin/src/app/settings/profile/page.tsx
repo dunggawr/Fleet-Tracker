@@ -58,6 +58,12 @@ export default function ProfilePage() {
     }
   };
 
+  const isDirty = user && (
+    formData.fullName !== (user.fullName || '') ||
+    formData.phone !== (user.phone || '') ||
+    formData.avatarUrl !== (user.avatarUrl || '')
+  );
+
   return (
     <>
       <div className="max-w-[1000px] mx-auto py-xl px-lg animate-fade-in">
@@ -88,7 +94,8 @@ export default function ProfilePage() {
             <Button 
               onClick={handleSave} 
               isLoading={isSaving}
-              className="px-xl py-lg rounded-default shadow-glow-primary"
+              disabled={!isDirty || isSaving}
+              className="px-xl py-lg rounded-default shadow-glow-primary disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed cursor-pointer"
             >
               Save Changes
             </Button>

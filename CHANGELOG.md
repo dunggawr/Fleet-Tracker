@@ -6,12 +6,15 @@
     - **Component Modularization**: Extracted UI elements into local `components/` subfolders within each module directory (e.g., `VehicleDispatchCard`, `OrderTable`, `DriverFilters`).
     - **Type Standardization**: Unified coordinate naming conventions across the project, standardizing on `{ lat, lng }` to prevent runtime and build-time errors.
     - **Build Stability**: Resolved all TypeScript errors and ensured a 100% successful production build (`next build`).
+    - **Profile Page**: Implemented dirty checking to disable the "Save Changes" button when no modifications are detected.
 
 ### Added
 - **Frontend (Admin Dashboard)**:
     - **useTracking Hook**: Manages WebSocket connections and real-time vehicle movement logic.
     - **useDispatchLogic Hook**: Handles complex order clustering, vehicle filtering, and assignment states.
     - **New Components**: Created over 30 new modular components to replace large, monolithic page files.
+- **Backend (API)**:
+    - **Data Mapping**: Included `fullName` as a top-level field in `Vehicle` and `Driver` responses by mapping from the related `User` entity.
 
 ## [2026-05-14] - UI Standardization & Premium Components
 ### Added

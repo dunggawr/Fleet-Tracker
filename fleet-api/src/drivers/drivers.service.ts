@@ -81,6 +81,13 @@ export class DriversService {
 
     const [data, total] = await query.getManyAndCount();
 
+    // Map fullName for convenience
+    data.forEach((driver) => {
+      if (driver.user) {
+        (driver as any).fullName = driver.user.fullName;
+      }
+    });
+
     return {
       data,
       total,
@@ -98,6 +105,10 @@ export class DriversService {
 
     if (!driver) {
       throw new NotFoundException(`Driver with ID ${id} not found`);
+    }
+
+    if (driver.user) {
+      (driver as any).fullName = driver.user.fullName;
     }
 
     return driver;
