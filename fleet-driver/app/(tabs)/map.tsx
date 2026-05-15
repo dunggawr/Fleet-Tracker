@@ -1,7 +1,8 @@
 import React from 'react';
 import { 
   View, 
-  StatusBar
+  StatusBar,
+  StyleSheet
 } from 'react-native';
 import { MapComponent, MarkerComponent, PolylineComponent, PROVIDER_GOOGLE } from '../../components/map/MapComponents';
 import { TripStatus } from '../../store/useTripStore';
@@ -39,6 +40,7 @@ export default function ActiveTripMap() {
         ref={mapRef}
         provider={PROVIDER_GOOGLE}
         mapType={mapType}
+        style={StyleSheet.absoluteFillObject}
         initialRegion={{
           latitude: location?.coords.latitude || 10.762622,
           longitude: location?.coords.longitude || 106.660172,
@@ -64,26 +66,25 @@ export default function ActiveTripMap() {
               longitude: location.coords.longitude,
             }}
             title="Your Location"
-            isTruck={true}
             rotation={location.coords.heading || 0}
           />
         )}
 
         {/* Order Markers */}
-        {activeTrip.orders.map((order) => (
+        {activeTrip.orders.map((order: any) => (
           <React.Fragment key={order.id}>
-            <MarkerComponent
-              coordinate={order.pickupLocation}
-              title={`Pickup: ${order.id.substring(0, 8)}`}
-              type="pickup"
-              status={order.status}
-            />
-            <MarkerComponent
-              coordinate={order.deliveryLocation}
-              title={`Delivery: ${order.id.substring(0, 8)}`}
-              type="delivery"
-              status={order.status}
-            />
+            {order.pickupLocation && (
+              <MarkerComponent
+                coordinate={order.pickupLocation}
+                title={`Pickup: ${order.id.substring(0, 8)}`}
+              />
+            )}
+            {order.deliveryLocation && (
+              <MarkerComponent
+                coordinate={order.deliveryLocation}
+                title={`Delivery: ${order.id.substring(0, 8)}`}
+              />
+            )}
           </React.Fragment>
         ))}
       </MapComponent>
