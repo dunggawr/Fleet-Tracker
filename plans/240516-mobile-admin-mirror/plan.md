@@ -14,8 +14,8 @@ Mirror `fleet-admin` (web) functionalities into `fleet-driver` (mobile) for Admi
 
 | Phase | Name | Status | Progress |
 |-------|------|--------|----------|
-| 01 | Multi-Role Navigation Setup | ⬜ Pending | 0% |
-| 02 | Admin Dashboard & Stats | ⬜ Pending | 0% |
+| 01 | Multi-Role Navigation Setup | ✅ Completed | 100% |
+| 02 | Admin Dashboard & Stats | ✅ Completed | 100% |
 | 03 | Fleet Tracking (Live Map) | ⬜ Pending | 0% |
 | 04 | Order Management (CRUD) | ⬜ Pending | 0% |
 | 05 | Driver & Vehicle Management | ⬜ Pending | 0% |
