@@ -1,3 +1,12 @@
+## [2026-05-16] - Mobile Admin Mirror Phase 04 (Order Management)
+### Added
+- **Mobile Admin Mirror Phase 04 (Order Management CRUD)**:
+    - **Order List Screen**: Developed `admin-orders.tsx` featuring real-time status filtering (Pending, Ongoing, Completed, Cancelled), search bar, and interactive order cards.
+    - **Create Order Workflow**: Implemented `app/admin/orders/create.tsx` for manual order entry.
+    - **MapPicker Component**: Built a reusable geospatial picker using a center-pin interaction pattern for high-precision pickup/delivery coordinate selection.
+    - **OrderForm Component**: Integrated form validation, address inputs, weight fields, and the MapPicker for a seamless administrative experience.
+    - **Zustand Order Store**: Created `useOrderStore` to manage CRUD operations, pagination, and backend API synchronization for orders.
+
 ## [2026-05-16] - Mobile Admin Mirror Phase 02 & 03
 ### Added
 - **Mobile Admin Mirror Phase 02 (Navigation & Architecture)**:

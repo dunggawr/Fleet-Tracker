@@ -1,0 +1,136 @@
+import { create } from 'zustand';
+import axios from 'axios';
+import { useAuthStore } from './useAuthStore';
+
+export enum OrderStatus {
+  PENDING = 'pending',
+  ASSIGNED = 'assigned',
+  PICKED_UP = 'picked_up',
+  DELIVERING = 'delivering',
+  DELIVERED = 'delivered',
+  FAILED = 'failed',
+  CANCELLED = 'cancelled',
+}
+
+export interface Order {
+  id: string;
+  pickupAddress: string;
+  pickupLocation: {
+    type: string;
+    coordinates: [number, number]; // [lng, lat]
+  };
+  deliveryAddress: string;
+  deliveryLocation: {
+    type: string;
+    coordinates: [number, number]; // [lng, lat]
+  };
+  weightKg: number;
+  description?: string;
+  status: OrderStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface OrderState {
+  orders: Order[];
+  loading: boolean;
+  error: string | null;
+  fetchOrders: (params?: any) => Promise<void>;
+  createOrder: (orderData: Partial<Order>) => Promise<Order>;
+  updateOrder: (id: string, orderData: Partial<Order>) => Promise<Order>;
+  deleteOrder: (id: string) => Promise<void>;
+  getOrderById: (id: string) => Order | undefined;
+}
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
+
+export const useOrderStore = create<OrderState>((set, get) => ({
+  orders: [],
+  loading: false,
+  error: null,
+
+  fetchOrders: async (params = {}) => {
+    set({ loading: true, error: null });
+    try {
+      const { token } = useAuthStore.getState();
+      const response = await axios.get(`${API_URL}/orders`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params,
+      });
+      
+      // Ensure we handle both wrapped { data, ... } and direct array
+      const orders = response.data.data || response.data;
+      set({ orders, loading: false });
+    } catch (error: any) {
+      set({ 
+        error: error.response?.data?.message || 'Failed to fetch orders', 
+        loading: false 
+      });
+    }
+  },
+
+  createOrder: async (orderData) => {
+    set({ loading: true, error: null });
+    try {
+      const { token } = useAuthStore.getState();
+      const response = await axios.post(`${API_URL}/orders`, orderData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      const newOrder = response.data.data || response.data;
+      set(state => ({ 
+        orders: [newOrder, ...state.orders], 
+        loading: false 
+      }));
+      return newOrder;
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Failed to create order';
+      set({ error: message, loading: false });
+      throw new Error(message);
+    }
+  },
+
+  updateOrder: async (id, orderData) => {
+    set({ loading: true, error: null });
+    try {
+      const { token } = useAuthStore.getState();
+      const response = await axios.patch(`${API_URL}/orders/${id}`, orderData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      const updatedOrder = response.data.data || response.data;
+      set(state => ({
+        orders: state.orders.map(o => o.id === id ? updatedOrder : o),
+        loading: false
+      }));
+      return updatedOrder;
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Failed to update order';
+      set({ error: message, loading: false });
+      throw new Error(message);
+    }
+  },
+
+  deleteOrder: async (id) => {
+    set({ loading: true, error: null });
+    try {
+      const { token } = useAuthStore.getState();
+      await axios.delete(`${API_URL}/orders/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      set(state => ({
+        orders: state.orders.filter(o => o.id !== id),
+        loading: false
+      }));
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Failed to delete order';
+      set({ error: message, loading: false });
+      throw new Error(message);
+    }
+  },
+
+  getOrderById: (id) => {
+    return get().orders.find(o => o.id === id);
+  },
+}));
