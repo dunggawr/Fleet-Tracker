@@ -43,7 +43,7 @@ export const AccountInfo: React.FC<AccountInfoProps> = ({ user, activeTrip }) =>
           />
           <ProfileInfoItem 
             label="Active Assignment"
-            value={activeTrip ? `Vehicle ${activeTrip.vehicleId.substring(0, 8).toUpperCase()}` : 'No active vehicle'}
+            value={activeTrip ? `Vehicle ${activeTrip.vehicle?.plateNumber || activeTrip.vehicleId.substring(0, 8).toUpperCase()}` : 'No active vehicle'}
             icon={Truck}
             color="#6366f1"
             showDivider={false}

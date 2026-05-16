@@ -8,7 +8,7 @@ import { authFetch } from '../../lib/authFetch';
 
 export const useProfileFlow = () => {
   const router = useRouter();
-  const { user, logout } = useAuthStore();
+  const { user, logout, updateUser } = useAuthStore();
   const { tripHistory, activeTrip } = useTripStore();
   
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -28,6 +28,13 @@ export const useProfileFlow = () => {
         const userData = data?.data ?? data;
         if (userData?.driver?.status) {
           setIsOnline(userData.driver.status === 'available');
+        }
+        if (userData?.fullName) {
+          updateUser({ 
+            fullName: userData.fullName,
+            email: userData.email,
+            role: userData.role 
+          });
         }
       } catch (error) {
         console.error('Failed to fetch status:', error);

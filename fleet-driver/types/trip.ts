@@ -32,6 +32,11 @@ export interface Order {
 export interface Trip {
   id: string;
   vehicleId: string;
+  vehicle?: {
+    id: string;
+    plateNumber: string;
+    type: string;
+  };
   driverId: string;
   status: TripStatus;
   totalDistanceKm: number;
