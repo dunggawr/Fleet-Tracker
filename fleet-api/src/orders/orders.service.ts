@@ -152,6 +152,19 @@ export class OrdersService {
     if (photoUrl) order.photoUrl = photoUrl;
     if (signatureUrl) order.signatureUrl = signatureUrl;
 
+    if (updateStatusDto.actionLat && updateStatusDto.actionLng) {
+      const location = {
+        type: 'Point',
+        coordinates: [updateStatusDto.actionLng, updateStatusDto.actionLat],
+      };
+
+      if (status === OrderStatus.PICKED_UP) {
+        order.pickupActualLocation = location;
+      } else if (status === OrderStatus.DELIVERED) {
+        order.deliveryActualLocation = location;
+      }
+    }
+
     return this.ordersRepository.save(order);
   }
 

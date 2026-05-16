@@ -1,3 +1,13 @@
+## [2026-05-16] - Geofencing Enforcement & Backend Audit Trail
+### Added
+- **Mobile (Driver App)**:
+    - **Geofencing Enforcement**: Implemented a mandatory 200m proximity check for "Pick Up" and "Submit Proof" actions.
+    - **useGeofencing Hook**: Centralized hook for managing location permissions, high-accuracy GPS state, and distance calculations.
+    - **UI Feedback**: Added loading indicators and error handling for location-based actions in `OrderCard`.
+- **Backend (API)**:
+    - **Audit Columns**: Added `pickupActualLocation` and `deliveryActualLocation` geography columns to the `Order` entity.
+    - **Status API Updates**: Enhanced the status update endpoint to capture and persist actual action coordinates from the driver app.
+
 ## [2026-05-15] - Massive Fleet Admin Refactoring & Modularization
 ### Changed
 - **Frontend (Admin Dashboard)**:

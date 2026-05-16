@@ -64,6 +64,24 @@ export class Order {
   @Column({ name: 'signature_url', type: 'text', nullable: true })
   signatureUrl: string;
 
+  @Column({
+    name: 'pickup_actual_location',
+    type: 'geography',
+    spatialFeatureType: 'Point',
+    srid: 4326,
+    nullable: true,
+  })
+  pickupActualLocation: any;
+
+  @Column({
+    name: 'delivery_actual_location',
+    type: 'geography',
+    spatialFeatureType: 'Point',
+    srid: 4326,
+    nullable: true,
+  })
+  deliveryActualLocation: any;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
