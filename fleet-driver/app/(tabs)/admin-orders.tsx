@@ -8,7 +8,8 @@ import {
   TextInput,
   RefreshControl,
   ActivityIndicator,
-  Platform
+  Platform,
+  ScrollView
 } from 'react-native';
 import { 
   Package, 
@@ -69,7 +70,10 @@ export default function AdminOrdersScreen() {
     return (
       <TouchableOpacity 
         style={styles.orderCard}
-        onPress={() => router.push(`/admin/orders/${item.id}`)}
+        onPress={() => router.push({
+          pathname: '/admin/orders/[id]',
+          params: { id: item.id }
+        })}
       >
         <View style={styles.cardHeader}>
           <View style={styles.orderIdGroup}>

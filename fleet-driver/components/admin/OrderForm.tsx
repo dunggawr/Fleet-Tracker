@@ -20,6 +20,7 @@ import {
 } from 'lucide-react-native';
 import { Order, OrderStatus } from '../../store/useOrderStore';
 import { MapPicker } from './MapPicker';
+import { AddressAutocomplete } from './AddressAutocomplete';
 
 interface OrderFormProps {
   initialData?: Partial<Order>;
@@ -66,7 +67,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, onSubmit, loa
         type: 'Point',
         coordinates: formData.deliveryLocation,
       },
-      status: OrderStatus.PENDING,
+      status: initialData?.status || OrderStatus.PENDING,
     } as any);
   };
 
@@ -111,14 +112,16 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, onSubmit, loa
           
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Address</Text>
-            <TextInput
-              style={[styles.input, errors.pickupAddress && styles.inputError]}
-              placeholder="Enter pickup address"
-              placeholderTextColor="#64748b"
+            <AddressAutocomplete
               value={formData.pickupAddress}
-              onChangeText={(text) => setFormData({ ...formData, pickupAddress: text })}
+              placeholder="Search pickup address"
+              onSelect={(address, coords) => setFormData({ 
+                ...formData, 
+                pickupAddress: address, 
+                pickupLocation: coords 
+              })}
+              error={errors.pickupAddress}
             />
-            {errors.pickupAddress && <Text style={styles.errorText}>{errors.pickupAddress}</Text>}
           </View>
 
           <TouchableOpacity 
@@ -142,14 +145,16 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, onSubmit, loa
           
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Address</Text>
-            <TextInput
-              style={[styles.input, errors.deliveryAddress && styles.inputError]}
-              placeholder="Enter delivery address"
-              placeholderTextColor="#64748b"
+            <AddressAutocomplete
               value={formData.deliveryAddress}
-              onChangeText={(text) => setFormData({ ...formData, deliveryAddress: text })}
+              placeholder="Search delivery address"
+              onSelect={(address, coords) => setFormData({ 
+                ...formData, 
+                deliveryAddress: address, 
+                deliveryLocation: coords 
+              })}
+              error={errors.deliveryAddress}
             />
-            {errors.deliveryAddress && <Text style={styles.errorText}>{errors.deliveryAddress}</Text>}
           </View>
 
           <TouchableOpacity 
@@ -216,7 +221,9 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, onSubmit, loa
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.submitButtonText}>Create New Order</Text>
+            <Text style={styles.submitButtonText}>
+              {initialData?.id ? 'Update Order' : 'Create New Order'}
+            </Text>
           )}
         </TouchableOpacity>
       </ScrollView>

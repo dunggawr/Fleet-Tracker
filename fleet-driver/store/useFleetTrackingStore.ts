@@ -90,13 +90,14 @@ export const useFleetTrackingStore = create<FleetTrackingState>((set, get) => ({
 
   startTracking: () => {
     console.log('[FleetTrackingStore] Starting live tracking...');
-    socketService.on('gps:update', (data) => {
-      get().updateVehicleLocation(data);
-    });
+    // Use stable reference to the function for proper removal later
+    const updateFn = get().updateVehicleLocation;
+    socketService.on('gps:update', updateFn);
   },
 
   stopTracking: () => {
     console.log('[FleetTrackingStore] Stopping live tracking...');
-    socketService.off('gps:update', get().updateVehicleLocation);
+    const updateFn = get().updateVehicleLocation;
+    socketService.off('gps:update', updateFn);
   }
 }));

@@ -292,7 +292,20 @@ export class TrackingService implements OnModuleDestroy {
 
   async getAllLiveLocations() {
     return this.vehicleRepository.find({
-      select: ['id', 'plateNumber', 'type', 'status', 'lastKnownLocation'],
+      relations: ['driver', 'driver.user'],
+      select: {
+        id: true,
+        plateNumber: true,
+        type: true,
+        status: true,
+        lastKnownLocation: true,
+        driver: {
+          id: true,
+          user: {
+            fullName: true,
+          },
+        },
+      },
     });
   }
 

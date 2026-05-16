@@ -39,6 +39,7 @@ interface OrderState {
   createOrder: (orderData: Partial<Order>) => Promise<Order>;
   updateOrder: (id: string, orderData: Partial<Order>) => Promise<Order>;
   deleteOrder: (id: string) => Promise<void>;
+  assignOrder: (orderId: string, vehicleId: string, driverId: string) => Promise<void>;
   getOrderById: (id: string) => Order | undefined;
 }
 
@@ -125,6 +126,32 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       }));
     } catch (error: any) {
       const message = error.response?.data?.message || 'Failed to delete order';
+      set({ error: message, loading: false });
+      throw new Error(message);
+    }
+  },
+
+  assignOrder: async (orderId, vehicleId, driverId) => {
+    set({ loading: true, error: null });
+    try {
+      const { token } = useAuthStore.getState();
+      await axios.post(`${API_URL}/dispatch/assign`, {
+        orderId,
+        vehicleId,
+        driverId
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      // Update local state: change order status to ASSIGNED
+      set(state => ({
+        orders: state.orders.map(o => 
+          o.id === orderId ? { ...o, status: OrderStatus.ASSIGNED } : o
+        ),
+        loading: false
+      }));
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Failed to assign order';
       set({ error: message, loading: false });
       throw new Error(message);
     }
