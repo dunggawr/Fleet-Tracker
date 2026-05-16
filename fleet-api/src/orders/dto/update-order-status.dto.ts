@@ -17,4 +17,12 @@ export class UpdateOrderStatusDto {
   @IsOptional()
   @IsString()
   signatureUrl?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  actionLat?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  actionLng?: number;
 }

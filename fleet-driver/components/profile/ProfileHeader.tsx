@@ -29,7 +29,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ user }) => {
         </View>
 
         <Text className="text-3xl font-black text-white text-center tracking-tight mb-2">
-          {user?.fullName || 'Driver Name'}
+          {user?.fullName || user?.email || 'Driver Name'}
         </Text>
         
         <BlurView intensity={20} className="rounded-full overflow-hidden border border-white/10">

@@ -35,17 +35,24 @@ async function seed() {
     // 1. Seed Admin
     const adminEmail = process.env.SEED_ADMIN_EMAIL || 'admin@fleettracker.com';
     let admin = await userRepository.findOne({ where: { email: adminEmail } });
+    const salt = await bcrypt.genSalt();
+    const adminPassword = process.env.SEED_ADMIN_PASSWORD || 'Admin@123';
+    const passwordHash = await bcrypt.hash(adminPassword, salt);
+
     if (!admin) {
-      const salt = await bcrypt.genSalt();
-      const adminPassword = process.env.SEED_ADMIN_PASSWORD || 'Admin@123';
-      const passwordHash = await bcrypt.hash(adminPassword, salt);
       admin = userRepository.create({
         email: adminEmail,
         passwordHash,
         role: UserRole.ADMIN,
+        fullName: 'System Admin',
+        phone: '0000000000',
       });
       await userRepository.save(admin);
-      console.log('Admin user seeded');
+      console.log('Admin user created');
+    } else {
+      admin.fullName = admin.fullName || 'System Admin';
+      await userRepository.save(admin);
+      console.log('Admin user verified/updated');
     }
 
     // 2. Seed Drivers + Users
@@ -83,13 +90,16 @@ async function seed() {
     ];
 
     for (const data of driversData) {
-      let user = await userRepository.findOne({ where: { email: data.email } });
+      let user = await userRepository.findOne({ where: { email: data.email }, relations: ['driver'] });
+      
+      const salt = await bcrypt.genSalt();
+      const driverPassword = process.env.DRIVER_PASSWORD || 'Driver@123';
+      const passwordHash = await bcrypt.hash(driverPassword, salt);
+
       if (!user) {
-        const salt = await bcrypt.genSalt();
-        const driverPassword = process.env.DRIVER_PASSWORD || 'Driver@123';
         user = userRepository.create({
           email: data.email,
-          passwordHash: await bcrypt.hash(driverPassword, salt),
+          passwordHash,
           role: UserRole.DRIVER,
           fullName: data.fullName,
           phone: data.phone,
@@ -103,7 +113,23 @@ async function seed() {
           status: DriverStatus.AVAILABLE,
         });
         await driverRepository.save(driver);
-        console.log(`Driver ${data.fullName} seeded`);
+        console.log(`Driver ${data.fullName} created`);
+      } else {
+        // Update existing user if needed
+        user.fullName = data.fullName;
+        user.phone = data.phone;
+        await userRepository.save(user);
+        
+        if (!user.driver) {
+          const driver = driverRepository.create({
+            user,
+            licenseClass: data.licenseClass,
+            licenseExpiry: new Date('2030-01-01'),
+            status: DriverStatus.AVAILABLE,
+          });
+          await driverRepository.save(driver);
+        }
+        console.log(`Driver ${data.fullName} updated`);
       }
     }
 
@@ -121,9 +147,15 @@ async function seed() {
         email: dispatcherEmail,
         passwordHash,
         role: UserRole.DISPATCHER,
+        fullName: 'Dispatcher One',
+        phone: '0111111111',
       });
       await userRepository.save(dispatcher);
-      console.log('Dispatcher user seeded');
+      console.log('Dispatcher user created');
+    } else {
+      dispatcher.fullName = dispatcher.fullName || 'Dispatcher One';
+      await userRepository.save(dispatcher);
+      console.log('Dispatcher user verified/updated');
     }
 
     // 3. Seed Vehicles

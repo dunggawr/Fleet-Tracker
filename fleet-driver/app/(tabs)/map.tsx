@@ -1,7 +1,8 @@
 import React from 'react';
 import { 
   View, 
-  StatusBar
+  StatusBar,
+  StyleSheet
 } from 'react-native';
 import { MapComponent, MarkerComponent, PolylineComponent, PROVIDER_GOOGLE } from '../../components/map/MapComponents';
 import { TripStatus } from '../../store/useTripStore';
@@ -19,12 +20,19 @@ export default function ActiveTripMap() {
     mapType,
     mapRef,
     currentOrder,
+    routeData,
     handleStatusUpdate,
     handleOrderStatusUpdate,
+    handleProofOfDelivery,
     centerOnLocation,
     toggleMapType,
     openNavigation,
+    zoomToDestination,
     fetchTrips,
+    isFollowing,
+    setIsFollowing,
+    isNavMode,
+    setIsNavMode,
   } = useMapFlow();
 
   if (!activeTrip) {
@@ -39,6 +47,11 @@ export default function ActiveTripMap() {
         ref={mapRef}
         provider={PROVIDER_GOOGLE}
         mapType={mapType}
+        style={StyleSheet.absoluteFillObject}
+        onPanDrag={() => {
+          setIsFollowing(false);
+          setIsNavMode(false);
+        }}
         initialRegion={{
           latitude: location?.coords.latitude || 10.762622,
           longitude: location?.coords.longitude || 106.660172,
@@ -46,13 +59,22 @@ export default function ActiveTripMap() {
           longitudeDelta: 0.05,
         }}
       >
-        {/* Render Planned Route */}
+        {/* Render Planned Trip Route */}
         {activeTrip.plannedRoute && activeTrip.plannedRoute.length > 0 && (
           <PolylineComponent
             coordinates={activeTrip.plannedRoute}
             strokeColor="#6366f1"
             strokeWidth={4}
             lineDashPattern={[0]}
+          />
+        )}
+
+        {/* Render Live Dynamic Route (Google Maps style) */}
+        {routeData && (
+          <PolylineComponent
+            coordinates={routeData.coordinates}
+            strokeColor="#10b981"
+            strokeWidth={6}
           />
         )}
 
@@ -64,26 +86,29 @@ export default function ActiveTripMap() {
               longitude: location.coords.longitude,
             }}
             title="Your Location"
-            isTruck={true}
             rotation={location.coords.heading || 0}
+            onPress={() => {
+              setIsFollowing(true);
+              setIsNavMode(!isNavMode);
+            }}
           />
         )}
 
         {/* Order Markers */}
-        {activeTrip.orders.map((order) => (
+        {activeTrip.orders.map((order: any) => (
           <React.Fragment key={order.id}>
-            <MarkerComponent
-              coordinate={order.pickupLocation}
-              title={`Pickup: ${order.id.substring(0, 8)}`}
-              type="pickup"
-              status={order.status}
-            />
-            <MarkerComponent
-              coordinate={order.deliveryLocation}
-              title={`Delivery: ${order.id.substring(0, 8)}`}
-              type="delivery"
-              status={order.status}
-            />
+            {order.pickupLocation && (
+              <MarkerComponent
+                coordinate={order.pickupLocation}
+                title={`Pickup: ${order.id.substring(0, 8)}`}
+              />
+            )}
+            {order.deliveryLocation && (
+              <MarkerComponent
+                coordinate={order.deliveryLocation}
+                title={`Delivery: ${order.id.substring(0, 8)}`}
+              />
+            )}
           </React.Fragment>
         ))}
       </MapComponent>
@@ -91,12 +116,16 @@ export default function ActiveTripMap() {
       <MissionDashboard 
         activeTrip={activeTrip} 
         currentOrder={currentOrder}
+        routeData={routeData}
       />
 
       <MapControls 
         onCenter={centerOnLocation}
         onToggleType={toggleMapType}
+        onZoomToDestination={zoomToDestination}
         mapType={mapType}
+        isFollowing={isFollowing}
+        isNavMode={isNavMode}
       />
 
       <MissionPanel 
@@ -104,6 +133,7 @@ export default function ActiveTripMap() {
         currentOrder={currentOrder}
         onUpdateTripStatus={handleStatusUpdate}
         onUpdateOrderStatus={handleOrderStatusUpdate}
+        onProofOfDelivery={handleProofOfDelivery}
         onNavigate={openNavigation}
       />
     </View>

@@ -1,3 +1,33 @@
+## [2026-05-16] - Mobile Admin Mirror Planning
+### Added
+- **Project Planning**:
+    - **Mobile Admin Mirror**: Initiated the project to mirror `fleet-admin` functionalities into the `fleet-driver` mobile app.
+    - **Phased Roadmap**: Created a 7-phase implementation plan covering Navigation, Dashboard, Fleet Tracking, Order CRUD, Management, Dispatching, and Analytics.
+    - **Navigation Architecture**: Designed a multi-role navigation system (`(driver_tabs)` vs `(admin_tabs)`) for the mobile application.
+- **Documentation**:
+    - Created detailed phase documents in `plans/240516-mobile-admin-mirror/`.
+    - Updated project knowledge base (`brain.json`) and session tracking (`session.json`).
+
+## [2026-05-16] - Data Seeding & Profile Information Enhancement
+### Added
+- **Backend (API)**:
+    - **Seed Script (`src/database/seeds/seed.ts`)**: Updated to ensure `fullName` and `phone` are correctly populated for Admin, Dispatcher, and Driver accounts. Added `upsert` logic to update existing users instead of skipping them.
+    - **Hotfix**: Executed SQL migration to fill missing `fullName` and `phone` data in the `users` table for existing driver accounts.
+- **Mobile (Driver App)**:
+    - **Profile Screen**: Replaced placeholder "Driver Name" with the driver's actual `fullName` from the user profile.
+    - **Profile UI**: Updated `AccountInfo` and `ProfileHeader` to display vehicle information (vehicle name + license plate) instead of placeholder text.
+    - **Data Flow**: Verified and optimized `useAuthStore` to ensure user profile data (including `fullName`) is correctly fetched and stored upon login.
+
+## [2026-05-16] - Geofencing Enforcement & Backend Audit Trail
+### Added
+- **Mobile (Driver App)**:
+    - **Geofencing Enforcement**: Implemented a mandatory 200m proximity check for "Pick Up" and "Submit Proof" actions.
+    - **useGeofencing Hook**: Centralized hook for managing location permissions, high-accuracy GPS state, and distance calculations.
+    - **UI Feedback**: Added loading indicators and error handling for location-based actions in `OrderCard`.
+- **Backend (API)**:
+    - **Audit Columns**: Added `pickupActualLocation` and `deliveryActualLocation` geography columns to the `Order` entity.
+    - **Status API Updates**: Enhanced the status update endpoint to capture and persist actual action coordinates from the driver app.
+
 ## [2026-05-15] - Massive Fleet Admin Refactoring & Modularization
 ### Changed
 - **Frontend (Admin Dashboard)**:
