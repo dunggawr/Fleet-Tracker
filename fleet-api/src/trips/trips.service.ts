@@ -26,7 +26,15 @@ export class TripsService {
     private eventEmitter: EventEmitter2,
   ) {}
 
-  async findMyTrips(userId: string) {
+  async findMyTrips(userId: string, role?: string) {
+    // If admin, they can see all active trips to test the app
+    if (role === 'admin') {
+      return this.tripRepository.find({
+        relations: ['vehicle', 'driver', 'tripOrders', 'tripOrders.order'],
+        order: { createdAt: 'DESC' },
+      });
+    }
+
     return this.tripRepository.find({
       where: [
         { driver: { userId } },
@@ -252,7 +260,7 @@ export class TripsService {
     }
   }
 
-  async reportIncident(tripId: string, dto: ReportIncidentDto, userId: string) {
+  async reportIncident(tripId: string, dto: ReportIncidentDto, userId: string, role?: string) {
     const trip = await this.tripRepository.findOne({
       where: { id: tripId },
       relations: ['driver'],
@@ -262,7 +270,8 @@ export class TripsService {
       throw new NotFoundException(`Trip with ID ${tripId} not found`);
     }
 
-    if (trip.driver && trip.driver.userId !== userId) {
+    const isAdmin = role === 'admin' || role === 'dispatcher';
+    if (!isAdmin && trip.driver && trip.driver.userId !== userId) {
       throw new ForbiddenException('You can only report incidents for your assigned trips');
     }
 

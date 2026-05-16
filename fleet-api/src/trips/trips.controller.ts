@@ -24,10 +24,11 @@ import { UserRole } from '../entities/user.entity';
 export class TripsController {
   constructor(private readonly tripsService: TripsService) {}
 
+  @Roles(UserRole.DRIVER, UserRole.ADMIN)
   @ApiOperation({ summary: 'List trips for current driver' })
   @Get('my')
   findMyTrips(@Request() req) {
-    return this.tripsService.findMyTrips(req.user.id);
+    return this.tripsService.findMyTrips(req.user.id, req.user.role);
   }
 
   @Roles(UserRole.ADMIN, UserRole.DISPATCHER)
@@ -65,6 +66,6 @@ export class TripsController {
     @Body() reportIncidentDto: ReportIncidentDto,
     @Request() req,
   ) {
-    return this.tripsService.reportIncident(id, reportIncidentDto, req.user.id);
+    return this.tripsService.reportIncident(id, reportIncidentDto, req.user.id, req.user.role);
   }
 }

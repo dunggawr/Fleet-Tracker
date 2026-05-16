@@ -199,7 +199,19 @@ export class DriversService {
   }
 
   async updateStatusByUserId(userId: string, status: DriverStatus): Promise<Driver> {
-    const driver = await this.findByUserId(userId);
+    let driver = await this.driversRepository.findOne({ where: { userId } });
+
+    if (!driver) {
+      const user = await this.usersRepository.findOne({ where: { id: userId } });
+      if (user && user.role === UserRole.ADMIN) {
+        driver = this.driversRepository.create({
+          userId,
+          status,
+        });
+        return this.driversRepository.save(driver);
+      }
+      throw new NotFoundException(`Driver for user ID ${userId} not found`);
+    }
 
     // Prevent manual status change if currently on a trip
     if (driver.status === DriverStatus.ON_TRIP) {

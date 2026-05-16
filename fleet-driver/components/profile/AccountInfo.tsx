@@ -31,13 +31,13 @@ export const AccountInfo: React.FC<AccountInfoProps> = ({ user, activeTrip }) =>
           />
           <ProfileInfoItem 
             label="Mobile Number"
-            value="+84 912 345 678"
+            value={user?.phone || 'Not linked'}
             icon={Phone}
             color="#10b981"
           />
           <ProfileInfoItem 
             label="Operator License"
-            value="Class C • 24-558291"
+            value={user?.driver?.licenseClass ? `${user.driver.licenseClass} • ${user.driver.id.substring(0, 8).toUpperCase()}` : (user?.role === 'admin' ? 'System Administrator' : 'N/A')}
             icon={CreditCard}
             color="#fbbf24"
           />

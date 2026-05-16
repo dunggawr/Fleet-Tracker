@@ -89,7 +89,7 @@ export class DriversController {
   }
 
   @Patch('status/me')
-  @Roles(UserRole.DRIVER)
+  @Roles(UserRole.DRIVER, UserRole.ADMIN)
   @ApiOperation({ summary: 'Update my own status (Driver only)' })
   updateMyStatus(@GetUser('id') userId: string, @Body() updateStatusDto: UpdateStatusDto) {
     return this.driversService.updateStatusByUserId(userId, updateStatusDto.status);

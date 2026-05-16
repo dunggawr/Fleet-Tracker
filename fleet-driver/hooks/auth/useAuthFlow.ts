@@ -49,8 +49,9 @@ export function useAuthFlow() {
         throw new Error("Invalid server response");
       }
 
-      if ((user.role || "").toLowerCase() !== "driver") {
-        throw new Error("Access denied: Drivers only");
+      const userRole = (user.role || "").toLowerCase();
+      if (userRole !== "driver" && userRole !== "admin") {
+        throw new Error("Access denied: Drivers and Admins only");
       }
 
       setAuth(
