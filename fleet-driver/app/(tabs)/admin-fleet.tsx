@@ -76,17 +76,21 @@ export default function AdminFleetScreen() {
   }, []);
 
   const filteredDrivers = useMemo(() => {
-    return drivers.filter(d => 
-      d.user.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      d.user.email.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    return drivers.filter(d => {
+      const fullName = d?.user?.fullName || '';
+      const email = d?.user?.email || '';
+      return fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+             email.toLowerCase().includes(searchQuery.toLowerCase());
+    });
   }, [drivers, searchQuery]);
 
   const filteredVehicles = useMemo(() => {
-    return vehicles.filter(v => 
-      v.plateNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      v.type.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    return vehicles.filter(v => {
+      const plateNumber = v?.plateNumber || '';
+      const type = v?.type || '';
+      return plateNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+             type.toLowerCase().includes(searchQuery.toLowerCase());
+    });
   }, [vehicles, searchQuery]);
 
   const renderDriverCard = ({ item }: { item: Driver }) => (

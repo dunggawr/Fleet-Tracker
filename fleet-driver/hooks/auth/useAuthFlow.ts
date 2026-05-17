@@ -32,7 +32,7 @@ export function useAuthFlow() {
       const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
       });
 
       const data = await response.json();
@@ -84,7 +84,7 @@ export function useAuthFlow() {
       const response = await fetch(`${API_URL}/auth/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: resetEmail }),
+        body: JSON.stringify({ email: resetEmail.trim().toLowerCase() }),
       });
 
       const data = await response.json();
@@ -131,7 +131,7 @@ export function useAuthFlow() {
       const response = await fetch(`${API_URL}/auth/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: resetEmail, resetCode, newPassword }),
+        body: JSON.stringify({ email: resetEmail.trim().toLowerCase(), resetCode, newPassword }),
       });
 
       const data = await response.json();

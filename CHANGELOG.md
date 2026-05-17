@@ -1,3 +1,15 @@
+## [2026-05-17] - Mobile Live Tracking & Auth Refinements
+### Added
+- **Mobile Fleet Tracking Refinements (`fleet-driver`)**:
+    - **Tailwind CSS UI Migration**: Migrated legacy Stylesheets in `admin-tracking.tsx` to utility-first Tailwind classes, optimizing headers, cards, overlay panels, search bar, and map controls for pure Glassmorphism.
+    - **Automated Vehicle Following**: Implemented dynamic map camera centering. The camera automatically pans and tracks selected vehicles in real-time as coordinates update.
+    - **Unified Search Result Dropdown**: Added interactive vehicle list searching by license plate and driver name, allowing direct marker focus on select.
+    - **Standard/Satellite/Hybrid Map View**: Added dynamic layer toggle control buttons for standard, satellite, and hybrid layers on mobile maps.
+
+### Fixed
+- **Mobile Keyboard Auto-Capitalization Failure**:
+    - Fixed credentials entry crash where default mobile keyboards capitalized input email addresses, causing hidden case-mismatch auth failures. Enforced `autoCapitalize="none"` and `autoCorrect={false}` client-side and transformed incoming fields using `.trim().toLowerCase()` in the hooks layer.
+
 ## [2026-05-17] - Navigation Stabilization & Layout Remount
 ### Added
 - **Multi-Role Nav Stabilization (`fleet-driver`)**:

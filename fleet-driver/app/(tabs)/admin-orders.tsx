@@ -52,10 +52,13 @@ export default function AdminOrdersScreen() {
 
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
+      const id = order?.id || '';
+      const pickupAddress = order?.pickupAddress || '';
+      const deliveryAddress = order?.deliveryAddress || '';
       const matchesSearch = 
-        order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.pickupAddress.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.deliveryAddress.toLowerCase().includes(searchQuery.toLowerCase());
+        id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        pickupAddress.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        deliveryAddress.toLowerCase().includes(searchQuery.toLowerCase());
       
       const matchesStatus = selectedStatus === 'all' || order.status === selectedStatus;
       

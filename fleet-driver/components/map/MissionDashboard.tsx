@@ -15,8 +15,8 @@ interface MissionDashboardProps {
   } | null;
 }
 
-const getStatusColor = (status: string) => {
-  switch (status.toLowerCase()) {
+const getStatusColor = (status: string = '') => {
+  switch ((status || '').toLowerCase()) {
     case 'pending': return '#f59e0b';
     case 'accepted': return '#6366f1';
     case 'in_progress': return '#818cf8';
@@ -92,7 +92,7 @@ export const MissionDashboard: React.FC<MissionDashboardProps> = ({ activeTrip, 
                   style={{ backgroundColor: getStatusColor(activeTrip.status) + '15' }}
                 >
                   <Text className="font-black text-[10px] uppercase tracking-[1.5px]" style={{ color: getStatusColor(activeTrip.status) }}>
-                    {activeTrip.status.replace('_', ' ')}
+                    {(activeTrip.status || '').replace('_', ' ')}
                   </Text>
                 </View>
               </View>

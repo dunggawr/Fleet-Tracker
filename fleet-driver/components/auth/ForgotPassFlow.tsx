@@ -38,6 +38,8 @@ export const ForgotPassFlow = (props: ForgotPassFlowProps) => {
             onChangeText={props.setResetEmail}
             placeholder="driver@fleet.com"
             keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
             icon={<Mail color="#818cf8" size={20} />}
           />
           <AuthButton title="Send Reset Code" onPress={props.onSendCode} isLoading={props.isLoading} />
