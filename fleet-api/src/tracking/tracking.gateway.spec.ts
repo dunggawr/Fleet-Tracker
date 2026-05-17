@@ -350,7 +350,7 @@ describe('TrackingGateway', () => {
 
       expect(mockServer.to).toHaveBeenCalledWith('admin');
       expect(mockServer.to).toHaveBeenCalledWith('trip:trip-1');
-      expect(mockServer.emit).toHaveBeenCalledTimes(2);
+      expect(mockServer.emit).toHaveBeenCalledTimes(3);
     });
 
     it('handleAlertResolved should broadcast to admin', () => {
