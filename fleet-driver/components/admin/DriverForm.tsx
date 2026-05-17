@@ -10,7 +10,7 @@ import {
   Platform,
   ActivityIndicator
 } from 'react-native';
-import { User, Mail, Phone, ShieldCheck, Calendar } from 'lucide-react-native';
+import { User, Mail, Phone, ShieldCheck, Calendar, Lock } from 'lucide-react-native';
 import { Driver, DriverStatus } from '../../store/useFleetStore';
 
 interface DriverFormProps {
@@ -23,6 +23,7 @@ export const DriverForm: React.FC<DriverFormProps> = ({ initialData, onSubmit, l
   const [formData, setFormData] = useState({
     fullName: initialData?.user.fullName || '',
     email: initialData?.user.email || '',
+    password: '',
     phone: initialData?.user.phone || '',
     licenseClass: initialData?.licenseClass || '',
     licenseExpiry: initialData?.licenseExpiry || '',
@@ -30,7 +31,12 @@ export const DriverForm: React.FC<DriverFormProps> = ({ initialData, onSubmit, l
   });
 
   const handleSubmit = () => {
-    onSubmit(formData);
+    if (initialData) {
+      const { password, ...updateData } = formData;
+      onSubmit(updateData);
+    } else {
+      onSubmit(formData);
+    }
   };
 
   return (
@@ -65,6 +71,21 @@ export const DriverForm: React.FC<DriverFormProps> = ({ initialData, onSubmit, l
               onChangeText={(text) => setFormData({ ...formData, email: text })}
             />
           </View>
+
+          {!initialData && (
+            <View style={styles.inputGroup}>
+              <Lock size={20} color="#64748b" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Password (min 6 characters)"
+                placeholderTextColor="#64748b"
+                secureTextEntry={true}
+                autoCapitalize="none"
+                value={formData.password}
+                onChangeText={(text) => setFormData({ ...formData, password: text })}
+              />
+            </View>
+          )}
 
           <View style={styles.inputGroup}>
             <Phone size={20} color="#64748b" style={styles.inputIcon} />
