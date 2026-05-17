@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput, FlatList, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MapComponent, PROVIDER_GOOGLE } from '../../components/map/MapComponents';
@@ -22,6 +22,12 @@ export default function AdminTrackingScreen() {
 
   const vehicleList = useMemo(() => Object.values(vehicles), [vehicles]);
   const selectedVehicle = selectedVehicleId ? vehicles[selectedVehicleId] : null;
+
+  const handleMarkerPress = useCallback((v: any) => {
+    setSelectedVehicleId(v.id);
+    setIsSearching(false);
+    Keyboard.dismiss();
+  }, []);
 
   // Filter vehicles for search list and map display
   const filteredVehicles = useMemo(() => {
@@ -52,19 +58,25 @@ export default function AdminTrackingScreen() {
     return () => stopTracking();
   }, []);
 
-  // Center on selected vehicle whenever its coordinates update
+  const lastAnimateTimeRef = useRef<number>(0);
+
+  // Center on selected vehicle whenever its coordinates update (throttled to 1.5s)
   useEffect(() => {
     if (selectedVehicle && mapRef.current) {
-      mapRef.current.animateToRegion({
-        latitude: selectedVehicle.latitude,
-        longitude: selectedVehicle.longitude,
-        latitudeDelta: 0.008,
-        longitudeDelta: 0.008,
-      }, 500);
+      const now = Date.now();
+      if (now - lastAnimateTimeRef.current > 1500) {
+        lastAnimateTimeRef.current = now;
+        mapRef.current.animateToRegion({
+          latitude: selectedVehicle.latitude,
+          longitude: selectedVehicle.longitude,
+          latitudeDelta: 0.008,
+          longitudeDelta: 0.008,
+        }, 500);
+      }
     }
   }, [selectedVehicle?.latitude, selectedVehicle?.longitude]);
 
-  const fitFleet = () => {
+  const fitFleet = useCallback(() => {
     if (vehicleList.length === 0 || !mapRef.current) return;
     
     const coords = vehicleList.map(v => ({
@@ -76,13 +88,13 @@ export default function AdminTrackingScreen() {
       edgePadding: { top: 100, right: 100, bottom: 100, left: 100 },
       animated: true,
     });
-  };
+  }, [vehicleList]);
 
-  const toggleMapType = () => {
+  const toggleMapType = useCallback(() => {
     const types: ('standard' | 'satellite' | 'hybrid')[] = ['standard', 'satellite', 'hybrid'];
     const nextIndex = (types.indexOf(mapType) + 1) % types.length;
     setMapType(types[nextIndex]);
-  };
+  }, [mapType]);
 
   return (
     <View className="flex-1 bg-black">
@@ -109,11 +121,7 @@ export default function AdminTrackingScreen() {
           <FleetMarker 
             key={vehicle.id} 
             vehicle={vehicle} 
-            onPress={(v) => {
-              setSelectedVehicleId(v.id);
-              setIsSearching(false);
-              Keyboard.dismiss();
-            }}
+            onPress={handleMarkerPress}
           />
         ))}
       </MapComponent>

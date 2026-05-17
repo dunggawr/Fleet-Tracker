@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { MarkerComponent } from './MapComponents';
 import { Truck } from 'lucide-react-native';
@@ -9,7 +9,17 @@ interface FleetMarkerProps {
   onPress?: (vehicle: TrackedVehicle) => void;
 }
 
-export const FleetMarker: React.FC<FleetMarkerProps> = ({ vehicle, onPress }) => {
+export const FleetMarker = memo(({ vehicle, onPress }: FleetMarkerProps) => {
+  const [tracksViewChanges, setTracksViewChanges] = useState(true);
+
+  useEffect(() => {
+    setTracksViewChanges(true);
+    const timer = setTimeout(() => {
+      setTracksViewChanges(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [vehicle.latitude, vehicle.longitude, vehicle.status, vehicle.heading]);
+
   const getStatusColor = () => {
     switch (vehicle.status) {
       case 'available': return '#10b981'; // Green
@@ -29,7 +39,8 @@ export const FleetMarker: React.FC<FleetMarkerProps> = ({ vehicle, onPress }) =>
       }}
       onPress={() => onPress?.(vehicle)}
       rotation={vehicle.heading}
-      anchor={{ x: 0.5, y: 0.5 }}
+      anchor={{ x: 0.5, y: 1.0 }}
+      tracksViewChanges={tracksViewChanges}
     >
       <View style={[styles.markerContainer, { borderColor: statusColor }]}>
         <View style={[styles.iconWrapper, { backgroundColor: statusColor }]}>
@@ -42,12 +53,22 @@ export const FleetMarker: React.FC<FleetMarkerProps> = ({ vehicle, onPress }) =>
       </View>
     </MarkerComponent>
   );
-};
+}, (prev, next) => {
+  return (
+    prev.vehicle.latitude === next.vehicle.latitude &&
+    prev.vehicle.longitude === next.vehicle.longitude &&
+    prev.vehicle.heading === next.vehicle.heading &&
+    prev.vehicle.status === next.vehicle.status &&
+    prev.vehicle.licensePlate === next.vehicle.licensePlate
+  );
+});
 
 const styles = StyleSheet.create({
   markerContainer: {
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'visible',
+    padding: 4,
   },
   iconWrapper: {
     width: 28,

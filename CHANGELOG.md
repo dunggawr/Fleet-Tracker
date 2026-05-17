@@ -5,6 +5,9 @@
     - **Automated Vehicle Following**: Implemented dynamic map camera centering. The camera automatically pans and tracks selected vehicles in real-time as coordinates update.
     - **Unified Search Result Dropdown**: Added interactive vehicle list searching by license plate and driver name, allowing direct marker focus on select.
     - **Standard/Satellite/Hybrid Map View**: Added dynamic layer toggle control buttons for standard, satellite, and hybrid layers on mobile maps.
+    - **Tracking Map Performance Optimization**: Throttled automated map camera following to 1.5s intervals using a ref timestamp and added `React.memo` caching to `FleetMarker` to minimize React Native re-rendering stress during rapid WebSocket location updates.
+    - **react-native-maps CPU Reduction**: Implemented transient `tracksViewChanges` state control (enabling it for 300ms only when coords/heading/status updates and then resetting it to false) to bypass expensive native map redraw loops.
+    - **Marker Icon Visual Correction**: Resolved native MapView custom icon cutoffs and boundary clipping by introducing outer container padding, forcing `overflow: 'visible'`, and configuring a precise base anchor (`anchor={{ x: 0.5, y: 1.0 }}`) to align markers correctly with coordinates.
 
 ### Fixed
 - **Mobile Keyboard Auto-Capitalization Failure**:
