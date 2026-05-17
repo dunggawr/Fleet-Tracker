@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import axios from 'axios';
 import { useAuthStore } from './useAuthStore';
+import { formatError } from '../utils/error';
 
 export enum DriverStatus {
   AVAILABLE = 'available',
@@ -83,7 +84,7 @@ export const useFleetStore = create<FleetState>((set, get) => ({
       });
       set({ drivers: response.data.data || response.data, loading: false });
     } catch (error: any) {
-      set({ error: error.message, loading: false });
+      set({ error: formatError(error, 'Failed to fetch drivers'), loading: false });
     }
   },
 
@@ -96,7 +97,7 @@ export const useFleetStore = create<FleetState>((set, get) => ({
       });
       set({ vehicles: response.data.data || response.data, loading: false });
     } catch (error: any) {
-      set({ error: error.message, loading: false });
+      set({ error: formatError(error, 'Failed to fetch vehicles'), loading: false });
     }
   },
 
@@ -112,8 +113,9 @@ export const useFleetStore = create<FleetState>((set, get) => ({
         loading: false 
       }));
     } catch (error: any) {
-      set({ error: error.message, loading: false });
-      throw error;
+      const message = formatError(error, 'Failed to create driver');
+      set({ error: message, loading: false });
+      throw new Error(message);
     }
   },
 
@@ -129,8 +131,9 @@ export const useFleetStore = create<FleetState>((set, get) => ({
         loading: false 
       }));
     } catch (error: any) {
-      set({ error: error.message, loading: false });
-      throw error;
+      const message = formatError(error, 'Failed to create vehicle');
+      set({ error: message, loading: false });
+      throw new Error(message);
     }
   },
 
@@ -147,8 +150,9 @@ export const useFleetStore = create<FleetState>((set, get) => ({
         loading: false
       }));
     } catch (error: any) {
-      set({ error: error.message, loading: false });
-      throw error;
+      const message = formatError(error, 'Failed to update driver');
+      set({ error: message, loading: false });
+      throw new Error(message);
     }
   },
 
@@ -165,8 +169,9 @@ export const useFleetStore = create<FleetState>((set, get) => ({
         loading: false
       }));
     } catch (error: any) {
-      set({ error: error.message, loading: false });
-      throw error;
+      const message = formatError(error, 'Failed to update vehicle');
+      set({ error: message, loading: false });
+      throw new Error(message);
     }
   },
 
@@ -182,8 +187,9 @@ export const useFleetStore = create<FleetState>((set, get) => ({
         loading: false
       }));
     } catch (error: any) {
-      set({ error: error.message, loading: false });
-      throw error;
+      const message = formatError(error, 'Failed to delete driver');
+      set({ error: message, loading: false });
+      throw new Error(message);
     }
   },
 
@@ -199,8 +205,9 @@ export const useFleetStore = create<FleetState>((set, get) => ({
         loading: false
       }));
     } catch (error: any) {
-      set({ error: error.message, loading: false });
-      throw error;
+      const message = formatError(error, 'Failed to delete vehicle');
+      set({ error: message, loading: false });
+      throw new Error(message);
     }
   },
 
@@ -217,8 +224,9 @@ export const useFleetStore = create<FleetState>((set, get) => ({
       await store.fetchVehicles();
       set({ loading: false });
     } catch (error: any) {
-      set({ error: error.message, loading: false });
-      throw error;
+      const message = formatError(error, 'Failed to assign driver to vehicle');
+      set({ error: message, loading: false });
+      throw new Error(message);
     }
   },
 }));

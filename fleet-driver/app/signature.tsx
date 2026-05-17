@@ -8,6 +8,7 @@ import { useGeofencing } from '@/hooks/useGeofencing';
 import Toast from 'react-native-toast-message';
 import { cacheDirectory, writeAsStringAsync, EncodingType, deleteAsync } from 'expo-file-system/legacy';
 import { authFetch } from '@/lib/authFetch';
+import { formatError } from '@/utils/error';
 
 export default function SignatureCapture() {
   const [isUploading, setIsUploading] = useState(false);
@@ -98,7 +99,7 @@ export default function SignatureCapture() {
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: error.message
+        text2: formatError(error, 'Failed to complete delivery')
       });
     } finally {
       setIsUploading(false);

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { authFetch } from '@/lib/authFetch';
 import { socketService } from '@/lib/socket';
 import { parsePoint } from '@/utils/geo';
+import { formatError, getFetchErrorMessage } from '@/utils/error';
 
 export interface TrackedVehicle {
   id: string;
@@ -37,7 +38,10 @@ export const useFleetTrackingStore = create<FleetTrackingState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await authFetch('/tracking/live');
-      if (!response.ok) throw new Error('Failed to fetch fleet locations');
+      if (!response.ok) {
+        const errorMsg = await getFetchErrorMessage(response, 'Failed to fetch fleet locations');
+        throw new Error(errorMsg);
+      }
       
       const result = await response.json();
       const rawVehicles = Array.isArray(result) ? result : (result?.data || []);
@@ -61,7 +65,7 @@ export const useFleetTrackingStore = create<FleetTrackingState>((set, get) => ({
       
       set({ vehicles: initialVehicles, isLoading: false });
     } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+      set({ error: formatError(error, 'Failed to fetch fleet locations'), isLoading: false });
     }
   },
 
