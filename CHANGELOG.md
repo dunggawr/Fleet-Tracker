@@ -1,3 +1,14 @@
+## [2026-05-17] - Driver Creation & Editing UI Improvements
+### Added
+- **Tailwind CSS Styling**: Migrated legacy vanilla Stylesheets in `DriverForm.tsx` to utility-first Tailwind CSS classes, matching the glassmorphic dark-mode admin aesthetic.
+- **Dynamic Date Picker Modal**: Replaced the standard text field with a native React Native DateTimePicker modal for selecting the driver's license expiration date in `YYYY-MM-DD` format.
+- **Create Driver Password Field**: Added a new `Password` field (minimum 6 characters, secure text entry) to the driver creation interface.
+
+### Fixed
+- **Driver Editing Fields & NestJS Payload Violations**:
+  - Made the `Email` field read-only (`editable={!initialData}`) and visually dimmed it during editing to prevent accidental changes.
+  - Stripped both `email` and `password` fields from the update payload in `handleSubmit` before passing it to `onSubmit`, resolving the `property email should not exist` NestJS validation error.
+
 ## [2026-05-17] - Driver Filtering & Friendly Error Messages
 ### Added
 - **User-Friendly Error Handling (`fleet-driver`)**:

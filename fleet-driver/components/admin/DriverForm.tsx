@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { 
   View, 
   Text, 
-  StyleSheet, 
   TextInput, 
   TouchableOpacity, 
   ScrollView,
@@ -60,7 +59,7 @@ export const DriverForm: React.FC<DriverFormProps> = ({ initialData, onSubmit, l
 
   const handleSubmit = () => {
     if (initialData) {
-      const { password, ...updateData } = formData;
+      const { password, email, ...updateData } = formData;
       onSubmit(updateData);
     } else {
       onSubmit(formData);
@@ -70,16 +69,18 @@ export const DriverForm: React.FC<DriverFormProps> = ({ initialData, onSubmit, l
   return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
+      className="flex-1"
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Personal Information</Text>
+      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+        <View className="mb-6">
+          <Text className="text-[14px] font-extrabold text-slate-400 uppercase tracking-[1px] mb-3">
+            Personal Information
+          </Text>
           
-          <View style={styles.inputGroup}>
-            <User size={20} color="#64748b" style={styles.inputIcon} />
+          <View className="flex-row items-center bg-slate-800 rounded-2xl border border-white/[0.08] px-4 mb-3 h-14">
+            <User size={20} color="#64748b" style={{ marginRight: 12 }} />
             <TextInput
-              style={styles.input}
+              className="flex-1 text-slate-50 text-base"
               placeholder="Full Name"
               placeholderTextColor="#64748b"
               value={formData.fullName}
@@ -87,24 +88,25 @@ export const DriverForm: React.FC<DriverFormProps> = ({ initialData, onSubmit, l
             />
           </View>
 
-          <View style={styles.inputGroup}>
-            <Mail size={20} color="#64748b" style={styles.inputIcon} />
+          <View className={`flex-row items-center bg-slate-800 rounded-2xl border border-white/[0.08] px-4 mb-3 h-14 ${initialData ? 'opacity-60' : ''}`}>
+            <Mail size={20} color="#64748b" style={{ marginRight: 12 }} />
             <TextInput
-              style={styles.input}
+              className="flex-1 text-slate-50 text-base"
               placeholder="Email Address"
               placeholderTextColor="#64748b"
               keyboardType="email-address"
               autoCapitalize="none"
               value={formData.email}
               onChangeText={(text) => setFormData({ ...formData, email: text })}
+              editable={!initialData}
             />
           </View>
 
           {!initialData && (
-            <View style={styles.inputGroup}>
-              <Lock size={20} color="#64748b" style={styles.inputIcon} />
+            <View className="flex-row items-center bg-slate-800 rounded-2xl border border-white/[0.08] px-4 mb-3 h-14">
+              <Lock size={20} color="#64748b" style={{ marginRight: 12 }} />
               <TextInput
-                style={styles.input}
+                className="flex-1 text-slate-50 text-base"
                 placeholder="Password (min 6 characters)"
                 placeholderTextColor="#64748b"
                 secureTextEntry={true}
@@ -115,10 +117,10 @@ export const DriverForm: React.FC<DriverFormProps> = ({ initialData, onSubmit, l
             </View>
           )}
 
-          <View style={styles.inputGroup}>
-            <Phone size={20} color="#64748b" style={styles.inputIcon} />
+          <View className="flex-row items-center bg-slate-800 rounded-2xl border border-white/[0.08] px-4 mb-3 h-14">
+            <Phone size={20} color="#64748b" style={{ marginRight: 12 }} />
             <TextInput
-              style={styles.input}
+              className="flex-1 text-slate-50 text-base"
               placeholder="Phone Number"
               placeholderTextColor="#64748b"
               keyboardType="phone-pad"
@@ -128,13 +130,15 @@ export const DriverForm: React.FC<DriverFormProps> = ({ initialData, onSubmit, l
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Driver License</Text>
+        <View className="mb-6">
+          <Text className="text-[14px] font-extrabold text-slate-400 uppercase tracking-[1px] mb-3">
+            Driver License
+          </Text>
           
-          <View style={styles.inputGroup}>
-            <ShieldCheck size={20} color="#64748b" style={styles.inputIcon} />
+          <View className="flex-row items-center bg-slate-800 rounded-2xl border border-white/[0.08] px-4 mb-3 h-14">
+            <ShieldCheck size={20} color="#64748b" style={{ marginRight: 12 }} />
             <TextInput
-              style={styles.input}
+              className="flex-1 text-slate-50 text-base"
               placeholder="License Class (e.g. C, FC)"
               placeholderTextColor="#64748b"
               value={formData.licenseClass}
@@ -143,15 +147,12 @@ export const DriverForm: React.FC<DriverFormProps> = ({ initialData, onSubmit, l
           </View>
 
           <TouchableOpacity 
-            style={styles.inputGroup} 
+            className="flex-row items-center bg-slate-800 rounded-2xl border border-white/[0.08] px-4 mb-3 h-14" 
             onPress={() => setShowDatePicker(true)}
             activeOpacity={0.7}
           >
-            <Calendar size={20} color="#64748b" style={styles.inputIcon} />
-            <Text style={[
-              styles.inputText, 
-              !formData.licenseExpiry && styles.inputPlaceholder
-            ]}>
+            <Calendar size={20} color="#64748b" style={{ marginRight: 12 }} />
+            <Text className={`flex-1 text-base ${formData.licenseExpiry ? 'text-slate-50' : 'text-slate-500'}`}>
               {formData.licenseExpiry 
                 ? formData.licenseExpiry 
                 : 'Expiry Date (YYYY-MM-DD)'}
@@ -159,22 +160,22 @@ export const DriverForm: React.FC<DriverFormProps> = ({ initialData, onSubmit, l
           </TouchableOpacity>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Status</Text>
-          <View style={styles.statusContainer}>
+        <View className="mb-6">
+          <Text className="text-[14px] font-extrabold text-slate-400 uppercase tracking-[1px] mb-3">
+            Status
+          </Text>
+          <View className="flex-row gap-2 flex-wrap">
             {Object.values(DriverStatus).map((status) => (
               <TouchableOpacity
                 key={status}
-                style={[
-                  styles.statusButton,
-                  formData.status === status && styles.statusButtonActive
-                ]}
+                className={`px-4 py-2.5 rounded-xl bg-slate-800 border border-white/[0.08] ${
+                  formData.status === status ? 'bg-indigo-500 border-indigo-500' : ''
+                }`}
                 onPress={() => setFormData({ ...formData, status })}
               >
-                <Text style={[
-                  styles.statusButtonText,
-                  formData.status === status && styles.statusButtonTextActive
-                ]}>
+                <Text className={`font-bold text-[13px] capitalize ${
+                  formData.status === status ? 'text-white' : 'text-slate-400'
+                }`}>
                   {status.replace('_', ' ')}
                 </Text>
               </TouchableOpacity>
@@ -183,14 +184,14 @@ export const DriverForm: React.FC<DriverFormProps> = ({ initialData, onSubmit, l
         </View>
 
         <TouchableOpacity 
-          style={styles.submitButton}
+          className="bg-indigo-500 h-14 rounded-2xl justify-center items-center mt-3 shadow-lg shadow-indigo-500/30 elevation-4"
           onPress={handleSubmit}
           disabled={loading}
         >
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.submitButtonText}>
+            <Text className="text-white text-base font-bold">
               {initialData ? 'Update Driver' : 'Create Driver'}
             </Text>
           )}
@@ -213,15 +214,15 @@ export const DriverForm: React.FC<DriverFormProps> = ({ initialData, onSubmit, l
           visible={showDatePicker}
           onRequestClose={() => setShowDatePicker(false)}
         >
-          <View style={styles.modalOverlay}>
-            <View style={styles.pickerContainerIOS}>
-              <View style={styles.pickerHeaderIOS}>
+          <View className="flex-1 justify-end bg-slate-950/75">
+            <View className="bg-slate-800 rounded-t-3xl border border-white/[0.08] pb-8">
+              <View className="flex-row justify-between items-center p-4 border-b border-white/[0.08]">
                 <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                  <Text style={styles.pickerCancelTextIOS}>Cancel</Text>
+                  <Text className="text-base text-slate-500 font-semibold">Cancel</Text>
                 </TouchableOpacity>
-                <Text style={styles.pickerTitleIOS}>Select Expiry Date</Text>
+                <Text className="text-base font-bold text-slate-50">Select Expiry Date</Text>
                 <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                  <Text style={styles.pickerConfirmTextIOS}>Done</Text>
+                  <Text className="text-base text-indigo-500 font-bold">Done</Text>
                 </TouchableOpacity>
               </View>
               <DateTimePicker
@@ -239,131 +240,3 @@ export const DriverForm: React.FC<DriverFormProps> = ({ initialData, onSubmit, l
     </KeyboardAvoidingView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#94a3b8',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 12,
-  },
-  inputGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1e293b',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    paddingHorizontal: 16,
-    marginBottom: 12,
-    height: 56,
-  },
-  inputIcon: {
-    marginRight: 12,
-  },
-  input: {
-    flex: 1,
-    color: '#f8fafc',
-    fontSize: 16,
-  },
-  statusContainer: {
-    flexDirection: 'row',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  statusButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: '#1e293b',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  statusButtonActive: {
-    backgroundColor: '#6366f1',
-    borderColor: '#6366f1',
-  },
-  statusButtonText: {
-    color: '#94a3b8',
-    fontWeight: '700',
-    fontSize: 13,
-    textTransform: 'capitalize',
-  },
-  statusButtonTextActive: {
-    color: '#fff',
-  },
-  submitButton: {
-    backgroundColor: '#6366f1',
-    height: 56,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 12,
-    shadowColor: '#6366f1',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  submitButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  inputText: {
-    flex: 1,
-    color: '#f8fafc',
-    fontSize: 16,
-  },
-  inputPlaceholder: {
-    color: '#64748b',
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(15, 23, 42, 0.75)',
-  },
-  pickerContainerIOS: {
-    backgroundColor: '#1e293b',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingBottom: Platform.OS === 'ios' ? 30 : 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  pickerHeaderIOS: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  pickerTitleIOS: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#f8fafc',
-  },
-  pickerCancelTextIOS: {
-    fontSize: 16,
-    color: '#64748b',
-    fontWeight: '600',
-  },
-  pickerConfirmTextIOS: {
-    fontSize: 16,
-    color: '#6366f1',
-    fontWeight: 'bold',
-  },
-});
