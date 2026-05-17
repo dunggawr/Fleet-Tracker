@@ -25,19 +25,19 @@ export class Trip {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Vehicle)
+  @ManyToOne(() => Vehicle, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'vehicle_id' })
-  vehicle: Vehicle;
+  vehicle: Vehicle | null;
 
-  @Column({ name: 'vehicle_id' })
-  vehicleId: string;
+  @Column({ name: 'vehicle_id', nullable: true })
+  vehicleId: string | null;
 
-  @ManyToOne(() => Driver)
+  @ManyToOne(() => Driver, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'driver_id' })
-  driver: Driver;
+  driver: Driver | null;
 
-  @Column({ name: 'driver_id' })
-  driverId: string;
+  @Column({ name: 'driver_id', nullable: true })
+  driverId: string | null;
 
   @Column({
     name: 'planned_route',

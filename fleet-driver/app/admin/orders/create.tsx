@@ -39,7 +39,7 @@ export default function CreateOrderScreen() {
           <ChevronLeft size={24} color="#f8fafc" />
         </TouchableOpacity>
         <Text style={styles.title}>New Order</Text>
-        <View style={{ width: 40 }} /> {/* Spacer */}
+        <View style={{ width: 40 }} />
       </View>
 
       <OrderForm onSubmit={handleSubmit} loading={loading} />
