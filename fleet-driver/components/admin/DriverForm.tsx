@@ -8,9 +8,11 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator
+  ActivityIndicator,
+  Modal
 } from 'react-native';
 import { User, Mail, Phone, ShieldCheck, Calendar, Lock } from 'lucide-react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { Driver, DriverStatus } from '../../store/useFleetStore';
 
 interface DriverFormProps {
@@ -29,6 +31,32 @@ export const DriverForm: React.FC<DriverFormProps> = ({ initialData, onSubmit, l
     licenseExpiry: initialData?.licenseExpiry || '',
     status: initialData?.status || DriverStatus.OFF_DUTY,
   });
+
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const getExpiryDate = () => {
+    if (formData.licenseExpiry) {
+      const d = new Date(formData.licenseExpiry);
+      if (!isNaN(d.getTime())) {
+        return d;
+      }
+    }
+    return new Date();
+  };
+
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    
+    if (selectedDate) {
+      const yyyy = selectedDate.getFullYear();
+      const mm = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const dd = String(selectedDate.getDate()).padStart(2, '0');
+      const formattedDate = `${yyyy}-${mm}-${dd}`;
+      setFormData({ ...formData, licenseExpiry: formattedDate });
+    }
+  };
 
   const handleSubmit = () => {
     if (initialData) {
@@ -114,16 +142,21 @@ export const DriverForm: React.FC<DriverFormProps> = ({ initialData, onSubmit, l
             />
           </View>
 
-          <View style={styles.inputGroup}>
+          <TouchableOpacity 
+            style={styles.inputGroup} 
+            onPress={() => setShowDatePicker(true)}
+            activeOpacity={0.7}
+          >
             <Calendar size={20} color="#64748b" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Expiry Date (YYYY-MM-DD)"
-              placeholderTextColor="#64748b"
-              value={formData.licenseExpiry}
-              onChangeText={(text) => setFormData({ ...formData, licenseExpiry: text })}
-            />
-          </View>
+            <Text style={[
+              styles.inputText, 
+              !formData.licenseExpiry && styles.inputPlaceholder
+            ]}>
+              {formData.licenseExpiry 
+                ? formData.licenseExpiry 
+                : 'Expiry Date (YYYY-MM-DD)'}
+            </Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.section}>
@@ -163,6 +196,46 @@ export const DriverForm: React.FC<DriverFormProps> = ({ initialData, onSubmit, l
           )}
         </TouchableOpacity>
       </ScrollView>
+
+      {showDatePicker && Platform.OS === 'android' && (
+        <DateTimePicker
+          value={getExpiryDate()}
+          mode="date"
+          display="calendar"
+          onChange={handleDateChange}
+        />
+      )}
+
+      {showDatePicker && Platform.OS === 'ios' && (
+        <Modal
+          transparent={true}
+          animationType="slide"
+          visible={showDatePicker}
+          onRequestClose={() => setShowDatePicker(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.pickerContainerIOS}>
+              <View style={styles.pickerHeaderIOS}>
+                <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                  <Text style={styles.pickerCancelTextIOS}>Cancel</Text>
+                </TouchableOpacity>
+                <Text style={styles.pickerTitleIOS}>Select Expiry Date</Text>
+                <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                  <Text style={styles.pickerConfirmTextIOS}>Done</Text>
+                </TouchableOpacity>
+              </View>
+              <DateTimePicker
+                value={getExpiryDate()}
+                mode="date"
+                display="spinner"
+                onChange={handleDateChange}
+                textColor="#f8fafc"
+                themeVariant="dark"
+              />
+            </View>
+          </View>
+        </Modal>
+      )}
     </KeyboardAvoidingView>
   );
 };
@@ -247,6 +320,50 @@ const styles = StyleSheet.create({
   submitButtonText: {
     color: '#fff',
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+  inputText: {
+    flex: 1,
+    color: '#f8fafc',
+    fontSize: 16,
+  },
+  inputPlaceholder: {
+    color: '#64748b',
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+  },
+  pickerContainerIOS: {
+    backgroundColor: '#1e293b',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingBottom: Platform.OS === 'ios' ? 30 : 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  pickerHeaderIOS: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  pickerTitleIOS: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#f8fafc',
+  },
+  pickerCancelTextIOS: {
+    fontSize: 16,
+    color: '#64748b',
+    fontWeight: '600',
+  },
+  pickerConfirmTextIOS: {
+    fontSize: 16,
+    color: '#6366f1',
     fontWeight: 'bold',
   },
 });

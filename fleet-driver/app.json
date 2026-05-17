@@ -16,7 +16,10 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "UIBackgroundModes": ["location", "fetch"]
+        "UIBackgroundModes": [
+          "location",
+          "fetch"
+        ]
       }
     },
     "android": {
@@ -50,7 +53,8 @@
           "locationWhenInUsePermission": "Cho phép FleetTracker truy cập vị trí của bạn để theo dõi hành trình.",
           "isAndroidBackgroundLocationEnabled": true
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true
