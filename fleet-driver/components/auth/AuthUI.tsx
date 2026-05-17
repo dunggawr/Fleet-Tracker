@@ -36,9 +36,21 @@ interface AuthInputProps {
   secureTextEntry?: boolean;
   keyboardType?: 'default' | 'email-address' | 'numeric';
   icon?: React.ReactNode;
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  autoCorrect?: boolean;
 }
 
-export const AuthInput = ({ label, value, onChangeText, placeholder, secureTextEntry, keyboardType, icon }: AuthInputProps) => (
+export const AuthInput = ({ 
+  label, 
+  value, 
+  onChangeText, 
+  placeholder, 
+  secureTextEntry, 
+  keyboardType, 
+  icon,
+  autoCapitalize,
+  autoCorrect
+}: AuthInputProps) => (
   <View className="mb-5">
     <Text className="text-slate-400 mb-2 ml-1 text-sm font-medium">{label}</Text>
     <View className="relative">
@@ -52,6 +64,8 @@ export const AuthInput = ({ label, value, onChangeText, placeholder, secureTextE
         placeholderTextColor="#64748b"
         secureTextEntry={secureTextEntry}
         keyboardType={keyboardType}
+        autoCapitalize={autoCapitalize}
+        autoCorrect={autoCorrect}
         className="bg-slate-800/50 border border-slate-700/50 rounded-2xl py-4 pl-12 pr-4 text-white text-base"
       />
     </View>

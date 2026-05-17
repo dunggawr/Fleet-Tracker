@@ -1,12 +1,22 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Truck, Map, User } from 'lucide-react-native';
+import { Truck, Map, User, LayoutDashboard, MapPin, Package, Users } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import { Platform, StyleSheet } from 'react-native';
+import { useAuthStore } from '../../store/useAuthStore';
 
 export default function TabLayout() {
+  const { user, isAuthenticated } = useAuthStore();
+
+  if (!isAuthenticated || !user) {
+    return null;
+  }
+
+  const isAdmin = user.role?.toUpperCase() === 'ADMIN';
+
   return (
     <Tabs
+      key={user.id}
       screenOptions={{
         tabBarActiveTintColor: '#6366f1',
         tabBarInactiveTintColor: '#94a3b8',
@@ -29,8 +39,8 @@ export default function TabLayout() {
         tabBarStyle: {
           position: 'absolute',
           bottom: 24,
-          left: 20,
-          right: 20,
+          left: 16,
+          right: 16,
           height: 72,
           elevation: 0,
           backgroundColor: 'transparent',
@@ -53,10 +63,12 @@ export default function TabLayout() {
         ),
         headerShown: false,
       }}>
+      {/* Driver Tabs */}
       <Tabs.Screen
         name="index"
         options={{
           title: 'Trips',
+          href: !isAdmin ? undefined : null,
           tabBarIcon: ({ color, focused }) => (
             <Truck size={focused ? 26 : 22} color={color} strokeWidth={focused ? 2.5 : 2} />
           ),
@@ -66,11 +78,56 @@ export default function TabLayout() {
         name="map"
         options={{
           title: 'Active Map',
+          href: !isAdmin ? undefined : null,
           tabBarIcon: ({ color, focused }) => (
             <Map size={focused ? 26 : 22} color={color} strokeWidth={focused ? 2.5 : 2} />
           ),
         }}
       />
+
+      {/* Admin Tabs */}
+      <Tabs.Screen
+        name="admin-dashboard"
+        options={{
+          title: 'Dash',
+          href: isAdmin ? undefined : null,
+          tabBarIcon: ({ color, focused }) => (
+            <LayoutDashboard size={focused ? 26 : 22} color={color} strokeWidth={focused ? 2.5 : 2} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="admin-tracking"
+        options={{
+          title: 'Tracking',
+          href: isAdmin ? undefined : null,
+          tabBarIcon: ({ color, focused }) => (
+            <MapPin size={focused ? 26 : 22} color={color} strokeWidth={focused ? 2.5 : 2} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="admin-orders"
+        options={{
+          title: 'Orders',
+          href: isAdmin ? undefined : null,
+          tabBarIcon: ({ color, focused }) => (
+            <Package size={focused ? 26 : 22} color={color} strokeWidth={focused ? 2.5 : 2} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="admin-fleet"
+        options={{
+          title: 'Fleet',
+          href: isAdmin ? undefined : null,
+          tabBarIcon: ({ color, focused }) => (
+            <Users size={focused ? 26 : 22} color={color} strokeWidth={focused ? 2.5 : 2} />
+          ),
+        }}
+      />
+
+      {/* Shared Tabs */}
       <Tabs.Screen
         name="profile"
         options={{

@@ -1,3 +1,65 @@
+## [2026-05-17] - Admin Vehicle Creation Fix & Driver Checks
+### Added
+- **Driver Eligibility Validation (`fleet-api`)**:
+    - Implemented a check in `VehiclesService.create` to verify that when assigning a driver to a vehicle during creation, the driver exists in the database.
+    - Added validation to ensure the driver is not currently active on another trip (`DriverStatus.ON_TRIP`), throwing a `ConflictException` if violated.
+    - Wrote comprehensive unit tests in `vehicles.service.spec.ts` covering successful creation with a driver, `NotFoundException` for invalid driver IDs, and `ConflictException` for drivers already on a trip.
+
+### Fixed
+- **API Vehicle Creation Validation Failure (400 Bad Request)**:
+    - Fixed a bug where creating a vehicle from the mobile admin interface failed with a `400 Bad Request` validation error when `driverId` or `status` was supplied.
+    - Updated `CreateVehicleDto` in `create-vehicle.dto.ts` to allow and validate `status` and `driverId` fields using `IsEnum` and `IsUUID` validation decorators.
+
+## [2026-05-17] - Mobile Live Tracking & Auth Refinements
+### Added
+- **Mobile Fleet Tracking Refinements (`fleet-driver`)**:
+    - **Tailwind CSS UI Migration**: Migrated legacy Stylesheets in `admin-tracking.tsx` to utility-first Tailwind classes, optimizing headers, cards, overlay panels, search bar, and map controls for pure Glassmorphism.
+    - **Automated Vehicle Following**: Implemented dynamic map camera centering. The camera automatically pans and tracks selected vehicles in real-time as coordinates update.
+    - **Unified Search Result Dropdown**: Added interactive vehicle list searching by license plate and driver name, allowing direct marker focus on select.
+    - **Standard/Satellite/Hybrid Map View**: Added dynamic layer toggle control buttons for standard, satellite, and hybrid layers on mobile maps.
+    - **Tracking Map Performance Optimization**: Throttled automated map camera following to 1.5s intervals using a ref timestamp and added `React.memo` caching to `FleetMarker` to minimize React Native re-rendering stress during rapid WebSocket location updates.
+    - **react-native-maps CPU Reduction**: Implemented transient `tracksViewChanges` state control (enabling it for 300ms only when coords/heading/status updates and then resetting it to false) to bypass expensive native map redraw loops.
+    - **Marker Icon Visual Correction**: Resolved native MapView custom icon cutoffs and boundary clipping by introducing outer container padding, forcing `overflow: 'visible'`, and configuring a precise base anchor (`anchor={{ x: 0.5, y: 1.0 }}`) to align markers correctly with coordinates.
+
+### Fixed
+- **Mobile Keyboard Auto-Capitalization Failure**:
+    - Fixed credentials entry crash where default mobile keyboards capitalized input email addresses, causing hidden case-mismatch auth failures. Enforced `autoCapitalize="none"` and `autoCorrect={false}` client-side and transformed incoming fields using `.trim().toLowerCase()` in the hooks layer.
+
+## [2026-05-17] - Navigation Stabilization & Layout Remount
+### Added
+- **Multi-Role Nav Stabilization (`fleet-driver`)**:
+    - **Dynamic Tabs Remounting**: Added `key={user.id}` to `<Tabs>` component in `app/(tabs)/_layout.tsx` to force full React Navigation cache reset on role switch, preventing UI tab leak.
+    - **Flash Guard**: Added early return on `!isAuthenticated || !user` to block rendering stale/empty layout before store hydrates.
+    - **Tab Layout Clean Up**: Removed redundant `<Tabs.Screen options={{ href: null }}` configurations at bottom, replaced with dynamic `href` properties.
+- **Mapbox Config Template (`fleet-driver`)**:
+    - Added `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` entry to `fleet-driver/.env.example`.
+
+### Fixed
+- **Expo Router Layout Routing Collision**:
+    - Resolved `ERROR [Error: Cannot use href and tabBarButton together.]` runtime crash by using dynamic `href: isAdmin ? undefined : null` instead of dynamic component blocks or combining custom button structures.
+
+## [2026-05-16] - Mobile Admin Mirror Phase 04 (Order Management)
+### Added
+- **Mobile Admin Mirror Phase 04 (Order Management CRUD)**:
+    - **Order List Screen**: Developed `admin-orders.tsx` featuring real-time status filtering (Pending, Ongoing, Completed, Cancelled), search bar, and interactive order cards.
+    - **Create Order Workflow**: Implemented `app/admin/orders/create.tsx` for manual order entry.
+    - **MapPicker Component**: Built a reusable geospatial picker using a center-pin interaction pattern for high-precision pickup/delivery coordinate selection.
+    - **OrderForm Component**: Integrated form validation, address inputs, weight fields, and the MapPicker for a seamless administrative experience.
+    - **Zustand Order Store**: Created `useOrderStore` to manage CRUD operations, pagination, and backend API synchronization for orders.
+
+## [2026-05-16] - Mobile Admin Mirror Phase 02 & 03
+### Added
+- **Mobile Admin Mirror Phase 02 (Navigation & Architecture)**:
+    - **Multi-Role Root Layout**: Implemented dynamic role-based routing in `app/_layout.tsx` to switch between `(driver_tabs)` and `(admin_tabs)`.
+    - **Admin Tab Bar**: Created a glassmorphic bottom navigation bar for administrators with screens for Dashboard, Tracking, Orders, and Management.
+    - **Session Persistence**: Enhanced `useAuthStore` to handle role-specific initial routes and deep linking.
+- **Mobile Admin Mirror Phase 03 (Live Fleet Tracking Map)**:
+    - **Interactive Map Screen**: Developed `admin-tracking.tsx` using `react-native-maps` with support for Standard/Satellite/Hybrid layers.
+    - **Real-time State Sync**: Integrated `useFleetTrackingStore` (Zustand) with Socket.io to receive and render live GPS telemetry.
+    - **Fleet Markers**: Created status-aware markers with vehicle heading rotation, license plate labels, and smooth movement animations.
+    - **Vehicle Detail Cards**: Implemented glassmorphic overlay cards showing real-time driver info, speed, and status.
+    - **Map Controls**: Added "Fit All" auto-zoom and layer toggle controls.
+
 ## [2026-05-16] - Mobile Admin Mirror Planning
 ### Added
 - **Project Planning**:

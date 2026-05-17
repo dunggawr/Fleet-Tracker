@@ -25,6 +25,8 @@ export const LoginForm = (props: LoginFormProps) => {
         onChangeText={props.setEmail}
         placeholder="driver@fleet.com"
         keyboardType="email-address"
+        autoCapitalize="none"
+        autoCorrect={false}
         icon={<Mail color="#818cf8" size={20} />}
       />
 

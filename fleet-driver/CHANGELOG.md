@@ -1,5 +1,11 @@
 # Changelog
 
+## [2026-05-17] - Live Tracking & Coordinate Parsing Fixes
+### Fixed
+- **Admin Fleet Tracking**: Fixed blank map screen by correctly unpacking the API response structure `{ statusCode, message, data }` in `useFleetTrackingStore`.
+- **PostGIS Coordinate Parsing**: Built a custom high-precision hexadecimal decoder for WKB (Well-Known Binary) PostGIS Geography formats in `geo.ts` to decode hex-encoded coordinates without external binary libraries.
+- **Unit Test Coverage**: Added comprehensive test suite `geo.test.ts` validating standard GeoJSON, WKT, plain objects, and binary hex-encoded WKB PostGIS inputs.
+
 ## [2026-05-15] - Driver App Polish & UI Standardization
 ### Refactored
 - Unified all component imports (Themed, StyledText, ExternalLink) to `@/components/ui`.
@@ -73,4 +79,19 @@
 - **Added**: Enforced 200m geofencing for "Pick Up" and "Submit Proof" actions.
 - **Added**: `useGeofencing` hook for centralized, high-accuracy location checks.
 - **Refactored**: Moved inline location logic from `OrderCard` and `signature` to shared hook.
-- **Improved**: Added loading indicators during location verification to enhance UX.
+## [2026-05-16] - Reporting & Analytics (Phase 07)
+### Added
+- **Fleet KPI Dashboard**: Visualization of fleet performance metrics.
+- **Utilization Tracking**: Detailed reports on vehicle and driver efficiency.
+- **Fuel Monitoring**: Analytics for fuel consumption and cost tracking.
+- **Trip History & Export**: Comprehensive trip logs with PDF/Excel export functionality.
+- **Reporting Store**: Centralized state management for complex analytical data using `useReportStore`.
+
+### Fixed
+- **Test Stability**: Fixed import path in `StyledText-test.js` ensuring clean test runs.
+- **Build Integrity**: Verified complete build cycle with `npx expo export`.
+
+### Improved
+- **Type Safety**: Ensured 100% TypeScript coverage for the reporting module.
+- **UI/UX**: Integrated `react-native-chart-kit` with the Tactical Admin theme.
+

@@ -9,7 +9,7 @@ interface TripBadgeProps {
 }
 
 export const getStatusColors = (status: string | TripStatus) => {
-  switch (status.toLowerCase()) {
+  switch ((status || '').toLowerCase()) {
     case 'pending':
       return {
         bg: 'bg-amber-500/15',
@@ -48,7 +48,7 @@ export const getStatusColors = (status: string | TripStatus) => {
 };
 
 export const TripBadge: React.FC<TripBadgeProps> = ({ status, isActive, isHistory }) => {
-  const displayStatus = isActive ? 'Live' : status.toUpperCase().replace('_', ' ');
+  const displayStatus = isActive ? 'Live' : (status || '').toUpperCase().replace('_', ' ');
   const colors = getStatusColors(isActive ? 'live' : status);
 
   return (
