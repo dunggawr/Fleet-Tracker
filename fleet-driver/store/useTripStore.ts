@@ -6,6 +6,7 @@ import { authFetch } from '@/lib/authFetch';
 export { Trip, TripStatus, OrderStatus } from '@/types/trip';
 import { Trip, TripStatus, OrderStatus } from '@/types/trip';
 import { parsePoint, parseLineString } from '@/utils/geo';
+import { formatError, getFetchErrorMessage } from '@/utils/error';
 
 const transformTripData = (t: any): Trip | null => {
   if (!t) return null;
@@ -68,7 +69,10 @@ export const useTripStore = create<TripState>()(
         set({ isLoading: true, error: null });
         try {
           const response = await authFetch('/trips/my');
-          if (!response.ok) throw new Error('Failed to fetch trips');
+          if (!response.ok) {
+            const errorMsg = await getFetchErrorMessage(response, 'Failed to fetch trips');
+            throw new Error(errorMsg);
+          }
           
           const result = await response.json();
           const rawTrips = result?.data ?? result;
@@ -95,7 +99,7 @@ export const useTripStore = create<TripState>()(
             error: null
           });
         } catch (error: any) {
-          set({ error: error.message, isLoading: false });
+          set({ error: formatError(error, 'Failed to fetch trips'), isLoading: false });
         }
       },
 
@@ -119,14 +123,15 @@ export const useTripStore = create<TripState>()(
           });
 
           if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to update status');
+            const errorMsg = await getFetchErrorMessage(response, 'Failed to update status');
+            throw new Error(errorMsg);
           }
           
           await get().fetchTrips();
         } catch (error: any) {
-          set({ error: error.message, isLoading: false });
-          throw error;
+          const message = formatError(error, 'Failed to update status');
+          set({ error: message, isLoading: false });
+          throw new Error(message);
         }
       },
 
@@ -148,14 +153,15 @@ export const useTripStore = create<TripState>()(
           });
 
           if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to update order status');
+            const errorMsg = await getFetchErrorMessage(response, 'Failed to update order status');
+            throw new Error(errorMsg);
           }
           
           await get().fetchTrips();
         } catch (error: any) {
-          set({ error: error.message, isLoading: false });
-          throw error;
+          const message = formatError(error, 'Failed to update order status');
+          set({ error: message, isLoading: false });
+          throw new Error(message);
         }
       },
     }),

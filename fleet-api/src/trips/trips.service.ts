@@ -277,7 +277,7 @@ export class TripsService {
 
     const alert = this.alertRepository.create({
       tripId,
-      vehicleId: trip.vehicleId,
+      vehicleId: trip.vehicleId!,
       driverId: trip.driverId,
       type: AlertType.INCIDENT,
       severity: dto.severity || AlertSeverity.HIGH,

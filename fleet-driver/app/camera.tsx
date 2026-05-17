@@ -5,6 +5,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { X, Camera, Check, RefreshCw } from 'lucide-react-native';
 import Toast from 'react-native-toast-message';
 import { authFetch } from '@/lib/authFetch';
+import { formatError, getFetchErrorMessage } from '@/utils/error';
 
 export default function CameraScreen() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -72,7 +73,11 @@ export default function CameraScreen() {
         body: formData,
       });
 
-      if (!response.ok) throw new Error('Failed to upload photo');
+      if (!response.ok) {
+        const errorMsg = await getFetchErrorMessage(response, 'Failed to upload photo');
+        throw new Error(errorMsg);
+      }
+      
       const { url } = await response.json();
 
       Toast.show({
@@ -90,7 +95,7 @@ export default function CameraScreen() {
       Toast.show({
         type: 'error',
         text1: 'Upload Failed',
-        text2: error.message
+        text2: formatError(error, 'Failed to upload photo')
       });
     } finally {
       setIsUploading(false);

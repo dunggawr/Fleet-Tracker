@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { VehiclesService } from './vehicles.service';
 import { Vehicle, VehicleStatus, VehicleType } from '../entities/vehicle.entity';
 import { Driver, DriverStatus } from '../entities/driver.entity';
+import { UserRole } from '../entities/user.entity';
 import { UploadService } from '../upload/upload.service';
 import {
   ConflictException,
@@ -99,7 +100,11 @@ describe('VehiclesService', () => {
 
     it('should create a vehicle with driver successfully', async () => {
       mockRepository.findOne.mockResolvedValue(null);
-      const mockDriver = { id: 'driver-1', status: DriverStatus.AVAILABLE };
+      const mockDriver = { 
+        id: 'driver-1', 
+        status: DriverStatus.AVAILABLE,
+        user: { role: UserRole.DRIVER }
+      };
       jest.spyOn(driverRepository, 'findOne').mockResolvedValue(mockDriver as any);
 
       const dto = {
@@ -132,7 +137,11 @@ describe('VehiclesService', () => {
 
     it('should throw ConflictException if driver is already on trip', async () => {
       mockRepository.findOne.mockResolvedValue(null);
-      const mockDriver = { id: 'driver-1', status: DriverStatus.ON_TRIP };
+      const mockDriver = { 
+        id: 'driver-1', 
+        status: DriverStatus.ON_TRIP,
+        user: { role: UserRole.DRIVER }
+      };
       jest.spyOn(driverRepository, 'findOne').mockResolvedValue(mockDriver as any);
 
       const dto = {

@@ -65,6 +65,7 @@ export class DriversService {
     const query = this.driversRepository
       .createQueryBuilder('driver')
       .leftJoinAndSelect('driver.user', 'user')
+      .andWhere('user.role = :role', { role: UserRole.DRIVER })
       .skip((page - 1) * limit)
       .take(limit);
 
@@ -103,7 +104,7 @@ export class DriversService {
       relations: ['user'],
     });
 
-    if (!driver) {
+    if (!driver || !driver.user || driver.user.role !== UserRole.DRIVER) {
       throw new NotFoundException(`Driver with ID ${id} not found`);
     }
 

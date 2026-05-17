@@ -3,6 +3,7 @@ import { Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuthStore } from "../../store/useAuthStore";
 import Toast from "react-native-toast-message";
+import { formatError } from "../../utils/error";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3001/api";
 
@@ -35,9 +36,9 @@ export function useAuthFlow() {
         body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
       if (!response.ok) {
-        throw new Error(data?.message || data?.error?.message || "Login failed");
+        throw new Error(data?.message || data?.error?.message || `Đăng nhập thất bại (Mã lỗi: ${response.status})`);
       }
 
       const payload = data?.data ?? data;
@@ -67,7 +68,7 @@ export function useAuthFlow() {
 
       router.replace("/(tabs)");
     } catch (error: any) {
-      Alert.alert("Login Failed", error.message || "Server connection error");
+      Alert.alert("Login Failed", formatError(error, "Server connection error"));
     } finally {
       setIsLoading(false);
     }
@@ -87,10 +88,10 @@ export function useAuthFlow() {
         body: JSON.stringify({ email: resetEmail.trim().toLowerCase() }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
       const result = data?.data ?? data;
 
-      if (!response.ok) throw new Error(result?.message || "Could not send reset code");
+      if (!response.ok) throw new Error(result?.message || `Không thể gửi mã khôi phục (Mã lỗi: ${response.status})`);
 
       Toast.show({
         type: "success",
@@ -103,7 +104,7 @@ export function useAuthFlow() {
       Toast.show({
         type: "error",
         text1: "Error",
-        text2: error.message || "Failed to send reset code",
+        text2: formatError(error, "Failed to send reset code"),
       });
     } finally {
       setIsLoading(false);
@@ -134,10 +135,10 @@ export function useAuthFlow() {
         body: JSON.stringify({ email: resetEmail.trim().toLowerCase(), resetCode, newPassword }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
       const result = data?.data ?? data;
 
-      if (!response.ok) throw new Error(result?.message || "Could not reset password");
+      if (!response.ok) throw new Error(result?.message || `Không thể đặt lại mật khẩu (Mã lỗi: ${response.status})`);
 
       Toast.show({
         type: "success",
@@ -155,7 +156,7 @@ export function useAuthFlow() {
       Toast.show({
         type: "error",
         text1: "Error",
-        text2: error.message || "Failed to reset password",
+        text2: formatError(error, "Failed to reset password"),
       });
     } finally {
       setIsLoading(false);

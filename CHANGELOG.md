@@ -1,3 +1,25 @@
+## [2026-05-17] - Driver Filtering & Friendly Error Messages
+### Added
+- **User-Friendly Error Handling (`fleet-driver`)**:
+    - Introduced a central error parsing utility `fleet-driver/utils/error.ts` to extract descriptive error messages from backend exceptions and raw Axios payloads, replacing technical "Request failed with status code" messages.
+    - Integrated the new error-handling framework across authentication flow (`useAuthFlow.ts`), profile management (`useProfileFlow.ts`), and global Zustand state stores (`useFleetStore.ts`, `useFleetTrackingStore.ts`, `useTripStore.ts`).
+    - Handled peripheral errors in camera capture and signature pad uploads to guarantee localized, readable mobile notifications.
+
+### Fixed
+- **Role-based Driver Exclusion (`fleet-api`)**:
+    - Fixed driver listing and assignment issues where administrator and dispatcher accounts mistakenly appeared as selectable drivers on the mobile app's fleet-driver tab and within vehicle-driver assignment interfaces.
+    - Replaced generic user listings in `DriversService.findAll` with precise query builders that explicitly target and filter only records associated with the `DRIVER` role.
+    - Updated `VehiclesService` role check to reject non-driver profiles when assigning drivers to fleet vehicles, backed by comprehensive mock tests in `vehicles.service.spec.ts` and `drivers.service.spec.ts`.
+- **Cascading Vehicle & Driver Deletion Support (`fleet-api`)**:
+    - Fixed database constraint violations when deleting a Vehicle or Driver associated with dynamic Trip history.
+    - Updated `Trip` entity relations (`vehicle`, `driver`) to `nullable: true` and configured `{ onDelete: 'SET NULL' }` cascading constraints.
+    - Standardized `vehicleId` and `driverId` to nullable types on the `Trip` entity, preventing TypeORM query crashes.
+    - Hardened `AlertsService` and `TripsService` to handle null `vehicleId` and `driverId` fields safely.
+- **Order Form & Address Autocomplete Stability (`fleet-driver`)**:
+    - Resolved critical React Native crash caused by standard comments outside of `<Text>` tags inside layout views in `create.tsx`.
+    - Fixed `VirtualizedLists should never be nested inside plain ScrollViews` warning/crash on Address Autocomplete popup by swapping `<FlatList>` with `<ScrollView>` and a standard `.map()` structure in `AddressAutocomplete.tsx`.
+    - Avoided empty string boolean coercion bugs by replacing standard ternary string validations with strict boolean checks (`!!error`, `!!errors.weightKg`) on text fields.
+
 ## [2026-05-17] - Admin Vehicle Creation Fix & Driver Checks
 ### Added
 - **Driver Eligibility Validation (`fleet-api`)**:

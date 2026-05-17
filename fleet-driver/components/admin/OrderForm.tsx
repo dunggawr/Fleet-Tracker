@@ -186,7 +186,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, onSubmit, loa
               value={formData.weightKg}
               onChangeText={(text) => setFormData({ ...formData, weightKg: text })}
             />
-            {errors.weightKg && <Text style={styles.errorText}>{errors.weightKg}</Text>}
+            {!!errors.weightKg && <Text style={styles.errorText}>{errors.weightKg}</Text>}
           </View>
 
           <View style={styles.inputGroup}>

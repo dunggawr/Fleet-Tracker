@@ -54,6 +54,7 @@ import { NetworkBanner } from '../components/ui/NetworkBanner';
 import { socketService } from '../lib/socket';
 
 import Toast from 'react-native-toast-message';
+import { toastConfig } from '../components/ui/ExpandableToast';
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
@@ -139,7 +140,7 @@ function RootLayoutNav() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
-      <Toast />
+      <Toast config={toastConfig} topOffset={56} />
     </ThemeProvider>
   );
 }

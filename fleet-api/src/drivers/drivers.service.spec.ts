@@ -5,7 +5,7 @@ import { ConflictException, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { DriversService } from './drivers.service';
 import { Driver, DriverStatus } from '../entities/driver.entity';
-import { User } from '../entities/user.entity';
+import { User, UserRole } from '../entities/user.entity';
 import { DriverKpi } from '../entities/driver-kpi.entity';
 
 jest.mock('bcrypt');
@@ -24,6 +24,7 @@ describe('DriversService', () => {
       id: 'u1',
       fullName: 'John Doe',
       phone: '123456789',
+      role: UserRole.DRIVER,
     },
   };
 

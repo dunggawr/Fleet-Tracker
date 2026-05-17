@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
 import { Vehicle, VehicleStatus } from '../entities/vehicle.entity';
 import { Driver, DriverStatus } from '../entities/driver.entity';
+import { UserRole } from '../entities/user.entity';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { VehicleQueryDto } from './dto/vehicle-query.dto';
@@ -39,8 +40,9 @@ export class VehiclesService {
     if (driverId) {
       const driver = await this.driverRepository.findOne({
         where: { id: driverId },
+        relations: ['user'],
       });
-      if (!driver) {
+      if (!driver || !driver.user || driver.user.role !== UserRole.DRIVER) {
         throw new NotFoundException('Driver not found');
       }
       if (driver.status === DriverStatus.ON_TRIP) {
@@ -141,8 +143,9 @@ export class VehiclesService {
       if (updateVehicleDto.driverId) {
         const newDriver = await this.driverRepository.findOne({
           where: { id: updateVehicleDto.driverId },
+          relations: ['user'],
         });
-        if (!newDriver) {
+        if (!newDriver || !newDriver.user || newDriver.user.role !== UserRole.DRIVER) {
           throw new NotFoundException('Driver not found');
         }
         if (newDriver.status === DriverStatus.ON_TRIP) {

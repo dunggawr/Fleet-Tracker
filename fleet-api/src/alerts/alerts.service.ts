@@ -26,7 +26,7 @@ export class AlertsService {
 
     if (tripId) {
       const trip = await this.tripRepository.findOne({ where: { id: tripId } });
-      driverId = trip ? trip.driverId : undefined;
+      driverId = trip?.driverId || undefined;
     }
 
     const alert = this.alertRepository.create({

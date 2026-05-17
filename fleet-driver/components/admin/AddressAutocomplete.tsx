@@ -4,7 +4,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  FlatList,
+  ScrollView,
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
@@ -123,11 +123,13 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
       {showSuggestions && suggestions.length > 0 && (
         <View style={styles.suggestionsContainer}>
-          <FlatList
-            data={suggestions}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
+          <ScrollView
+            style={styles.suggestionsList}
+            keyboardShouldPersistTaps="handled"
+          >
+            {suggestions.map((item) => (
               <TouchableOpacity
+                key={item.id}
                 style={styles.suggestionItem}
                 onPress={() => handleSelect(item)}
               >
@@ -141,13 +143,11 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
                   </Text>
                 </View>
               </TouchableOpacity>
-            )}
-            style={styles.suggestionsList}
-            keyboardShouldPersistTaps="handled"
-          />
+            ))}
+          </ScrollView>
         </View>
       )}
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      {!!error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
 };

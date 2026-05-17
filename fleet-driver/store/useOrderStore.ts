@@ -74,7 +74,25 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const { token } = useAuthStore.getState();
-      const response = await axios.post(`${API_URL}/orders`, orderData, {
+      
+      // Transform client-side payload to match NestJS DTO (flat coordinates)
+      const payload: any = {
+        pickupAddress: orderData.pickupAddress,
+        deliveryAddress: orderData.deliveryAddress,
+        weightKg: orderData.weightKg,
+        description: orderData.description,
+      };
+
+      if (orderData.pickupLocation?.coordinates) {
+        payload.pickupLng = orderData.pickupLocation.coordinates[0];
+        payload.pickupLat = orderData.pickupLocation.coordinates[1];
+      }
+      if (orderData.deliveryLocation?.coordinates) {
+        payload.deliveryLng = orderData.deliveryLocation.coordinates[0];
+        payload.deliveryLat = orderData.deliveryLocation.coordinates[1];
+      }
+
+      const response = await axios.post(`${API_URL}/orders`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
       
@@ -95,9 +113,37 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const { token } = useAuthStore.getState();
-      const response = await axios.patch(`${API_URL}/orders/${id}`, orderData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      
+      let response;
+      // If updating status only, route to the dedicated status endpoint
+      if (orderData.status && Object.keys(orderData).length === 1) {
+        response = await axios.patch(`${API_URL}/orders/${id}/status`, { status: orderData.status }, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } else {
+        const payload: any = { ...orderData };
+        
+        // Remove fields that would fail DTO validation due to forbidNonWhitelisted
+        delete payload.id;
+        delete payload.createdAt;
+        delete payload.updatedAt;
+        delete payload.status;
+
+        if (orderData.pickupLocation?.coordinates) {
+          payload.pickupLng = orderData.pickupLocation.coordinates[0];
+          payload.pickupLat = orderData.pickupLocation.coordinates[1];
+          delete payload.pickupLocation;
+        }
+        if (orderData.deliveryLocation?.coordinates) {
+          payload.deliveryLng = orderData.deliveryLocation.coordinates[0];
+          payload.deliveryLat = orderData.deliveryLocation.coordinates[1];
+          delete payload.deliveryLocation;
+        }
+
+        response = await axios.patch(`${API_URL}/orders/${id}`, payload, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
       
       const updatedOrder = response.data.data || response.data;
       set(state => ({

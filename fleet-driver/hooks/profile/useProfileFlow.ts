@@ -5,6 +5,7 @@ import Toast from 'react-native-toast-message';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useTripStore } from '../../store/useTripStore';
 import { authFetch } from '../../lib/authFetch';
+import { formatError } from '../../utils/error';
 
 export const useProfileFlow = () => {
   const router = useRouter();
@@ -75,7 +76,7 @@ export const useProfileFlow = () => {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Cập nhật trạng thái thất bại');
+        throw new Error(errorData.message || errorData.error?.message || 'Cập nhật trạng thái thất bại');
       }
 
       setIsOnline(!isOnline);
@@ -90,7 +91,7 @@ export const useProfileFlow = () => {
       Toast.show({
         type: 'error',
         text1: 'Lỗi',
-        text2: error.message || 'Cập nhật trạng thái thất bại',
+        text2: formatError(error, 'Cập nhật trạng thái thất bại'),
       });
     } finally {
       setIsUpdatingStatus(false);
@@ -138,11 +139,11 @@ export const useProfileFlow = () => {
         }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
       const result = data?.data ?? data;
 
       if (!response.ok) {
-        throw new Error(result?.message || 'Đổi mật khẩu thất bại');
+        throw new Error(result?.message || result?.error?.message || 'Đổi mật khẩu thất bại');
       }
 
       Toast.show({
@@ -159,7 +160,7 @@ export const useProfileFlow = () => {
       Toast.show({
         type: 'error',
         text1: 'Lỗi',
-        text2: error.message || 'Đổi mật khẩu thất bại',
+        text2: formatError(error, 'Đổi mật khẩu thất bại'),
       });
     } finally {
       setIsChanging(false);
