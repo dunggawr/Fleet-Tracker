@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTripStore } from '../../store/useTripStore';
+import { useAuthStore } from '../../store/useAuthStore';
 import { ConnectionStatus } from '../../components/ui/ConnectionStatus';
 import Toast from 'react-native-toast-message';
 
@@ -20,6 +21,7 @@ import { TripSectionHeader } from '../../components/trip/TripSectionHeader';
 
 export default function TripsScreen() {
   const router = useRouter();
+  const { user } = useAuthStore();
   const pendingTrips = useTripStore(state => state.pendingTrips);
   const activeTrip = useTripStore(state => state.activeTrip);
   const tripHistory = useTripStore(state => state.tripHistory);
@@ -31,8 +33,12 @@ export default function TripsScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
+    if (user?.role?.toUpperCase() === 'ADMIN') {
+      router.replace('/(tabs)/admin-dashboard');
+      return;
+    }
     fetchTrips();
-  }, []);
+  }, [user]);
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);

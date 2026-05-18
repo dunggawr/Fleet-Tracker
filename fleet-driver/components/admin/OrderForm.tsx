@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { 
   View, 
   Text, 
-  StyleSheet, 
   TextInput, 
   TouchableOpacity, 
   ScrollView,
@@ -20,7 +19,6 @@ import {
 } from 'lucide-react-native';
 import { Order, OrderStatus } from '../../store/useOrderStore';
 import { MapPicker } from './MapPicker';
-import { AddressAutocomplete } from './AddressAutocomplete';
 
 interface OrderFormProps {
   initialData?: Partial<Order>;
@@ -71,11 +69,19 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, onSubmit, loa
     } as any);
   };
 
-  const handleLocationSelect = (coords: { latitude: number; longitude: number }) => {
+  const handleLocationSelect = (coords: { latitude: number; longitude: number }, address: string) => {
     if (pickingLocation === 'pickup') {
-      setFormData({ ...formData, pickupLocation: [coords.longitude, coords.latitude] });
+      setFormData({ 
+        ...formData, 
+        pickupLocation: [coords.longitude, coords.latitude],
+        pickupAddress: address 
+      });
     } else if (pickingLocation === 'delivery') {
-      setFormData({ ...formData, deliveryLocation: [coords.longitude, coords.latitude] });
+      setFormData({ 
+        ...formData, 
+        deliveryLocation: [coords.longitude, coords.latitude],
+        deliveryAddress: address 
+      });
     }
     setPickingLocation(null);
   };
@@ -91,6 +97,9 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, onSubmit, loa
             ? { latitude: formData.deliveryLocation[1], longitude: formData.deliveryLocation[0] }
             : undefined
         }
+        initialAddress={
+          pickingLocation === 'pickup' ? formData.pickupAddress : formData.deliveryAddress
+        }
         onSelect={handleLocationSelect}
         onCancel={() => setPickingLocation(null)}
       />
@@ -100,36 +109,45 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, onSubmit, loa
   return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
+      className="flex-1"
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40, gap: 20 }}>
         {/* Pickup Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
+        <View className="bg-slate-800 rounded-3xl p-5 border border-white/[0.08] gap-4">
+          <View className="flex-row items-center gap-2.5 mb-1">
             <MapPin size={20} color="#f59e0b" />
-            <Text style={styles.sectionTitle}>Pickup Details</Text>
+            <Text className="text-lg font-bold text-slate-50">Pickup Details</Text>
           </View>
           
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Address</Text>
-            <AddressAutocomplete
-              value={formData.pickupAddress}
-              placeholder="Search pickup address"
-              onSelect={(address, coords) => setFormData({ 
-                ...formData, 
-                pickupAddress: address, 
-                pickupLocation: coords 
-              })}
-              error={errors.pickupAddress}
-            />
+          <View className="gap-2">
+            <Text className="text-sm font-semibold text-slate-400 ml-1">Address</Text>
+            {formData.pickupAddress ? (
+              <View className={`bg-[#0f172a] rounded-2xl p-4 border border-white/5 gap-1.5 ${(errors.pickupAddress || errors.pickupLocation) ? 'border-red-500' : ''}`}>
+                <Text className="text-[15px] font-semibold text-slate-50 leading-5" numberOfLines={2}>
+                  {formData.pickupAddress}
+                </Text>
+                {formData.pickupLocation && (
+                  <Text className="text-xs text-slate-400 font-medium">
+                    Coords: {formData.pickupLocation[1].toFixed(6)}, {formData.pickupLocation[0].toFixed(6)}
+                  </Text>
+                )}
+              </View>
+            ) : (
+              <View className={`bg-[#0f172a] rounded-2xl p-4 border gap-1.5 border-dashed border-white/15 ${(errors.pickupAddress || errors.pickupLocation) ? 'border-red-500' : ''}`}>
+                <Text className="text-sm text-slate-500 italic">
+                  No pickup location selected. Please select a location on the map.
+                </Text>
+              </View>
+            )}
+            {!!errors.pickupAddress && <Text className="text-red-500 text-xs font-semibold ml-1">{errors.pickupAddress}</Text>}
           </View>
 
           <TouchableOpacity 
-            style={[styles.mapButton, errors.pickupLocation && styles.mapButtonError]}
+            className={`flex-row items-center bg-[#0f172a] rounded-2xl h-[52px] px-4 gap-3 border border-white/5 ${errors.pickupLocation ? 'border-red-500' : ''}`}
             onPress={() => setPickingLocation('pickup')}
           >
             <MapIcon size={20} color={formData.pickupLocation ? '#10b981' : '#64748b'} />
-            <Text style={[styles.mapButtonText, formData.pickupLocation && styles.mapButtonTextSuccess]}>
+            <Text className={`flex-1 text-slate-500 text-[15px] font-semibold ${formData.pickupLocation ? 'text-emerald-500' : ''}`}>
               {formData.pickupLocation ? 'Pickup Location Set' : 'Set Pickup on Map'}
             </Text>
             <ChevronRight size={20} color="#475569" />
@@ -137,32 +155,41 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, onSubmit, loa
         </View>
 
         {/* Delivery Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
+        <View className="bg-slate-800 rounded-3xl p-5 border border-white/[0.08] gap-4">
+          <View className="flex-row items-center gap-2.5 mb-1">
             <MapPin size={20} color="#10b981" />
-            <Text style={styles.sectionTitle}>Delivery Details</Text>
+            <Text className="text-lg font-bold text-slate-50">Delivery Details</Text>
           </View>
           
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Address</Text>
-            <AddressAutocomplete
-              value={formData.deliveryAddress}
-              placeholder="Search delivery address"
-              onSelect={(address, coords) => setFormData({ 
-                ...formData, 
-                deliveryAddress: address, 
-                deliveryLocation: coords 
-              })}
-              error={errors.deliveryAddress}
-            />
+          <View className="gap-2">
+            <Text className="text-sm font-semibold text-slate-400 ml-1">Address</Text>
+            {formData.deliveryAddress ? (
+              <View className={`bg-[#0f172a] rounded-2xl p-4 border border-white/5 gap-1.5 ${(errors.deliveryAddress || errors.deliveryLocation) ? 'border-red-500' : ''}`}>
+                <Text className="text-[15px] font-semibold text-slate-50 leading-5" numberOfLines={2}>
+                  {formData.deliveryAddress}
+                </Text>
+                {formData.deliveryLocation && (
+                  <Text className="text-xs text-slate-400 font-medium">
+                    Coords: {formData.deliveryLocation[1].toFixed(6)}, {formData.deliveryLocation[0].toFixed(6)}
+                  </Text>
+                )}
+              </View>
+            ) : (
+              <View className={`bg-[#0f172a] rounded-2xl p-4 border gap-1.5 border-dashed border-white/15 ${(errors.deliveryAddress || errors.deliveryLocation) ? 'border-red-500' : ''}`}>
+                <Text className="text-sm text-slate-500 italic">
+                  No delivery location selected. Please select a location on the map.
+                </Text>
+              </View>
+            )}
+            {!!errors.deliveryAddress && <Text className="text-red-500 text-xs font-semibold ml-1">{errors.deliveryAddress}</Text>}
           </View>
 
           <TouchableOpacity 
-            style={[styles.mapButton, errors.deliveryLocation && styles.mapButtonError]}
+            className={`flex-row items-center bg-[#0f172a] rounded-2xl h-[52px] px-4 gap-3 border border-white/5 ${errors.deliveryLocation ? 'border-red-500' : ''}`}
             onPress={() => setPickingLocation('delivery')}
           >
             <MapIcon size={20} color={formData.deliveryLocation ? '#10b981' : '#64748b'} />
-            <Text style={[styles.mapButtonText, formData.deliveryLocation && styles.mapButtonTextSuccess]}>
+            <Text className={`flex-1 text-slate-500 text-[15px] font-semibold ${formData.deliveryLocation ? 'text-emerald-500' : ''}`}>
               {formData.deliveryLocation ? 'Delivery Location Set' : 'Set Delivery on Map'}
             </Text>
             <ChevronRight size={20} color="#475569" />
@@ -170,58 +197,59 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, onSubmit, loa
         </View>
 
         {/* Cargo Details */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
+        <View className="bg-slate-800 rounded-3xl p-5 border border-white/[0.08] gap-4">
+          <View className="flex-row items-center gap-2.5 mb-1">
             <Scale size={20} color="#6366f1" />
-            <Text style={styles.sectionTitle}>Cargo Info</Text>
+            <Text className="text-lg font-bold text-slate-50">Cargo Info</Text>
           </View>
           
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Weight (kg)</Text>
+          <View className="gap-2">
+            <Text className="text-sm font-semibold text-slate-400 ml-1">Weight (kg)</Text>
             <TextInput
-              style={[styles.input, errors.weightKg && styles.inputError]}
+              className={`bg-[#0f172a] rounded-2xl h-[52px] px-4 text-slate-50 text-base border border-white/5 ${errors.weightKg ? 'border-red-500' : ''}`}
               placeholder="e.g. 150.5"
               placeholderTextColor="#64748b"
               keyboardType="numeric"
               value={formData.weightKg}
               onChangeText={(text) => setFormData({ ...formData, weightKg: text })}
             />
-            {!!errors.weightKg && <Text style={styles.errorText}>{errors.weightKg}</Text>}
+            {!!errors.weightKg && <Text className="text-red-500 text-xs font-semibold ml-1">{errors.weightKg}</Text>}
           </View>
 
-          <View style={styles.inputGroup}>
-            <View style={styles.labelRow}>
+          <View className="gap-2">
+            <View className="flex-row items-center gap-1.5">
               <FileText size={16} color="#64748b" />
-              <Text style={styles.label}>Description (Optional)</Text>
+              <Text className="text-sm font-semibold text-slate-400 ml-1">Description (Optional)</Text>
             </View>
             <TextInput
-              style={[styles.input, styles.textArea]}
+              className="bg-[#0f172a] rounded-2xl h-[100px] pt-4 px-4 text-slate-50 text-base border border-white/5"
               placeholder="Cargo type, handling instructions..."
               placeholderTextColor="#64748b"
               multiline
               numberOfLines={4}
               value={formData.description}
               onChangeText={(text) => setFormData({ ...formData, description: text })}
+              style={{ textAlignVertical: 'top' }}
             />
           </View>
         </View>
 
         {errors.pickupLocation || errors.deliveryLocation ? (
-          <View style={styles.globalError}>
+          <View className="flex-row items-center bg-red-500/10 p-4 rounded-2xl gap-3 border border-red-500/20">
             <AlertCircle size={20} color="#ef4444" />
-            <Text style={styles.globalErrorText}>Please select locations on the map</Text>
+            <Text className="text-red-500 text-sm font-bold">Please select locations on the map</Text>
           </View>
         ) : null}
 
         <TouchableOpacity 
-          style={[styles.submitButton, loading && styles.submitButtonDisabled]}
+          className={`bg-indigo-500 h-[60px] rounded-[20px] justify-center items-center shadow-lg shadow-indigo-500/30 elevation-8 ${loading ? 'opacity-60' : ''}`}
           onPress={handleSubmit}
           disabled={loading}
         >
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.submitButtonText}>
+            <Text className="text-white text-lg font-extrabold">
               {initialData?.id ? 'Update Order' : 'Create New Order'}
             </Text>
           )}
@@ -230,129 +258,3 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, onSubmit, loa
     </KeyboardAvoidingView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
-    gap: 20,
-  },
-  section: {
-    backgroundColor: '#1e293b',
-    borderRadius: 24,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    gap: 16,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 4,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#f8fafc',
-  },
-  inputGroup: {
-    gap: 8,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#94a3b8',
-    marginLeft: 4,
-  },
-  labelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  input: {
-    backgroundColor: '#0f172a',
-    borderRadius: 16,
-    height: 52,
-    paddingHorizontal: 16,
-    color: '#f8fafc',
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
-  },
-  inputError: {
-    borderColor: '#ef4444',
-  },
-  textArea: {
-    height: 100,
-    paddingTop: 16,
-    textAlignVertical: 'top',
-  },
-  errorText: {
-    color: '#ef4444',
-    fontSize: 12,
-    fontWeight: '600',
-    marginLeft: 4,
-  },
-  mapButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#0f172a',
-    borderRadius: 16,
-    height: 52,
-    paddingHorizontal: 16,
-    gap: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
-  },
-  mapButtonError: {
-    borderColor: '#ef4444',
-  },
-  mapButtonText: {
-    flex: 1,
-    color: '#64748b',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  mapButtonTextSuccess: {
-    color: '#10b981',
-  },
-  globalError: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    padding: 16,
-    borderRadius: 16,
-    gap: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.2)',
-  },
-  globalErrorText: {
-    color: '#ef4444',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  submitButton: {
-    backgroundColor: '#6366f1',
-    height: 60,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#6366f1',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  submitButtonDisabled: {
-    opacity: 0.6,
-  },
-  submitButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '800',
-  },
-});

@@ -1,3 +1,26 @@
+## [2026-05-18] - Order Management Map Integration & Tailwind CSS Migration
+### Added
+- **Interactive Map Search & Reverse Geocoding in MapPicker**:
+  - Re-engineered `MapPicker.tsx` to support real-time Address Search (Autocomplete) using Mapbox Search API directly inside the picker modal.
+  - Implemented automatic Reverse Geocoding utilizing dynamic map coordinates to retrieve real-time street address strings upon dragging the picker's central pin or panning the map view.
+  - Upgraded callback method `onSelect` signature to dispatch both geographic coordinates `(latitude, longitude)` and resolved readable address `(address)` back to the parent components.
+  - Enhanced mobile layout with premium glassmorphism overlay headers, dynamic drop-down search result overlays, and fluid dark-mode elements matching the dashboard style.
+
+### Changed
+- **OrderForm Tailwind CSS Migration**:
+  - Migrated `OrderForm.tsx` completely from classical React Native `StyleSheet` styling to utility-first Tailwind CSS (NativeWind v4) layouts.
+  - Integrated dynamic MapPicker coordinate & address states directly into the Form fields, replacing static, manual input fields for pickup and delivery locations.
+- **Auto Admin Dashboard Redirection**:
+  - Wired in user role authorization checks inside the mobile home screen (`fleet-driver/app/(tabs)/index.tsx`).
+  - Added immediate redirection logic to automatically swap standard driver dashboard panels with the `(tabs)/admin-dashboard` layout when an Administrator persona signs in.
+
+### Fixed
+- **Mobile Order Detail Map Load Error**:
+  - Fixed map viewport failure inside order detail views (`fleet-driver/app/admin/orders/[id].tsx`) where the Mapbox/Google Map engine failed to paint or rendered with dimensions of 0x0 pixels.
+  - Swapped standard `className="flex-1"` with explicit inline style declaration `style={{ flex: 1 }}` to correctly enforce layout bounds on native MapViews under the NativeWind v4 compiler.
+- **Admin Dashboard Cleanup**:
+  - Removed outdated pulse banner indicators inside the web admin creation portal `OrderCreateModal.tsx` to maintain unified presentation standards.
+
 ## [2026-05-18] - Admin Profile View Streamlining
 ### Changed
 - **Profile Tab Customizations for Admin Role**:

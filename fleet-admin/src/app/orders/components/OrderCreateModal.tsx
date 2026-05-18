@@ -187,13 +187,6 @@ export const OrderCreateModal: React.FC<OrderCreateModalProps> = ({
               </div>
             </div>
           </div>
-
-          {selectionMode !== 'none' && (
-            <div className="flex items-center gap-md px-lg py-md bg-warning/10 text-warning rounded-default text-xs font-medium border border-warning/20 animate-pulse">
-              <LocateFixed size={16} />
-              <span>Click anywhere on the map to set <b>{selectionMode}</b> location</span>
-            </div>
-          )}
         </form>
 
         <div className="relative h-full min-h-[400px] lg:min-h-full border border-border rounded-lg overflow-hidden">

@@ -232,7 +232,7 @@ export default function OrderDetailScreen() {
         <View className="h-56 w-full overflow-hidden relative">
           <MapComponent
             provider={PROVIDER_GOOGLE}
-            className="flex-1"
+            style={{ flex: 1 }}
             initialRegion={{
               latitude: (order.pickupLocation.coordinates[1] + order.deliveryLocation.coordinates[1]) / 2,
               longitude: (order.pickupLocation.coordinates[0] + order.deliveryLocation.coordinates[0]) / 2,
