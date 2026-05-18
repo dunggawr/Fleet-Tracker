@@ -1,3 +1,12 @@
+## [2026-05-18] - Dispatch Friendly Error & Trip Cancellation Lifecycle Security
+### Fixed
+- **DTO property check when dispatching vehicle**:
+  - Gỡ bỏ trường `driverId` thừa trong payload khi gọi API gán xe `/dispatch/assign` ở mobile app, khắc phục hoàn toàn lỗi `400 Bad Request` "property driverId should not exist" do backend DTO chỉ nhận `orderId` và `vehicleId`.
+  - Thêm cơ chế dịch lỗi thân thiện ở mobile frontend: hiển thị "Xe này chưa được gán tài xế. Vui lòng chọn xe đã có tài xế." thay vì thông báo thô từ backend khi gán đơn hàng cho xe chưa có tài xế.
+- **Trip Cancellation resource release**:
+  - Khắc phục lỗi tài xế và phương tiện không được trả về trạng thái `AVAILABLE` khi chuyến đi bị admin/dispatcher hủy bỏ.
+  - Sửa đổi `TripsService.updateTripStatus` trong backend để capture chính xác `driverId` và `vehicleId` trước khi TypeORM ghi đè/xóa các trường ID này trong memory (do cơ chế quan hệ tự động ghi đè hoặc xoá các trường ID nguyên bản khi liên kết nạp lại). Việc này bảo đảm trạng thái xe và tài xế được cập nhật đúng cách về `AVAILABLE`.
+
 ## [2026-05-18] - Order Detail Vehicle Selection Crash Fix
 ### Fixed
 - **Couldn't find a navigation context crash when selecting a vehicle**:

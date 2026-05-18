@@ -100,10 +100,18 @@ export class TripsService {
         throw new NotFoundException(`Trip with ID ${id} data could not be re-loaded`);
       }
       
+      // Capture the correct IDs securely before relations override them in memory
+      const driverId = trip.driverId || fullTrip.driverId || fullTrip.driver?.id || null;
+      const vehicleId = trip.vehicleId || fullTrip.vehicleId || fullTrip.vehicle?.id || null;
+
       // Update our locked trip object with relation data
       trip.driver = fullTrip.driver;
       trip.vehicle = fullTrip.vehicle;
       trip.tripOrders = fullTrip.tripOrders;
+
+      // Explicitly synchronize ID fields to avoid TypeORM losing them in memory
+      trip.driverId = driverId;
+      trip.vehicleId = vehicleId;
 
       // Check if user is the assigned driver or admin
       const isDriver = role === 'driver';
@@ -119,9 +127,9 @@ export class TripsService {
       trip.status = status;
 
       if (status === TripStatus.ACCEPTED) {
-        if (trip.driverId) {
+        if (driverId) {
           const driver = await queryRunner.manager.findOne(Driver, {
-            where: { id: trip.driverId },
+            where: { id: driverId },
           });
           if (driver) {
             driver.status = DriverStatus.ON_TRIP;
@@ -130,9 +138,9 @@ export class TripsService {
         }
 
         // Ensure vehicle status is DELIVERING
-        if (trip.vehicleId) {
+        if (vehicleId) {
           const vehicle = await queryRunner.manager.findOne(Vehicle, {
-            where: { id: trip.vehicleId },
+            where: { id: vehicleId },
           });
           if (vehicle) {
             vehicle.status = VehicleStatus.DELIVERING;
@@ -168,9 +176,9 @@ export class TripsService {
         }
 
         // Update Vehicle & Driver back to AVAILABLE
-        if (trip.vehicleId) {
+        if (vehicleId) {
           const vehicle = await queryRunner.manager.findOne(Vehicle, {
-            where: { id: trip.vehicleId },
+            where: { id: vehicleId },
           });
           if (vehicle) {
             vehicle.status = VehicleStatus.AVAILABLE;
@@ -179,9 +187,9 @@ export class TripsService {
           }
         }
 
-        if (trip.driverId) {
+        if (driverId) {
           const driver = await queryRunner.manager.findOne(Driver, {
-            where: { id: trip.driverId },
+            where: { id: driverId },
           });
           if (driver) {
             driver.status = DriverStatus.AVAILABLE;
@@ -202,9 +210,9 @@ export class TripsService {
         }
 
         // Update Vehicle & Driver back to AVAILABLE
-        if (trip.vehicleId) {
+        if (vehicleId) {
           const vehicle = await queryRunner.manager.findOne(Vehicle, {
-            where: { id: trip.vehicleId },
+            where: { id: vehicleId },
           });
           if (vehicle) {
             vehicle.status = VehicleStatus.AVAILABLE;
@@ -213,9 +221,9 @@ export class TripsService {
           }
         }
 
-        if (trip.driverId) {
+        if (driverId) {
           const driver = await queryRunner.manager.findOne(Driver, {
-            where: { id: trip.driverId },
+            where: { id: driverId },
           });
           if (driver) {
             driver.status = DriverStatus.AVAILABLE;
