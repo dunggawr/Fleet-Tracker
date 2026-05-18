@@ -29,7 +29,7 @@ import {
 } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import { useOrderStore, OrderStatus, Order } from '../../../store/useOrderStore';
-import { useFleetStore, VehicleStatus } from '../../../store/useFleetStore';
+import { useFleetStore } from '../../../store/useFleetStore';
 import { OrderForm } from '../../../components/admin/OrderForm';
 import { VehicleDispatchItem } from '../../../components/admin/VehicleDispatchItem';
 import { MapComponent, MarkerComponent, PolylineComponent, PROVIDER_GOOGLE } from '../../../components/map/MapComponents';
@@ -48,7 +48,7 @@ export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const { getOrderById, updateOrder, deleteOrder, assignOrder, loading } = useOrderStore();
-  const { vehicles, fetchVehicles, loading: fleetLoading } = useFleetStore();
+  const { suggestions, fetchSuggestions, loading: fleetLoading } = useFleetStore();
   const [order, setOrder] = useState<Order | undefined>(undefined);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
@@ -59,10 +59,10 @@ export default function OrderDetailScreen() {
       const data = getOrderById(id as string);
       setOrder(data);
       if (data?.status === OrderStatus.PENDING) {
-        fetchVehicles().catch(console.error);
+        fetchSuggestions(data.id).catch(console.error);
       }
     }
-  }, [id, getOrderById, fetchVehicles]);
+  }, [id, getOrderById, fetchSuggestions]);
 
   if (!order) {
     return (
@@ -134,11 +134,13 @@ export default function OrderDetailScreen() {
   const handleAssign = async () => {
     if (!selectedVehicleId) return;
 
-    const vehicle = vehicles.find(v => v.id === selectedVehicleId);
-    if (!vehicle || !vehicle.driverId) {
+    const suggestion = suggestions.find(s => s.vehicle.id === selectedVehicleId);
+    if (!suggestion || !suggestion.vehicle.driverId) {
       Alert.alert('Error', 'Selected vehicle must have a driver assigned.');
       return;
     }
+
+    const vehicle = suggestion.vehicle;
 
     Alert.alert(
       'Confirm Dispatch',
@@ -168,9 +170,6 @@ export default function OrderDetailScreen() {
   const statusConfig = STATUS_CONFIG[order.status] || STATUS_CONFIG[OrderStatus.PENDING];
   const StatusIcon = statusConfig.icon;
   const canCancel = order.status === OrderStatus.PENDING || order.status === OrderStatus.ASSIGNED;
-  const availableVehicles = vehicles.filter(v => 
-    v.status === VehicleStatus.AVAILABLE && v.driverId !== null
-  );
 
   if (isEditing) {
     return (
@@ -305,7 +304,7 @@ export default function OrderDetailScreen() {
                   <Text className="text-lg font-bold text-slate-100">Available Resources</Text>
                 </View>
                 <View className="bg-emerald-500/10 px-2.5 py-1 rounded-full">
-                  <Text className="text-emerald-500 text-xs font-black">{availableVehicles.length}</Text>
+                  <Text className="text-emerald-500 text-xs font-black">{suggestions.length}</Text>
                 </View>
               </View>
 
@@ -314,19 +313,21 @@ export default function OrderDetailScreen() {
                   <ActivityIndicator size="small" color="#6366f1" />
                   <Text className="text-slate-400 text-xs">Loading available vehicles...</Text>
                 </View>
-              ) : availableVehicles.length === 0 ? (
+              ) : suggestions.length === 0 ? (
                 <View className="bg-slate-950/40 rounded-2xl p-6 items-center border border-dashed border-slate-800">
                   <AlertCircle size={28} color="#475569" />
                   <Text className="text-slate-400 mt-2 text-center text-xs">No available vehicles with drivers</Text>
                 </View>
               ) : (
                 <View className="gap-1">
-                  {availableVehicles.map(vehicle => (
+                  {suggestions.map((suggestion, index) => (
                     <VehicleDispatchItem
-                      key={vehicle.id}
-                      vehicle={vehicle}
-                      isSelected={selectedVehicleId === vehicle.id}
-                      onPress={() => setSelectedVehicleId(vehicle.id === selectedVehicleId ? null : vehicle.id)}
+                      key={suggestion.vehicle.id}
+                      vehicle={suggestion.vehicle}
+                      isSelected={selectedVehicleId === suggestion.vehicle.id}
+                      onPress={() => setSelectedVehicleId(suggestion.vehicle.id === selectedVehicleId ? null : suggestion.vehicle.id)}
+                      distanceKm={suggestion.distanceKm}
+                      rank={index}
                     />
                   ))}
                 </View>
