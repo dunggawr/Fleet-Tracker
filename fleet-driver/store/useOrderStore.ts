@@ -181,10 +181,11 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const { token } = useAuthStore.getState();
+      // Backend DTO only expects orderId and vehicleId. 
+      // Sending driverId causes "property driverId should not exist" error.
       await axios.post(`${API_URL}/dispatch/assign`, {
         orderId,
-        vehicleId,
-        driverId
+        vehicleId
       }, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -197,7 +198,17 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         loading: false
       }));
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Failed to assign order';
+      let message = error.response?.data?.message || 'Failed to assign order';
+      
+      if (Array.isArray(message)) {
+        message = message.join(', ');
+      }
+      
+      // Provide a friendly error message for driver issues
+      if (typeof message === 'string' && (message.includes('driverId should not exist') || message.includes('driverID should not exist'))) {
+        message = 'Xe này chưa được gán tài xế. Vui lòng chọn xe đã có tài xế.';
+      }
+
       set({ error: message, loading: false });
       throw new Error(message);
     }
