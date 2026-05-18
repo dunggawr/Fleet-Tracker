@@ -2,19 +2,16 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { 
   View, 
   Text, 
-  StyleSheet, 
   FlatList, 
   TouchableOpacity, 
   TextInput,
   RefreshControl,
   ActivityIndicator,
-  Platform,
   ScrollView
 } from 'react-native';
 import { 
   Package, 
   Search, 
-  Filter, 
   Plus, 
   ChevronRight, 
   Clock, 
@@ -72,95 +69,103 @@ export default function AdminOrdersScreen() {
 
     return (
       <TouchableOpacity 
-        style={styles.orderCard}
+        className="bg-slate-800 rounded-3xl p-5 mb-4 border border-white/10"
         onPress={() => router.push({
           pathname: '/admin/orders/[id]',
           params: { id: item.id }
         })}
       >
-        <View style={styles.cardHeader}>
-          <View style={styles.orderIdGroup}>
-            <Text style={styles.orderIdLabel}>ORDER ID</Text>
-            <Text style={styles.orderIdText}>#{item.id.slice(0, 8).toUpperCase()}</Text>
+        <View className="flex-row justify-between items-start mb-4">
+          <View className="gap-[2px]">
+            <Text className="text-[10px] text-slate-500 font-bold tracking-wider">ORDER ID</Text>
+            <Text className="text-sm text-slate-50 font-bold">#{item.id.slice(0, 8).toUpperCase()}</Text>
           </View>
-          <View style={[styles.statusBadge, { backgroundColor: `${config.color}20` }]}>
+          <View className="flex-row items-center px-[10px] py-1 rounded-xl gap-1.5" style={{ backgroundColor: `${config.color}20` }}>
             <StatusIcon size={14} color={config.color} />
-            <Text style={[styles.statusText, { color: config.color }]}>{config.label}</Text>
+            <Text className="text-xs font-bold" style={{ color: config.color }}>{config.label}</Text>
           </View>
         </View>
 
-        <View style={styles.addressContainer}>
-          <View style={styles.addressLine}>
-            <View style={[styles.dot, { backgroundColor: '#f59e0b' }]} />
-            <Text style={styles.addressText} numberOfLines={1}>{item.pickupAddress}</Text>
+        <View className="mb-5">
+          <View className="flex-row items-center gap-3">
+            <View className="w-2 h-2 rounded-full" style={{ backgroundColor: '#f59e0b' }} />
+            <Text className="text-slate-300 text-sm flex-1" numberOfLines={1}>{item.pickupAddress}</Text>
           </View>
-          <View style={styles.connector} />
-          <View style={styles.addressLine}>
-            <View style={[styles.dot, { backgroundColor: '#10b981' }]} />
-            <Text style={styles.addressText} numberOfLines={1}>{item.deliveryAddress}</Text>
+          <View className="w-[2px] h-3 bg-white/10 ml-[3px] my-1" />
+          <View className="flex-row items-center gap-3">
+            <View className="w-2 h-2 rounded-full" style={{ backgroundColor: '#10b981' }} />
+            <Text className="text-slate-300 text-sm flex-1" numberOfLines={1}>{item.deliveryAddress}</Text>
           </View>
         </View>
 
-        <View style={styles.cardFooter}>
-          <View style={styles.footerItem}>
+        <View className="flex-row items-center pt-4 border-t border-white/5 gap-4">
+          <View className="flex-row items-center gap-1.5">
             <Scale size={16} color="#94a3b8" />
-            <Text style={styles.footerText}>{item.weightKg} kg</Text>
+            <Text className="text-slate-400 text-[13px] font-semibold">{item.weightKg} kg</Text>
           </View>
-          <View style={styles.footerItem}>
+          <View className="flex-row items-center gap-1.5">
             <Clock size={16} color="#94a3b8" />
-            <Text style={styles.footerText}>
+            <Text className="text-slate-400 text-[13px] font-semibold">
               {new Date(item.createdAt).toLocaleDateString()}
             </Text>
           </View>
-          <ChevronRight size={20} color="#475569" />
+          <ChevronRight size={20} color="#475569" className="ml-auto" />
         </View>
       </TouchableOpacity>
     );
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
+    <SafeAreaView className="flex-1 bg-slate-950" edges={['top']}>
+      <View className="flex-row justify-between items-center px-5 pt-[10px] mb-5">
         <View>
-          <Text style={styles.greeting}>Logistics</Text>
-          <Text style={styles.title}>Order Fleet</Text>
+          <Text className="text-base text-slate-400 font-medium">Logistics</Text>
+          <Text className="text-3xl font-bold text-slate-50">Order Fleet</Text>
         </View>
         <TouchableOpacity 
-          style={styles.addButton}
+          className="bg-indigo-500 w-12 h-12 rounded-2xl justify-center items-center shadow-lg shadow-indigo-500/30"
           onPress={() => router.push('/admin/orders/create')}
         >
           <Plus size={24} color="#fff" />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.searchContainer}>
-        <BlurView intensity={40} tint="dark" style={styles.searchBlur}>
-          <Search size={20} color="#64748b" style={styles.searchIcon} />
+      <View className="px-5 mb-4">
+        <BlurView intensity={40} tint="dark" className="flex-row items-center rounded-2xl px-4 h-[52px] border border-white/10 overflow-hidden">
+          <Search size={20} color="#64748b" className="mr-3" />
           <TextInput
             placeholder="Search orders, addresses..."
             placeholderTextColor="#64748b"
-            style={styles.searchInput}
+            className="flex-1 text-slate-50 text-base"
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
         </BlurView>
       </View>
 
-      <View style={styles.filterContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+      <View className="mb-4">
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 8 }}>
           <TouchableOpacity 
-            style={[styles.filterChip, selectedStatus === 'all' && styles.filterChipActive]}
+            className={`px-4 py-2 rounded-full bg-slate-800 border border-white/5 ${
+              selectedStatus === 'all' ? 'bg-indigo-500 border-indigo-500' : ''
+            }`}
             onPress={() => setSelectedStatus('all')}
           >
-            <Text style={[styles.filterChipText, selectedStatus === 'all' && styles.filterChipTextActive]}>All</Text>
+            <Text className={`font-semibold text-sm ${
+              selectedStatus === 'all' ? 'text-white' : 'text-slate-400'
+            }`}>All</Text>
           </TouchableOpacity>
           {Object.entries(STATUS_CONFIG).map(([status, config]) => (
             <TouchableOpacity 
               key={status}
-              style={[styles.filterChip, selectedStatus === status && styles.filterChipActive]}
+              className={`px-4 py-2 rounded-full bg-slate-800 border border-white/5 ${
+                selectedStatus === status ? 'bg-indigo-500 border-indigo-500' : ''
+              }`}
               onPress={() => setSelectedStatus(status as OrderStatus)}
             >
-              <Text style={[styles.filterChipText, selectedStatus === status && styles.filterChipTextActive]}>
+              <Text className={`font-semibold text-sm ${
+                selectedStatus === status ? 'text-white' : 'text-slate-400'
+              }`}>
                 {config.label}
               </Text>
             </TouchableOpacity>
@@ -172,7 +177,7 @@ export default function AdminOrdersScreen() {
         data={filteredOrders}
         renderItem={renderOrderCard}
         keyExtractor={item => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
         refreshControl={
           <RefreshControl 
             refreshing={loading} 
@@ -182,10 +187,10 @@ export default function AdminOrdersScreen() {
         }
         ListEmptyComponent={
           !loading ? (
-            <View style={styles.emptyState}>
+            <View className="items-center justify-center mt-20 gap-4">
               <Package size={64} color="#1e293b" />
-              <Text style={styles.emptyTitle}>No Orders Found</Text>
-              <Text style={styles.emptySub}>Try adjusting your search or filters</Text>
+              <Text className="text-slate-50 text-xl font-bold">No Orders Found</Text>
+              <Text className="text-slate-500 text-base">Try adjusting your search or filters</Text>
             </View>
           ) : (
             <ActivityIndicator size="large" color="#6366f1" style={{ marginTop: 40 }} />
@@ -196,191 +201,3 @@ export default function AdminOrdersScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0f172a',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    marginBottom: 20,
-  },
-  greeting: {
-    fontSize: 16,
-    color: '#94a3b8',
-    fontWeight: '500',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#f8fafc',
-  },
-  addButton: {
-    backgroundColor: '#6366f1',
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#6366f1',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  searchContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  searchBlur: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    height: 52,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    overflow: 'hidden',
-  },
-  searchIcon: {
-    marginRight: 12,
-  },
-  searchInput: {
-    flex: 1,
-    color: '#f8fafc',
-    fontSize: 16,
-  },
-  filterContainer: {
-    marginBottom: 16,
-  },
-  filterScroll: {
-    paddingHorizontal: 20,
-    gap: 8,
-  },
-  filterChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#1e293b',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
-  },
-  filterChipActive: {
-    backgroundColor: '#6366f1',
-    borderColor: '#6366f1',
-  },
-  filterChipText: {
-    color: '#94a3b8',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  filterChipTextActive: {
-    color: '#fff',
-  },
-  listContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 100, // For tab bar
-  },
-  orderCard: {
-    backgroundColor: '#1e293b',
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-  },
-  orderIdGroup: {
-    gap: 2,
-  },
-  orderIdLabel: {
-    fontSize: 10,
-    color: '#64748b',
-    fontWeight: 'bold',
-    letterSpacing: 0.5,
-  },
-  orderIdText: {
-    fontSize: 14,
-    color: '#f8fafc',
-    fontWeight: '700',
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 6,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  addressContainer: {
-    marginBottom: 20,
-  },
-  addressLine: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  addressText: {
-    color: '#cbd5e1',
-    fontSize: 14,
-    flex: 1,
-  },
-  connector: {
-    width: 2,
-    height: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    marginLeft: 3,
-    marginVertical: 4,
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.05)',
-    gap: 16,
-  },
-  footerItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  footerText: {
-    color: '#94a3b8',
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 80,
-    gap: 16,
-  },
-  emptyTitle: {
-    color: '#f8fafc',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  emptySub: {
-    color: '#64748b',
-    fontSize: 16,
-  },
-});

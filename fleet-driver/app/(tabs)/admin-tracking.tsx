@@ -220,7 +220,12 @@ export default function AdminTrackingScreen() {
 
         {/* Selected Vehicle Card */}
         {selectedVehicle && (
-          <BlurView intensity={95} tint="dark" className="absolute bottom-10 left-4 right-4 rounded-3xl overflow-hidden p-5 border border-white/15 shadow-2xl shadow-black/30">
+          <BlurView 
+            intensity={95} 
+            tint="dark" 
+            className="absolute left-4 right-4 rounded-3xl overflow-hidden p-5 border border-white/15 shadow-2xl shadow-black/30"
+            style={{ bottom: 112 }}
+          >
             <View className="flex-row justify-between items-center mb-4">
               <View className="flex-row items-center gap-2">
                 <View className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: getStatusColor(selectedVehicle.status) }} />

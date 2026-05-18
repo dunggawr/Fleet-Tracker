@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { 
   View, 
   Text, 
-  StyleSheet, 
   ScrollView, 
   TouchableOpacity, 
   Alert,
@@ -24,11 +23,15 @@ import {
   CheckCircle2,
   XCircle,
   Clock3,
-  ChevronRight
+  ChevronRight,
+  Truck,
+  Send
 } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import { useOrderStore, OrderStatus, Order } from '../../../store/useOrderStore';
+import { useFleetStore } from '../../../store/useFleetStore';
 import { OrderForm } from '../../../components/admin/OrderForm';
+import { VehicleDispatchItem } from '../../../components/admin/VehicleDispatchItem';
 import { MapComponent, MarkerComponent, PolylineComponent, PROVIDER_GOOGLE } from '../../../components/map/MapComponents';
 
 const STATUS_CONFIG = {
@@ -44,23 +47,29 @@ const STATUS_CONFIG = {
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-  const { getOrderById, updateOrder, deleteOrder, loading } = useOrderStore();
+  const { getOrderById, updateOrder, deleteOrder, assignOrder, loading } = useOrderStore();
+  const { suggestions, fetchSuggestions, loading: fleetLoading } = useFleetStore();
   const [order, setOrder] = useState<Order | undefined>(undefined);
   const [isEditing, setIsEditing] = useState(false);
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (id) {
       const data = getOrderById(id as string);
       setOrder(data);
+      if (data?.status === OrderStatus.PENDING) {
+        fetchSuggestions(data.id).catch(console.error);
+      }
     }
-  }, [id, getOrderById]);
+  }, [id, getOrderById, fetchSuggestions]);
 
   if (!order) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
+      <SafeAreaView className="flex-1 bg-slate-950">
+        <View className="flex-1 justify-center items-center gap-4">
           <ActivityIndicator size="large" color="#6366f1" />
-          <Text style={styles.loadingText}>Loading order details...</Text>
+          <Text className="text-slate-400 text-sm font-medium">Loading order details...</Text>
         </View>
       </SafeAreaView>
     );
@@ -90,7 +99,8 @@ export default function OrderDetailScreen() {
 
   const handleUpdate = async (data: Partial<Order>) => {
     try {
-      await updateOrder(order.id, data);
+      const updated = await updateOrder(order.id, data);
+      setOrder(updated);
       setIsEditing(false);
       Alert.alert("Success", "Order updated successfully");
     } catch (error: any) {
@@ -121,18 +131,57 @@ export default function OrderDetailScreen() {
     );
   };
 
+  const handleAssign = async () => {
+    if (!selectedVehicleId) return;
+
+    const suggestion = suggestions.find(s => s.vehicle.id === selectedVehicleId);
+    if (!suggestion || !suggestion.vehicle.driverId) {
+      Alert.alert('Error', 'Selected vehicle must have a driver assigned.');
+      return;
+    }
+
+    const vehicle = suggestion.vehicle;
+
+    Alert.alert(
+      'Confirm Dispatch',
+      `Assign this order to Vehicle ${vehicle.plateNumber} and Driver ${vehicle.driver?.user?.fullName || 'Assigned Driver'}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Assign',
+          onPress: async () => {
+            setIsSubmitting(true);
+            try {
+              await assignOrder(order.id, selectedVehicleId, vehicle.driverId!);
+              setOrder(prev => prev ? { ...prev, status: OrderStatus.ASSIGNED } : undefined);
+              setSelectedVehicleId(null);
+              Alert.alert('Success', 'Order has been dispatched successfully!');
+            } catch (error: any) {
+              Alert.alert('Dispatch Failed', error.message);
+            } finally {
+              setIsSubmitting(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const statusConfig = STATUS_CONFIG[order.status] || STATUS_CONFIG[OrderStatus.PENDING];
   const StatusIcon = statusConfig.icon;
   const canCancel = order.status === OrderStatus.PENDING || order.status === OrderStatus.ASSIGNED;
 
   if (isEditing) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => setIsEditing(false)} style={styles.backButton}>
+      <SafeAreaView className="flex-1 bg-slate-950" edges={['top']}>
+        <View className="flex-row items-center px-4 py-3 gap-4 border-b border-white/5 bg-slate-950">
+          <TouchableOpacity 
+            onPress={() => setIsEditing(false)} 
+            className="w-10 h-10 rounded-full bg-white/5 justify-center items-center"
+          >
             <ArrowLeft size={24} color="#fff" />
           </TouchableOpacity>
-          <Text style={styles.title}>Edit Order</Text>
+          <Text className="flex-1 text-xl font-extrabold text-white">Edit Order</Text>
         </View>
         <OrderForm 
           initialData={order} 
@@ -144,33 +193,45 @@ export default function OrderDetailScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+    <SafeAreaView className="flex-1 bg-slate-950" edges={['top']}>
+      <View className="flex-row items-center px-4 py-3 gap-4 border-b border-white/5 bg-slate-950">
+        <TouchableOpacity 
+          onPress={() => router.back()} 
+          className="w-10 h-10 rounded-full bg-white/5 justify-center items-center"
+        >
           <ArrowLeft size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.title}>Order Detail</Text>
-        <View style={styles.headerActions}>
+        <Text className="flex-1 text-xl font-extrabold text-white">Order Detail</Text>
+        <View className="flex-row gap-2">
           {canCancel && (
-            <TouchableOpacity onPress={handleCancel} style={styles.actionIcon}>
+            <TouchableOpacity 
+              onPress={handleCancel} 
+              className="w-10 h-10 rounded-full bg-white/5 justify-center items-center"
+            >
               <XCircle size={20} color="#94a3b8" />
             </TouchableOpacity>
           )}
-          <TouchableOpacity onPress={() => setIsEditing(true)} style={styles.actionIcon}>
+          <TouchableOpacity 
+            onPress={() => setIsEditing(true)} 
+            className="w-10 h-10 rounded-full bg-white/5 justify-center items-center"
+          >
             <Edit3 size={20} color="#6366f1" />
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleDelete} style={styles.actionIcon}>
+          <TouchableOpacity 
+            onPress={handleDelete} 
+            className="w-10 h-10 rounded-full bg-white/5 justify-center items-center"
+          >
             <Trash2 size={20} color="#ef4444" />
           </TouchableOpacity>
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={{ paddingBottom: order.status === OrderStatus.PENDING && selectedVehicleId ? 120 : 40 }}>
         {/* Map Preview */}
-        <View style={styles.mapContainer}>
+        <View className="h-56 w-full overflow-hidden relative">
           <MapComponent
             provider={PROVIDER_GOOGLE}
-            style={styles.map}
+            style={{ flex: 1 }}
             initialRegion={{
               latitude: (order.pickupLocation.coordinates[1] + order.deliveryLocation.coordinates[1]) / 2,
               longitude: (order.pickupLocation.coordinates[0] + order.deliveryLocation.coordinates[0]) / 2,
@@ -206,296 +267,184 @@ export default function OrderDetailScreen() {
               lineDashPattern={[5, 5]}
             />
           </MapComponent>
-          <BlurView intensity={20} tint="dark" style={styles.mapOverlay}>
-            <View style={[styles.statusBadge, { backgroundColor: `${statusConfig.color}CC` }]}>
+          <BlurView 
+            intensity={20} 
+            tint="dark" 
+            className="justify-end"
+            style={{ position: 'absolute', left: 0, right: 0, bottom: 0, top: 0, padding: 16, backgroundColor: 'rgba(15, 23, 42, 0.3)' }}
+          >
+            <View 
+              className="flex-row items-center self-start px-3 py-1.5 rounded-xl gap-2 shadow-lg shadow-black/20"
+              style={{ backgroundColor: `${statusConfig.color}CC` }}
+            >
               <StatusIcon size={16} color="#fff" />
-              <Text style={styles.statusBadgeText}>{statusConfig.label}</Text>
+              <Text className="text-white font-extrabold text-xs uppercase tracking-wide">{statusConfig.label}</Text>
             </View>
           </BlurView>
         </View>
 
         {/* Info Sections */}
-        <View style={styles.contentContainer}>
-          <View style={styles.idCard}>
-            <Text style={styles.idLabel}>ORDER REFERENCE</Text>
-            <Text style={styles.idText}>{order.id.toUpperCase()}</Text>
+        <View className="p-5 gap-5">
+          <View className="bg-slate-900 p-4 rounded-3xl border border-white/5">
+            <Text className="text-[10px] text-slate-500 font-bold tracking-wider mb-1">ORDER REFERENCE</Text>
+            <Text 
+              className="text-slate-100 text-base font-bold"
+              style={{ fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' }}
+            >
+              {order.id.toUpperCase()}
+            </Text>
           </View>
 
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
+          {/* Dispatch Section */}
+          {order.status === OrderStatus.PENDING && (
+            <View className="bg-slate-900 rounded-3xl p-5 border border-indigo-500/20 gap-4">
+              <View className="flex-row justify-between items-center">
+                <View className="flex-row items-center gap-2.5">
+                  <Truck size={20} color="#6366f1" />
+                  <Text className="text-lg font-bold text-slate-100">Available Resources</Text>
+                </View>
+                <View className="bg-emerald-500/10 px-2.5 py-1 rounded-full">
+                  <Text className="text-emerald-500 text-xs font-black">{suggestions.length}</Text>
+                </View>
+              </View>
+
+              {fleetLoading ? (
+                <View className="py-6 justify-center items-center gap-2">
+                  <ActivityIndicator size="small" color="#6366f1" />
+                  <Text className="text-slate-400 text-xs">Loading available vehicles...</Text>
+                </View>
+              ) : suggestions.length === 0 ? (
+                <View className="bg-slate-950/40 rounded-2xl p-6 items-center border border-dashed border-slate-800">
+                  <AlertCircle size={28} color="#475569" />
+                  <Text className="text-slate-400 mt-2 text-center text-xs">No available vehicles with drivers</Text>
+                </View>
+              ) : (
+                <View className="gap-1">
+                  {suggestions.map((suggestion, index) => (
+                    <VehicleDispatchItem
+                      key={suggestion.vehicle.id}
+                      vehicle={suggestion.vehicle}
+                      isSelected={selectedVehicleId === suggestion.vehicle.id}
+                      onPress={() => setSelectedVehicleId(suggestion.vehicle.id === selectedVehicleId ? null : suggestion.vehicle.id)}
+                      distanceKm={suggestion.distanceKm}
+                      rank={index}
+                    />
+                  ))}
+                </View>
+              )}
+            </View>
+          )}
+
+          <View className="bg-slate-900 rounded-3xl p-5 border border-white/5">
+            <View className="flex-row items-center gap-2.5 mb-4">
               <MapPin size={20} color="#6366f1" />
-              <Text style={styles.sectionTitle}>Route Details</Text>
+              <Text className="text-lg font-bold text-slate-100">Route Details</Text>
             </View>
             
-            <View style={styles.routeItem}>
-              <View style={[styles.routeDot, { backgroundColor: '#f59e0b' }]} />
-              <View style={styles.routeTextContainer}>
-                <Text style={styles.routeLabel}>Pickup Address</Text>
-                <Text style={styles.routeValue}>{order.pickupAddress}</Text>
+            <View className="flex-row gap-4">
+              <View className="w-3 items-center">
+                <View className="w-3 h-3 rounded-full bg-amber-500 mt-1" />
+                <View className="w-0.5 flex-1 bg-white/10 my-1" />
+              </View>
+              <View className="flex-1 pb-4">
+                <Text className="text-xs text-slate-500 font-semibold mb-1">Pickup Address</Text>
+                <Text className="text-sm text-slate-300 leading-5">{order.pickupAddress}</Text>
               </View>
             </View>
             
-            <View style={styles.routeLine} />
-            
-            <View style={styles.routeItem}>
-              <View style={[styles.routeDot, { backgroundColor: '#10b981' }]} />
-              <View style={styles.routeTextContainer}>
-                <Text style={styles.routeLabel}>Delivery Address</Text>
-                <Text style={styles.routeValue}>{order.deliveryAddress}</Text>
+            <View className="flex-row gap-4">
+              <View className="w-3 items-center">
+                <View className="w-3 h-3 rounded-full bg-emerald-500 mt-1" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-xs text-slate-500 font-semibold mb-1">Delivery Address</Text>
+                <Text className="text-sm text-slate-300 leading-5">{order.deliveryAddress}</Text>
               </View>
             </View>
           </View>
 
-          <View style={styles.twoColumn}>
-            <View style={styles.sectionSmall}>
-              <View style={styles.sectionHeader}>
+          <View className="flex-row gap-4">
+            <View className="flex-1 bg-slate-900 rounded-3xl p-5 border border-white/5">
+              <View className="flex-row items-center gap-2 mb-3">
                 <Scale size={18} color="#6366f1" />
-                <Text style={styles.sectionTitleSmall}>Weight</Text>
+                <Text className="text-sm font-bold text-slate-100">Weight</Text>
               </View>
-              <Text style={styles.valueLarge}>{order.weightKg} kg</Text>
+              <Text className="text-xl font-extrabold text-white">{order.weightKg} kg</Text>
             </View>
 
-            <View style={styles.sectionSmall}>
-              <View style={styles.sectionHeader}>
+            <View className="flex-1 bg-slate-900 rounded-3xl p-5 border border-white/5">
+              <View className="flex-row items-center gap-2 mb-3">
                 <Calendar size={18} color="#6366f1" />
-                <Text style={styles.sectionTitleSmall}>Date</Text>
+                <Text className="text-sm font-bold text-slate-100">Date</Text>
               </View>
-              <Text style={styles.valueLarge}>
+              <Text className="text-xl font-extrabold text-white">
                 {new Date(order.createdAt).toLocaleDateString()}
               </Text>
             </View>
           </View>
 
           {order.description && (
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
+            <View className="bg-slate-900 rounded-3xl p-5 border border-white/5">
+              <View className="flex-row items-center gap-2.5 mb-4">
                 <Package size={20} color="#6366f1" />
-                <Text style={styles.sectionTitle}>Instructions</Text>
+                <Text className="text-lg font-bold text-slate-100">Instructions</Text>
               </View>
-              <Text style={styles.descriptionText}>{order.description}</Text>
+              <Text className="text-slate-400 text-sm leading-6">{order.description}</Text>
             </View>
           )}
 
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
+          <View className="bg-slate-900 rounded-3xl p-5 border border-white/5">
+            <View className="flex-row items-center gap-2.5 mb-4">
               <Clock size={20} color="#6366f1" />
-              <Text style={styles.sectionTitle}>Timeline</Text>
+              <Text className="text-lg font-bold text-slate-100">Timeline</Text>
             </View>
-            <View style={styles.timelineItem}>
-              <View style={styles.timelinePoint} />
-              <Text style={styles.timelineText}>Order created on {new Date(order.createdAt).toLocaleString()}</Text>
+            <View className="flex-row items-center gap-3 mb-3">
+              <View className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+              <Text className="text-slate-500 text-xs flex-1">
+                Order created on {new Date(order.createdAt).toLocaleString()}
+              </Text>
             </View>
             {order.updatedAt !== order.createdAt && (
-              <View style={styles.timelineItem}>
-                <View style={styles.timelinePoint} />
-                <Text style={styles.timelineText}>Last updated on {new Date(order.updatedAt).toLocaleString()}</Text>
+              <View className="flex-row items-center gap-3">
+                <View className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                <Text className="text-slate-500 text-xs flex-1">
+                  Last updated on {new Date(order.updatedAt).toLocaleString()}
+                </Text>
               </View>
             )}
           </View>
         </View>
       </ScrollView>
+
+      {/* Floating Action Button */}
+      {order.status === OrderStatus.PENDING && selectedVehicleId && (
+        <View 
+          className="absolute bottom-6 left-5 right-5"
+          style={{
+            shadowColor: '#6366f1',
+            shadowOffset: { width: 0, height: 12 },
+            shadowOpacity: 0.1,
+            shadowRadius: 24,
+            elevation: 8,
+          }}
+        >
+          <TouchableOpacity 
+            onPress={handleAssign}
+            disabled={isSubmitting}
+            className="bg-indigo-600 h-14 rounded-2xl flex-row justify-center items-center"
+            activeOpacity={0.8}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <>
+                <Send size={18} color="#fff" />
+                <Text className="text-white font-extrabold ml-2 text-base">Confirm Assignment</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0f172a',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 16,
-  },
-  loadingText: {
-    color: '#94a3b8',
-    fontSize: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 16,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    flex: 1,
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#fff',
-  },
-  headerActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  actionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scrollContent: {
-    paddingBottom: 40,
-  },
-  mapContainer: {
-    height: 200,
-    width: '100%',
-    overflow: 'hidden',
-  },
-  map: {
-    flex: 1,
-  },
-  mapOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(15, 23, 42, 0.3)',
-    justifyContent: 'flex-end',
-    padding: 16,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-  },
-  statusBadgeText: {
-    color: '#fff',
-    fontWeight: '800',
-    fontSize: 14,
-    textTransform: 'uppercase',
-  },
-  contentContainer: {
-    padding: 20,
-    gap: 20,
-  },
-  idCard: {
-    backgroundColor: '#1e293b',
-    padding: 16,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
-  },
-  idLabel: {
-    fontSize: 10,
-    color: '#64748b',
-    fontWeight: 'bold',
-    letterSpacing: 1,
-    marginBottom: 4,
-  },
-  idText: {
-    color: '#f8fafc',
-    fontSize: 16,
-    fontWeight: '700',
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-  },
-  section: {
-    backgroundColor: '#1e293b',
-    borderRadius: 24,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#f8fafc',
-  },
-  routeItem: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  routeDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginTop: 4,
-  },
-  routeTextContainer: {
-    flex: 1,
-  },
-  routeLabel: {
-    fontSize: 12,
-    color: '#64748b',
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  routeValue: {
-    fontSize: 15,
-    color: '#cbd5e1',
-    lineHeight: 20,
-  },
-  routeLine: {
-    width: 2,
-    height: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    marginLeft: 5,
-    marginVertical: 4,
-  },
-  twoColumn: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  sectionSmall: {
-    flex: 1,
-    backgroundColor: '#1e293b',
-    borderRadius: 24,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  sectionTitleSmall: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#f8fafc',
-  },
-  valueLarge: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#fff',
-  },
-  descriptionText: {
-    color: '#94a3b8',
-    fontSize: 15,
-    lineHeight: 22,
-  },
-  timelineItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 12,
-  },
-  timelinePoint: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#6366f1',
-  },
-  timelineText: {
-    color: '#64748b',
-    fontSize: 13,
-  },
-});

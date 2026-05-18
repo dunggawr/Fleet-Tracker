@@ -6,20 +6,20 @@ Dependencies: Phase 02, Phase 04
 Provide admin users with visual insights into fleet performance, including trips, utilization, and driver KPIs, directly on the mobile app.
 
 ## Requirements
-- [ ] Overview dashboard for reports (Fuel, Trips, Utilization, KPI).
-- [ ] Visual charts for Trip trends (Daily/Weekly).
-- [ ] Driver Performance Ranking (KPIs).
-- [ ] Vehicle Utilization analytics.
-- [ ] Export to PDF/CSV functionality (Streamlined for mobile).
+- [x] Overview dashboard for reports (Fuel, Trips, Utilization, KPI).
+- [x] Visual charts for Trip trends (Daily/Weekly).
+- [x] Driver Performance Ranking (KPIs).
+- [x] Vehicle Utilization analytics.
+- [x] Export to PDF/CSV functionality (Streamlined for mobile).
 
 ## Implementation Steps
-1. [ ] Create `useReportStore` to handle data fetching for different report types.
-2. [ ] Build Reports Overview screen (`app/admin/reports/index.tsx`).
-3. [ ] Implement specific report detail screens:
+1. [x] Create `useReportStore` to handle data fetching for different report types.
+2. [x] Build Reports Overview screen (`app/admin/reports/index.tsx`).
+3. [x] Implement specific report detail screens:
    - `app/admin/reports/trips.tsx`
    - `app/admin/reports/kpi.tsx`
-4. [ ] Integrate `react-native-chart-kit` or similar for data visualization.
-5. [ ] Style with Tailwind CSS and Glassmorphism design consistent with previous phases.
+4. [x] Integrate `react-native-chart-kit` or similar for data visualization.
+5. [x] Style with Tailwind CSS and Glassmorphism design consistent with previous phases.
 
 ## Files to Create/Modify
 - `fleet-driver/store/useReportStore.ts`

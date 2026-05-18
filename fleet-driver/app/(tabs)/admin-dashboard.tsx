@@ -1,12 +1,14 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
-import { LayoutDashboard, Truck, Package, DollarSign, AlertTriangle } from 'lucide-react-native';
+import { View, Text, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { LayoutDashboard, Truck, Package, DollarSign, AlertTriangle, TrendingUp, ChevronRight } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { StatCard } from '../../components/admin/StatCard';
 import { useDashboardStore } from '../../store/useDashboardStore';
 
 export default function AdminDashboardScreen() {
   const { stats, isLoading, fetchStats } = useDashboardStore();
+  const router = useRouter();
 
   useEffect(() => {
     fetchStats();
@@ -17,19 +19,19 @@ export default function AdminDashboardScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView className="flex-1 bg-slate-950">
       <ScrollView 
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={{ padding: 20, paddingBottom: 120 }}
         refreshControl={
           <RefreshControl refreshing={isLoading} onRefresh={fetchStats} tintColor="#6366f1" />
         }
       >
-        <View style={styles.header}>
+        <View className="flex-row items-center mb-6 gap-3">
           <LayoutDashboard size={32} color="#6366f1" />
-          <Text style={styles.title}>Admin Dashboard</Text>
+          <Text className="text-3xl font-bold text-slate-50">Admin Dashboard</Text>
         </View>
 
-        <View style={styles.statsGrid}>
+        <View className="flex-row flex-wrap justify-between mb-6">
           <StatCard 
             title="Active Vehicles" 
             value={stats.activeVehicles} 
@@ -62,17 +64,37 @@ export default function AdminDashboardScreen() {
           />
         </View>
         
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recent Activity</Text>
+        <View className="mb-4">
+          <Text className="text-lg font-bold text-slate-50 tracking-wider">Reports & Analytics</Text>
         </View>
 
-        <View style={styles.placeholderCard}>
+        <TouchableOpacity 
+          className="bg-slate-800 rounded-3xl p-5 flex-row items-center mb-6 border border-white/10"
+          onPress={() => router.push('/admin/reports' as any)}
+        >
+          <View className="w-12 h-12 rounded-2xl bg-indigo-500/15 justify-center items-center mr-4">
+            <TrendingUp size={24} color="#6366f1" />
+          </View>
+          <View className="flex-1">
+            <Text className="text-slate-50 font-bold text-base mb-1">Fleet Insights & KPIs</Text>
+            <Text className="text-slate-400 text-xs">View fuel, trips, utilization, and rankings</Text>
+          </View>
+          <View className="w-8 h-8 rounded-full bg-slate-950 justify-center items-center">
+            <ChevronRight size={18} color="#94a3b8" />
+          </View>
+        </TouchableOpacity>
+
+        <View className="mb-4">
+          <Text className="text-lg font-bold text-slate-50 tracking-wider">Recent Activity</Text>
+        </View>
+
+        <View className="bg-slate-800 rounded-3xl p-8 items-center justify-center border border-white/10">
           {isLoading ? (
             <ActivityIndicator color="#6366f1" />
           ) : (
             <>
-              <Text style={styles.placeholderText}>Detailed activity logs and mini charts will be added in future updates.</Text>
-              <Text style={styles.statusBadge}>Phase 02 in Progress</Text>
+              <Text className="text-slate-400 text-sm text-center mb-5 leading-5">Detailed activity logs and mini charts will be added in future updates.</Text>
+              <Text className="bg-indigo-500/15 text-indigo-400 px-4 py-2 rounded-2xl text-xs font-bold overflow-hidden">Phase 02 in Progress</Text>
             </>
           )}
         </View>
@@ -80,66 +102,3 @@ export default function AdminDashboardScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0f172a',
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 120, // Tab bar space
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-    gap: 12,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#f8fafc',
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-  },
-  sectionHeader: {
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#f8fafc',
-    letterSpacing: 0.5,
-  },
-  placeholderCard: {
-    backgroundColor: '#1e293b',
-    borderRadius: 24,
-    padding: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  placeholderText: {
-    color: '#94a3b8',
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 20,
-    lineHeight: 20,
-  },
-  statusBadge: {
-    backgroundColor: 'rgba(99, 102, 241, 0.15)',
-    color: '#818cf8',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 16,
-    fontSize: 12,
-    fontWeight: '700',
-    overflow: 'hidden',
-  },
-});

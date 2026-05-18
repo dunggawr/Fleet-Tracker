@@ -1,3 +1,61 @@
+## [2026-05-18] - Order Detail Vehicle Selection Crash Fix
+### Fixed
+- **Couldn't find a navigation context crash when selecting a vehicle**:
+  - Resolved a critical crash that occurred when selecting a non-optimal vehicle on the order details screen inside the `fleet-driver` mobile app.
+  - Replaced dynamic Tailwind CSS shadow and opacity classes (e.g. `shadow-indigo-500/10`) in `OrderDetailScreen` (`[id].tsx`) and `VehicleDispatchItem` (`VehicleDispatchItem.tsx`) with robust native React Native inline shadow style properties to prevent layout tree CSS parsing race conditions under Expo Router.
+
+## [2026-05-18] - Order Management Map Integration & Tailwind CSS Migration
+### Added
+- **Interactive Map Search & Reverse Geocoding in MapPicker**:
+  - Re-engineered `MapPicker.tsx` to support real-time Address Search (Autocomplete) using Mapbox Search API directly inside the picker modal.
+  - Implemented automatic Reverse Geocoding utilizing dynamic map coordinates to retrieve real-time street address strings upon dragging the picker's central pin or panning the map view.
+  - Upgraded callback method `onSelect` signature to dispatch both geographic coordinates `(latitude, longitude)` and resolved readable address `(address)` back to the parent components.
+  - Enhanced mobile layout with premium glassmorphism overlay headers, dynamic drop-down search result overlays, and fluid dark-mode elements matching the dashboard style.
+
+### Changed
+- **OrderForm Tailwind CSS Migration**:
+  - Migrated `OrderForm.tsx` completely from classical React Native `StyleSheet` styling to utility-first Tailwind CSS (NativeWind v4) layouts.
+  - Integrated dynamic MapPicker coordinate & address states directly into the Form fields, replacing static, manual input fields for pickup and delivery locations.
+- **Auto Admin Dashboard Redirection**:
+  - Wired in user role authorization checks inside the mobile home screen (`fleet-driver/app/(tabs)/index.tsx`).
+  - Added immediate redirection logic to automatically swap standard driver dashboard panels with the `(tabs)/admin-dashboard` layout when an Administrator persona signs in.
+
+### Fixed
+- **Mobile Order Detail Map Load Error**:
+  - Fixed map viewport failure inside order detail views (`fleet-driver/app/admin/orders/[id].tsx`) where the Mapbox/Google Map engine failed to paint or rendered with dimensions of 0x0 pixels.
+  - Swapped standard `className="flex-1"` with explicit inline style declaration `style={{ flex: 1 }}` to correctly enforce layout bounds on native MapViews under the NativeWind v4 compiler.
+- **Admin Dashboard Cleanup**:
+  - Removed outdated pulse banner indicators inside the web admin creation portal `OrderCreateModal.tsx` to maintain unified presentation standards.
+
+## [2026-05-18] - Admin Profile View Streamlining
+### Changed
+- **Profile Tab Customizations for Admin Role**:
+  - Excluded standard stats view (`ProfileStats`) from Administrator profiles inside `fleet-driver/app/(tabs)/profile.tsx` to streamline their profile experience.
+  - Excluded trip/mission history (`MissionHistory`) for Administrator accounts, hiding the driver-specific card.
+  - Excluded driver-specific settings (like the "Duty Status" switch) in `fleet-driver/components/profile/SettingsSection.tsx` by introducing the `showDutyStatus` condition based on user role (`user?.role !== 'admin'`).
+
+## [2026-05-18] - Live Map Tracking Marker Bugfix & Tailwind CSS Migration
+### Added
+- **Tailwind CSS Styling**: Migrated custom marker component `FleetMarker.tsx` from raw React Native `StyleSheet` to unified Tailwind CSS (NativeWind) classes, matching the global premium logistics visual aesthetic.
+
+### Fixed
+- **Marker Cutoff and Disappearance on Live Map**:
+  - Solved the persistent bug where live tracking vehicle marker icons were partially cut off or disappeared completely during dynamic WebSocket telemetry updates.
+  - Hardened container dimensions using static, explicit width/height constraints (`w-[120px] h-[65px]`) combined with `overflow-visible` and `bg-transparent` properties to ensure all marker elements (vehicle icon, license plate card, anchor arrow) remain fully visible.
+  - Increased `tracksViewChanges` redraw delay timer from `300ms` to `1500ms` in the react-native-maps `useEffect` lifecycle to allow complex UI layouts and icons to completely paint before pausing expensive native map canvas redraw threads.
+  - Re-implemented vehicle movement orientation (heading) dynamic rotation through standard inline styles (`transform: [{ rotate: ... }]`) to rotate the indicator smoothly without breaking the layout bounds.
+
+## [2026-05-17] - Driver Creation & Editing UI Improvements
+### Added
+- **Tailwind CSS Styling**: Migrated legacy vanilla Stylesheets in `DriverForm.tsx` to utility-first Tailwind CSS classes, matching the glassmorphic dark-mode admin aesthetic.
+- **Dynamic Date Picker Modal**: Replaced the standard text field with a native React Native DateTimePicker modal for selecting the driver's license expiration date in `YYYY-MM-DD` format.
+- **Create Driver Password Field**: Added a new `Password` field (minimum 6 characters, secure text entry) to the driver creation interface.
+
+### Fixed
+- **Driver Editing Fields & NestJS Payload Violations**:
+  - Made the `Email` field read-only (`editable={!initialData}`) and visually dimmed it during editing to prevent accidental changes.
+  - Stripped both `email` and `password` fields from the update payload in `handleSubmit` before passing it to `onSubmit`, resolving the `property email should not exist` NestJS validation error.
+
 ## [2026-05-17] - Driver Filtering & Friendly Error Messages
 ### Added
 - **User-Friendly Error Handling (`fleet-driver`)**:

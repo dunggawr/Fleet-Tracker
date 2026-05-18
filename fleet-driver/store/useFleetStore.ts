@@ -51,13 +51,23 @@ export interface Vehicle {
   updatedAt: string;
 }
 
+export interface DispatchSuggestion {
+  vehicle: Vehicle;
+  driver: Driver;
+  distanceKm: number;
+  freeCapacityKg: number;
+  kpiScore: number;
+}
+
 interface FleetState {
   drivers: Driver[];
   vehicles: Vehicle[];
+  suggestions: DispatchSuggestion[];
   loading: boolean;
   error: string | null;
   fetchDrivers: () => Promise<void>;
   fetchVehicles: () => Promise<void>;
+  fetchSuggestions: (orderId: string) => Promise<void>;
   createDriver: (data: any) => Promise<void>;
   createVehicle: (data: any) => Promise<void>;
   updateDriver: (id: string, data: any) => Promise<void>;
@@ -72,6 +82,7 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
 export const useFleetStore = create<FleetState>((set, get) => ({
   drivers: [],
   vehicles: [],
+  suggestions: [],
   loading: false,
   error: null,
 
@@ -98,6 +109,19 @@ export const useFleetStore = create<FleetState>((set, get) => ({
       set({ vehicles: response.data.data || response.data, loading: false });
     } catch (error: any) {
       set({ error: formatError(error, 'Failed to fetch vehicles'), loading: false });
+    }
+  },
+
+  fetchSuggestions: async (orderId: string) => {
+    set({ loading: true, error: null });
+    try {
+      const { token } = useAuthStore.getState();
+      const response = await axios.get(`${API_URL}/dispatch/suggest/${orderId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      set({ suggestions: response.data.data || response.data, loading: false });
+    } catch (error: any) {
+      set({ error: formatError(error, 'Failed to fetch dispatch suggestions'), loading: false });
     }
   },
 
