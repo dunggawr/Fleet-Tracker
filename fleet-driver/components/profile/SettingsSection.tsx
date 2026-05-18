@@ -9,6 +9,7 @@ interface SettingsSectionProps {
   activeTrip: any;
   onToggleStatus: () => void;
   onOpenSecurity: () => void;
+  showDutyStatus?: boolean;
 }
 
 export const SettingsSection: React.FC<SettingsSectionProps> = ({
@@ -16,7 +17,8 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
   isUpdatingStatus,
   activeTrip,
   onToggleStatus,
-  onOpenSecurity
+  onOpenSecurity,
+  showDutyStatus = true
 }) => {
   return (
     <View className="px-5 mt-10">
@@ -26,15 +28,17 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
       </View>
       
       <View className="bg-slate-900/40 rounded-[32px] overflow-hidden border border-white/5">
-        <SettingsItem 
-          label="Duty Status"
-          sublabel={isOnline ? 'Online & Available' : 'Offline / Off Duty'}
-          icon={Power}
-          showSwitch={true}
-          switchValue={isOnline}
-          onSwitchValueChange={onToggleStatus}
-          switchDisabled={isUpdatingStatus || !!activeTrip}
-        />
+        {showDutyStatus && (
+          <SettingsItem 
+            label="Duty Status"
+            sublabel={isOnline ? 'Online & Available' : 'Offline / Off Duty'}
+            icon={Power}
+            showSwitch={true}
+            switchValue={isOnline}
+            onSwitchValueChange={onToggleStatus}
+            switchDisabled={isUpdatingStatus || !!activeTrip}
+          />
+        )}
 
         <SettingsItem 
           label="App Configuration"

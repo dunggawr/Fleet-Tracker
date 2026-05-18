@@ -51,15 +51,19 @@ export default function ProfileScreen() {
       >
         <ProfileHeader user={user} />
 
-        <ProfileStats 
-          completedCount={stats.completedCount}
-          totalDistance={stats.totalDistance}
-          avgSpeed={stats.avgSpeed}
-        />
+        {user?.role !== 'admin' && (
+          <ProfileStats 
+            completedCount={stats.completedCount}
+            totalDistance={stats.totalDistance}
+            avgSpeed={stats.avgSpeed}
+          />
+        )}
 
         <AccountInfo user={user} activeTrip={activeTrip} />
 
-        <MissionHistory tripHistory={tripHistory} />
+        {user?.role !== 'admin' && (
+          <MissionHistory tripHistory={tripHistory} />
+        )}
 
         <SettingsSection 
           isOnline={isOnline}
@@ -67,6 +71,7 @@ export default function ProfileScreen() {
           activeTrip={activeTrip}
           onToggleStatus={toggleStatus}
           onOpenSecurity={() => setShowPasswordModal(true)}
+          showDutyStatus={user?.role !== 'admin'}
         />
 
         {/* Logout Button */}

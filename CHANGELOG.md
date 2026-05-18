@@ -1,3 +1,10 @@
+## [2026-05-18] - Admin Profile View Streamlining
+### Changed
+- **Profile Tab Customizations for Admin Role**:
+  - Excluded standard stats view (`ProfileStats`) from Administrator profiles inside `fleet-driver/app/(tabs)/profile.tsx` to streamline their profile experience.
+  - Excluded trip/mission history (`MissionHistory`) for Administrator accounts, hiding the driver-specific card.
+  - Excluded driver-specific settings (like the "Duty Status" switch) in `fleet-driver/components/profile/SettingsSection.tsx` by introducing the `showDutyStatus` condition based on user role (`user?.role !== 'admin'`).
+
 ## [2026-05-18] - Live Map Tracking Marker Bugfix & Tailwind CSS Migration
 ### Added
 - **Tailwind CSS Styling**: Migrated custom marker component `FleetMarker.tsx` from raw React Native `StyleSheet` to unified Tailwind CSS (NativeWind) classes, matching the global premium logistics visual aesthetic.
