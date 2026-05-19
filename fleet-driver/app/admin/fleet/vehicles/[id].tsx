@@ -5,7 +5,8 @@ import {
   ScrollView, 
   TouchableOpacity, 
   Alert,
-  ActivityIndicator
+  ActivityIndicator,
+  Image
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,7 +17,8 @@ import {
   Truck,
   Scale,
   User as UserIcon,
-  Box
+  Box,
+  Cpu
 } from 'lucide-react-native';
 import { useFleetStore, Vehicle, VehicleStatus, VehicleType } from '../../../../store/useFleetStore';
 import { VehicleForm } from '../../../../components/admin/VehicleForm';
@@ -139,22 +141,46 @@ export default function VehicleDetailScreen() {
           loading={loading}
         />
       ) : (
-        <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-          <View className="items-center py-8 bg-slate-800 rounded-b-[32px] border-b border-white/5">
-            <View className="w-24 h-24 rounded-[32px] bg-emerald-500/10 justify-center items-center mb-4">
-              <Truck size={48} color="#10b981" />
-            </View>
-            <Text className="text-2xl font-bold text-slate-50 mb-2">{vehicle?.plateNumber}</Text>
-            {status && (
-              <View 
-                className="flex-row items-center px-3 py-1.5 rounded-xl gap-2"
-                style={{ backgroundColor: `${status.color}20` }}
-              >
-                <View className="w-2 h-2 rounded-full" style={{ backgroundColor: status.color }} />
-                <Text className="text-xs font-extrabold uppercase" style={{ color: status.color }}>{status.label}</Text>
+        <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+          {vehicle?.imageUrl ? (
+            <View className="w-full h-72 bg-slate-800 rounded-b-[40px] overflow-hidden mb-6 border-b border-white/5">
+              <Image 
+                source={{ uri: vehicle.imageUrl }} 
+                className="w-full h-full"
+                resizeMode="cover"
+              />
+              <View className="absolute inset-0 bg-black/50 justify-end items-center pb-8 pt-20">
+                <Text className="text-4xl font-black text-white mb-3 tracking-wider" style={{ textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 4 }}>
+                  {vehicle?.plateNumber}
+                </Text>
+                {status && (
+                  <View 
+                    className="flex-row items-center px-4 py-2 rounded-2xl gap-2"
+                    style={{ backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' }}
+                  >
+                    <View className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: status.color, shadowColor: status.color, shadowOpacity: 0.8, shadowRadius: 4 }} />
+                    <Text className="text-sm font-extrabold uppercase tracking-wide text-white">{status.label}</Text>
+                  </View>
+                )}
               </View>
-            )}
-          </View>
+            </View>
+          ) : (
+            <View className="items-center py-10 bg-slate-800 rounded-b-[40px] border-b border-white/5 mb-6">
+              <View className="w-28 h-28 rounded-full bg-emerald-500/10 justify-center items-center mb-5 border border-emerald-500/20">
+                <Truck size={48} color="#10b981" />
+              </View>
+              <Text className="text-3xl font-black text-slate-50 mb-3 tracking-wider">{vehicle?.plateNumber}</Text>
+              {status && (
+                <View 
+                  className="flex-row items-center px-4 py-2 rounded-2xl gap-2"
+                  style={{ backgroundColor: `${status.color}15`, borderWidth: 1, borderColor: `${status.color}30` }}
+                >
+                  <View className="w-2 h-2 rounded-full" style={{ backgroundColor: status.color }} />
+                  <Text className="text-xs font-extrabold uppercase tracking-wide" style={{ color: status.color }}>{status.label}</Text>
+                </View>
+              )}
+            </View>
+          )}
 
           <View className="p-5 gap-5">
             <View className="bg-slate-800 rounded-[24px] p-5 border border-white/10">
@@ -173,6 +199,14 @@ export default function VehicleDetailScreen() {
                 <View>
                   <Text className="text-xs text-slate-500 font-semibold">Max Capacity</Text>
                   <Text className="text-base text-slate-50 font-bold">{vehicle?.maxCapacityKg} kg</Text>
+                </View>
+              </View>
+
+              <View className="flex-row items-center gap-4">
+                <Cpu size={20} color="#64748b" />
+                <View>
+                  <Text className="text-xs text-slate-500 font-semibold">Hardware GPS Device ID</Text>
+                  <Text className="text-base text-slate-50 font-bold">{vehicle?.deviceId || 'No Device Linked'}</Text>
                 </View>
               </View>
             </View>
