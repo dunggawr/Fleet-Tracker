@@ -104,7 +104,7 @@ describe('OrdersService', () => {
 
   describe('findAll', () => {
     it('should return paginated orders', async () => {
-      const result = await service.findAll({ page: 1, limit: 10 });
+      const result = await service.findAll({ page: 1, limit: 10 } as any);
 
       expect(result.data).toEqual([mockOrder]);
       expect(result.total).toBe(1);
@@ -113,7 +113,7 @@ describe('OrdersService', () => {
 
     it('should apply status filter if provided', async () => {
       const queryBuilder = mockRepository.createQueryBuilder();
-      await service.findAll({ status: OrderStatus.PENDING });
+      await service.findAll({ status: OrderStatus.PENDING } as any);
       expect(queryBuilder.andWhere).toHaveBeenCalledWith(
         expect.stringContaining('order.status = :status'),
         { status: OrderStatus.PENDING },
