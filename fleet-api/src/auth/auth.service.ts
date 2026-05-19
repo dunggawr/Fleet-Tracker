@@ -49,7 +49,15 @@ export class AuthService {
     const { email, password } = loginDto;
     const user = await this.userRepository.findOne({
       where: { email, isActive: true },
-      select: ['id', 'email', 'passwordHash', 'role', 'fullName', 'phone', 'avatarUrl'],
+      select: [
+        'id',
+        'email',
+        'passwordHash',
+        'role',
+        'fullName',
+        'phone',
+        'avatarUrl',
+      ],
       relations: ['driver'],
     });
 
@@ -86,7 +94,15 @@ export class AuthService {
       const userId = payload.sub;
       const user = await this.userRepository.findOne({
         where: { id: userId, isActive: true },
-        select: ['id', 'email', 'role', 'refreshTokenHash', 'fullName', 'phone', 'avatarUrl'],
+        select: [
+          'id',
+          'email',
+          'role',
+          'refreshTokenHash',
+          'fullName',
+          'phone',
+          'avatarUrl',
+        ],
         relations: ['driver'],
       });
 
@@ -177,7 +193,10 @@ export class AuthService {
     }
 
     // Verify old password
-    const isPasswordValid = await bcrypt.compare(oldPassword, user.passwordHash);
+    const isPasswordValid = await bcrypt.compare(
+      oldPassword,
+      user.passwordHash,
+    );
     if (!isPasswordValid) {
       throw new UnauthorizedException('Old password is incorrect');
     }
@@ -185,7 +204,9 @@ export class AuthService {
     // Check if new password is same as old password
     const isSamePassword = await bcrypt.compare(newPassword, user.passwordHash);
     if (isSamePassword) {
-      throw new UnauthorizedException('New password must be different from old password');
+      throw new UnauthorizedException(
+        'New password must be different from old password',
+      );
     }
 
     // Hash and save new password
@@ -200,7 +221,9 @@ export class AuthService {
     return { message: 'Password changed successfully' };
   }
 
-  async forgotPassword(email: string): Promise<{ message: string; resetCode: string }> {
+  async forgotPassword(
+    email: string,
+  ): Promise<{ message: string; resetCode: string }> {
     const user = await this.userRepository.findOne({
       where: { email, isActive: true },
     });
@@ -226,7 +249,9 @@ export class AuthService {
     });
 
     // In production, send via email. For now, return it for demo
-    console.log(`[PASSWORD RESET] Email: ${email}, Code: ${resetCode}, Expires: ${expiryTime}`);
+    console.log(
+      `[PASSWORD RESET] Email: ${email}, Code: ${resetCode}, Expires: ${expiryTime}`,
+    );
 
     return {
       message: 'Reset code sent to email (check console for demo)',

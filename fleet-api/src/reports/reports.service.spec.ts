@@ -64,7 +64,8 @@ describe('ReportsService Logic', () => {
       createMockQueryBuilder(mockStats),
     );
     // For trends and distributions
-    mockTripRepo.createQueryBuilder.mockReturnValueOnce(createMockQueryBuilder(mockStats))
+    mockTripRepo.createQueryBuilder
+      .mockReturnValueOnce(createMockQueryBuilder(mockStats))
       .mockReturnValueOnce(createMockQueryBuilder([])) // tripsByVehicle
       .mockReturnValueOnce(createMockQueryBuilder([])) // statusDistribution
       .mockReturnValueOnce(createMockQueryBuilder([])); // trendData
@@ -105,7 +106,9 @@ describe('ReportsService Logic', () => {
     expect(result.averageUtilization).toBeGreaterThanOrEqual(0);
     expect(result.vehicleStats).toHaveLength(2);
     // v1 utilization: 4 hours / 24 hours = 16.66% -> 17%
-    expect(result.vehicleStats.find(v => v.plateNumber === '29A-1').utilization).toBe(17);
+    expect(
+      result.vehicleStats.find((v) => v.plateNumber === '29A-1').utilization,
+    ).toBe(17);
   });
 
   it('should calculate fuel cost report correctly', async () => {

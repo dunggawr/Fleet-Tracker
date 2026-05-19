@@ -14,7 +14,6 @@ import { Vehicle, VehicleStatus } from '../entities/vehicle.entity';
 import { Order, OrderStatus } from '../entities/order.entity';
 import { Alert } from '../entities/alert.entity';
 
-
 describe('TripsService', () => {
   let service: TripsService;
   let tripRepository: Repository<Trip>;
@@ -80,7 +79,6 @@ describe('TripsService', () => {
           },
         },
       ],
-
     }).compile();
 
     service = module.get<TripsService>(TripsService);

@@ -1,11 +1,10 @@
+import { Controller, Patch, Body, UseGuards, Get } from '@nestjs/common';
 import {
-  Controller,
-  Patch,
-  Body,
-  UseGuards,
-  Get,
-} from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -21,7 +20,10 @@ export class UsersController {
 
   @Get('profile')
   @ApiOperation({ summary: 'Get current user profile' })
-  @ApiResponse({ status: 200, description: 'Profile data retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Profile data retrieved successfully',
+  })
   getProfile(@GetUser() user: User) {
     return this.usersService.findOne(user.id);
   }

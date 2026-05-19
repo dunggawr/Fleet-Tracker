@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   UseGuards,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { DriversService } from './drivers.service';
@@ -59,9 +60,12 @@ export class DriversController {
   }
 
   @Get(':id/kpi')
-  @Roles(UserRole.ADMIN)
-  @ApiOperation({ summary: 'Get driver KPI (Admin only)' })
-  getKpi(@Param('id') id: string) {
+  @Roles(UserRole.ADMIN, UserRole.DRIVER)
+  @ApiOperation({ summary: 'Get driver KPI (Admin and Driver)' })
+  getKpi(@Param('id') id: string, @GetUser() user: any) {
+    if (user.role === UserRole.DRIVER && user.driver?.id !== id) {
+      throw new ForbiddenException('You can only view your own KPI');
+    }
     return this.driversService.getKpi(id);
   }
 
@@ -91,7 +95,13 @@ export class DriversController {
   @Patch('status/me')
   @Roles(UserRole.DRIVER, UserRole.ADMIN)
   @ApiOperation({ summary: 'Update my own status (Driver only)' })
-  updateMyStatus(@GetUser('id') userId: string, @Body() updateStatusDto: UpdateStatusDto) {
-    return this.driversService.updateStatusByUserId(userId, updateStatusDto.status);
+  updateMyStatus(
+    @GetUser('id') userId: string,
+    @Body() updateStatusDto: UpdateStatusDto,
+  ) {
+    return this.driversService.updateStatusByUserId(
+      userId,
+      updateStatusDto.status,
+    );
   }
 }

@@ -277,11 +277,14 @@ describe('TrackingGateway', () => {
 
       expect(result.status).toBe('ok');
       expect(mockServer.to).toHaveBeenCalledWith('admin');
-      expect(mockServer.emit).toHaveBeenCalledWith('alert:new', expect.objectContaining({
-        type: 'SOS',
-        tripId: 't1',
-        timestamp: expect.any(Number),
-      }));
+      expect(mockServer.emit).toHaveBeenCalledWith(
+        'alert:new',
+        expect.objectContaining({
+          type: 'SOS',
+          tripId: 't1',
+          timestamp: expect.any(Number),
+        }),
+      );
     });
   });
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { OrderForm } from '../../../components/admin/OrderForm';
 import { useOrderStore } from '../../../store/useOrderStore';
 import Toast from 'react-native-toast-message';
@@ -31,6 +31,7 @@ export default function CreateOrderScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-slate-950" edges={['top']}>
+      <Stack.Screen options={{ headerShown: false }} />
       <View className="flex-row items-center justify-between px-4 h-[60px] border-b border-white/5">
         <TouchableOpacity 
           className="w-10 h-10 rounded-xl bg-slate-800 justify-center items-center"

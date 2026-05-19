@@ -145,7 +145,11 @@ export class VehiclesService {
           where: { id: updateVehicleDto.driverId },
           relations: ['user'],
         });
-        if (!newDriver || !newDriver.user || newDriver.user.role !== UserRole.DRIVER) {
+        if (
+          !newDriver ||
+          !newDriver.user ||
+          newDriver.user.role !== UserRole.DRIVER
+        ) {
           throw new NotFoundException('Driver not found');
         }
         if (newDriver.status === DriverStatus.ON_TRIP) {

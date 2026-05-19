@@ -11,7 +11,11 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { TripsService } from './trips.service';
-import { ReportIncidentDto, UpdateTripStatusDto, FindTripsQueryDto } from './dto/trip.dto';
+import {
+  ReportIncidentDto,
+  UpdateTripStatusDto,
+  FindTripsQueryDto,
+} from './dto/trip.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -66,6 +70,11 @@ export class TripsController {
     @Body() reportIncidentDto: ReportIncidentDto,
     @Request() req,
   ) {
-    return this.tripsService.reportIncident(id, reportIncidentDto, req.user.id, req.user.role);
+    return this.tripsService.reportIncident(
+      id,
+      reportIncidentDto,
+      req.user.id,
+      req.user.role,
+    );
   }
 }

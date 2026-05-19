@@ -3,7 +3,11 @@ import * as bcrypt from 'bcrypt';
 import * as dotenv from 'dotenv';
 import { User, UserRole } from '../../entities/user.entity';
 import { Driver, DriverStatus } from '../../entities/driver.entity';
-import { Vehicle, VehicleType, VehicleStatus } from '../../entities/vehicle.entity';
+import {
+  Vehicle,
+  VehicleType,
+  VehicleStatus,
+} from '../../entities/vehicle.entity';
 import { Order, OrderStatus } from '../../entities/order.entity';
 import { Trip, TripStatus } from '../../entities/trip.entity';
 import { TripOrder } from '../../entities/trip-order.entity';
@@ -16,7 +20,17 @@ dotenv.config();
 const dataSource = new DataSource({
   type: 'postgres',
   url: process.env.DATABASE_URL,
-  entities: [User, Driver, Vehicle, Order, Trip, TripOrder, Alert, DriverKpi, GpsLocation],
+  entities: [
+    User,
+    Driver,
+    Vehicle,
+    Order,
+    Trip,
+    TripOrder,
+    Alert,
+    DriverKpi,
+    GpsLocation,
+  ],
   synchronize: false,
   ssl: {
     rejectUnauthorized: false,
@@ -68,8 +82,20 @@ async function seed() {
     const kpiRepository = dataSource.getRepository(DriverKpi);
 
     await userRepository.save([
-      userRepository.create({ email: 'admin@fleettracker.com', passwordHash, role: UserRole.ADMIN, fullName: 'System Admin', phone: '0000000000' }),
-      userRepository.create({ email: 'dispatcher@fleettracker.com', passwordHash, role: UserRole.DISPATCHER, fullName: 'Dispatcher', phone: '0111111111' })
+      userRepository.create({
+        email: 'admin@fleettracker.com',
+        passwordHash,
+        role: UserRole.ADMIN,
+        fullName: 'System Admin',
+        phone: '0000000000',
+      }),
+      userRepository.create({
+        email: 'dispatcher@fleettracker.com',
+        passwordHash,
+        role: UserRole.DISPATCHER,
+        fullName: 'Dispatcher',
+        phone: '0111111111',
+      }),
     ]);
 
     const driversData: Driver[] = [];
@@ -128,7 +154,11 @@ async function seed() {
         deliveryLocation: generateRandomPoint(),
         weightKg: 50 + i * 10,
         description: `Order Description ${i}`,
-        status: [OrderStatus.PENDING, OrderStatus.ASSIGNED, OrderStatus.DELIVERED][i % 3],
+        status: [
+          OrderStatus.PENDING,
+          OrderStatus.ASSIGNED,
+          OrderStatus.DELIVERED,
+        ][i % 3],
       });
       ordersData.push(await orderRepository.save(order));
     }
@@ -146,12 +176,16 @@ async function seed() {
         tripCounter++;
         const driver = driversData[tripCounter % driversData.length];
         const vehicle = vehiclesData[tripCounter % vehiclesData.length];
-        
+
         const daysAgo = 30 - day;
-        const startedAt = new Date(Date.now() - 86400000 * daysAgo + Math.random() * 40000000);
-        const completedAt = new Date(startedAt.getTime() + 3600000 + Math.random() * 7200000);
+        const startedAt = new Date(
+          Date.now() - 86400000 * daysAgo + Math.random() * 40000000,
+        );
+        const completedAt = new Date(
+          startedAt.getTime() + 3600000 + Math.random() * 7200000,
+        );
         const distance = 10 + Math.floor(Math.random() * 50);
-        
+
         const trip = tripRepository.create({
           driver,
           vehicle,
@@ -164,23 +198,32 @@ async function seed() {
           totalDistanceKm: distance,
           estimatedFuelCost: distance * 2500,
         });
-        
+
         const savedTrip = await tripRepository.save(trip);
-        await dataSource.query(`UPDATE trips SET created_at = $1 WHERE id = $2`, [startedAt, savedTrip.id]);
+        await dataSource.query(
+          `UPDATE trips SET created_at = $1 WHERE id = $2`,
+          [startedAt, savedTrip.id],
+        );
         tripsData.push(savedTrip);
 
-        await tripOrderRepository.save(tripOrderRepository.create({
-          trip: savedTrip,
-          order: ordersData[tripCounter % ordersData.length],
-          sequence: 1,
-        }));
+        await tripOrderRepository.save(
+          tripOrderRepository.create({
+            trip: savedTrip,
+            order: ordersData[tripCounter % ordersData.length],
+            sequence: 1,
+          }),
+        );
 
         if (tripCounter % 5 === 0) {
           const alert = alertRepository.create({
             trip: savedTrip,
             vehicle,
             driver,
-            type: [AlertType.SPEED_VIOLATION, AlertType.ROUTE_DEVIATION, AlertType.ABNORMAL_STOP][tripCounter % 3],
+            type: [
+              AlertType.SPEED_VIOLATION,
+              AlertType.ROUTE_DEVIATION,
+              AlertType.ABNORMAL_STOP,
+            ][tripCounter % 3],
             severity: AlertSeverity.MEDIUM,
             message: `System alert ${tripCounter}`,
             location: generateRandomPoint(),
@@ -189,7 +232,10 @@ async function seed() {
             createdAt: startedAt,
           });
           const savedAlert = await alertRepository.save(alert);
-          await dataSource.query(`UPDATE alerts SET created_at = $1 WHERE id = $2`, [startedAt, savedAlert.id]);
+          await dataSource.query(
+            `UPDATE alerts SET created_at = $1 WHERE id = $2`,
+            [startedAt, savedAlert.id],
+          );
         }
 
         const gps = gpsRepository.create({

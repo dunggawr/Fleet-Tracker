@@ -28,6 +28,7 @@ export default function ProfileScreen() {
     showPasswordModal,
     passwords,
     stats,
+    kpi,
     setShowPasswordModal,
     toggleStatus,
     handleChangePassword,
@@ -50,11 +51,7 @@ export default function ProfileScreen() {
         <ProfileHeader user={user} />
 
         {user?.role !== 'admin' && (
-          <ProfileStats 
-            completedCount={stats.completedCount}
-            totalDistance={stats.totalDistance}
-            avgSpeed={stats.avgSpeed}
-          />
+          <ProfileStats kpi={kpi} />
         )}
 
         <AccountInfo user={user} activeTrip={activeTrip} />
