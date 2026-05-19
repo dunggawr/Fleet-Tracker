@@ -239,10 +239,10 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       const response = await axios.get(`${API_URL}/orders/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const order = response.data;
+      const order = response.data.data || response.data;
       
       set(state => {
-        const index = state.orders.findIndex(o => o.id === id);
+        const index = state.orders.findIndex(o => o?.id === id);
         if (index > -1) {
           const newOrders = [...state.orders];
           newOrders[index] = order;

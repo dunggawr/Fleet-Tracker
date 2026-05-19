@@ -1,5 +1,9 @@
 # Changelog
 
+## [2026-05-19] - Order Details Runtime Bug Fixes
+### Fixed
+- **Order Detail Bug & FlatList Keys**: Unwrapped NestJS backend response in fetchOrderById using `response.data.data || response.data` to prevent replacing Order objects with response wrappers. This completely fixes the TypeError `.slice` of undefined and FlatList duplicate key warnings on the admin orders lists.
+
 ## [2026-05-17] - Live Tracking & Coordinate Parsing Fixes
 ### Fixed
 - **Admin Fleet Tracking**: Fixed blank map screen by correctly unpacking the API response structure `{ statusCode, message, data }` in `useFleetTrackingStore`.
