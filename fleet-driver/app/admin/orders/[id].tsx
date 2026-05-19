@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
   Platform
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
   ArrowLeft, 
@@ -174,6 +174,7 @@ export default function OrderDetailScreen() {
   if (isEditing) {
     return (
       <SafeAreaView className="flex-1 bg-slate-950" edges={['top']}>
+        <Stack.Screen options={{ headerShown: false }} />
         <View className="flex-row items-center px-4 py-3 gap-4 border-b border-white/5 bg-slate-950">
           <TouchableOpacity 
             onPress={() => setIsEditing(false)} 
@@ -194,6 +195,7 @@ export default function OrderDetailScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-slate-950" edges={['top']}>
+      <Stack.Screen options={{ headerShown: false }} />
       <View className="flex-row items-center px-4 py-3 gap-4 border-b border-white/5 bg-slate-950">
         <TouchableOpacity 
           onPress={() => router.back()} 

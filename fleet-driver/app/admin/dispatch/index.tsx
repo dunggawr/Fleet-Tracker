@@ -1,25 +1,49 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { ScrollView, Alert } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Send, AlertCircle, RefreshCw } from 'lucide-react-native';
 import { useOrderStore, OrderStatus } from '../../../store/useOrderStore';
-import { useFleetStore, VehicleStatus } from '../../../store/useFleetStore';
-import { OrderDispatchItem } from '../../../components/admin/OrderDispatchItem';
-import { VehicleDispatchItem } from '../../../components/admin/VehicleDispatchItem';
+import { useFleetStore, VehicleStatus, Vehicle } from '../../../store/useFleetStore';
+
+// Subcomponents
+import DispatchHeader from './components/DispatchHeader';
+import SmartDispatchBanner from './components/SmartDispatchBanner';
+import OrdersSection from './components/OrdersSection';
+import VehiclesSection from './components/VehiclesSection';
+import ConfirmDispatchButton from './components/ConfirmDispatchButton';
 
 export default function DispatchCenterScreen() {
   const router = useRouter();
   const { orders, fetchOrders, assignOrder, loading: ordersLoading } = useOrderStore();
-  const { vehicles, fetchVehicles, loading: fleetLoading } = useFleetStore();
+  const { vehicles, fetchVehicles, suggestions, fetchSuggestions, loading: fleetLoading } = useFleetStore();
 
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuggestLoading, setIsSuggestLoading] = useState(false);
 
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    const getSuggestions = async () => {
+      if (selectedOrderId) {
+        setIsSuggestLoading(true);
+        try {
+          await fetchSuggestions(selectedOrderId);
+        } catch (e) {
+          console.error('Error fetching suggestions:', e);
+        } finally {
+          setIsSuggestLoading(false);
+        }
+      } else {
+        useFleetStore.setState({ suggestions: [] });
+        setSelectedVehicleId(null);
+      }
+    };
+    getSuggestions();
+  }, [selectedOrderId]);
 
   const loadData = async () => {
     await Promise.all([
@@ -33,22 +57,101 @@ export default function DispatchCenterScreen() {
     v.status === VehicleStatus.AVAILABLE && v.driverId !== null
   );
 
+  // Partition vehicles into suggested and others, computing warning flags
+  const partitionedVehicles = React.useMemo(() => {
+    const activeOrder = orders.find(o => o.id === selectedOrderId);
+
+    if (!selectedOrderId || suggestions.length === 0) {
+      return {
+        suggested: [],
+        others: availableVehicles.map(v => {
+          const remainingCapacity = v.maxCapacityKg - v.currentLoadKg;
+          const capacityWarning = activeOrder ? (remainingCapacity < activeOrder.weightKg) : false;
+          const licenseWarning = v.driver?.licenseExpiry ? new Date(v.driver.licenseExpiry) < new Date() : false;
+          return { vehicle: v, capacityWarning, licenseWarning };
+        })
+      };
+    }
+
+    const suggestedList: {
+      vehicle: Vehicle;
+      distanceKm: number;
+      rank: number;
+      capacityWarning: boolean;
+      licenseWarning: boolean;
+    }[] = [];
+    const suggestedIds = new Set<string>();
+
+    suggestions.forEach((s, index) => {
+      const av = availableVehicles.find(v => v.id === s.vehicle.id);
+      if (av) {
+        const remainingCapacity = av.maxCapacityKg - av.currentLoadKg;
+        const capacityWarning = activeOrder ? (remainingCapacity < activeOrder.weightKg) : false;
+        const licenseWarning = av.driver?.licenseExpiry ? new Date(av.driver.licenseExpiry) < new Date() : false;
+
+        suggestedList.push({
+          vehicle: av,
+          distanceKm: s.distanceKm,
+          rank: index,
+          capacityWarning,
+          licenseWarning,
+        });
+        suggestedIds.add(av.id);
+      }
+    });
+
+    const otherList = availableVehicles
+      .filter(v => !suggestedIds.has(v.id))
+      .map(v => {
+        const remainingCapacity = v.maxCapacityKg - v.currentLoadKg;
+        const capacityWarning = activeOrder ? (remainingCapacity < activeOrder.weightKg) : false;
+        const licenseWarning = v.driver?.licenseExpiry ? new Date(v.driver.licenseExpiry) < new Date() : false;
+        return { vehicle: v, capacityWarning, licenseWarning };
+      });
+
+    return { suggested: suggestedList, others: otherList };
+  }, [selectedOrderId, suggestions, availableVehicles, orders]);
+
   const handleAssign = async () => {
     if (!selectedOrderId || !selectedVehicleId) return;
 
     const vehicle = vehicles.find(v => v.id === selectedVehicleId);
     if (!vehicle || !vehicle.driverId) {
-      Alert.alert('Error', 'Selected vehicle must have a driver assigned.');
+      Alert.alert('Error', 'Selected vehicle must have an assigned driver.');
       return;
     }
 
+    const order = orders.find(o => o.id === selectedOrderId);
+    if (!order) return;
+
+    const remainingCapacity = vehicle.maxCapacityKg - vehicle.currentLoadKg;
+    const capacityWarning = remainingCapacity < order.weightKg;
+    const licenseWarning = vehicle.driver?.licenseExpiry ? new Date(vehicle.driver.licenseExpiry) < new Date() : false;
+
+    let warningMessage = '';
+    if (capacityWarning) {
+      warningMessage += `⚠️ The selected vehicle does not have enough remaining capacity (${remainingCapacity} kg remaining, order requires ${order.weightKg} kg).\n\n`;
+    }
+    if (licenseWarning) {
+      const expiryStr = vehicle.driver?.licenseExpiry 
+        ? new Date(vehicle.driver.licenseExpiry).toLocaleDateString()
+        : 'Unknown';
+      warningMessage += `⚠️ The driver's license (${vehicle.driver?.user?.fullName}) expired on ${expiryStr}.\n\n`;
+    }
+
+    const title = warningMessage ? 'Safety Check Warnings' : 'Confirm Dispatch';
+    const message = warningMessage 
+      ? `${warningMessage}Are you sure you still want to assign this order to the vehicle?`
+      : `Assign Order #${selectedOrderId.slice(-6).toUpperCase()} to Vehicle ${vehicle.plateNumber}?`;
+
     Alert.alert(
-      'Confirm Dispatch',
-      `Assign Order #${selectedOrderId.slice(-6).toUpperCase()} to Vehicle ${vehicle.plateNumber}?`,
+      title,
+      message,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Assign',
+          text: warningMessage ? 'Proceed Anyway' : 'Assign',
+          style: warningMessage ? 'destructive' : 'default',
           onPress: async () => {
             setIsSubmitting(true);
             try {
@@ -78,106 +181,40 @@ export default function DispatchCenterScreen() {
         }} 
       />
 
-      {/* Header */}
-      <View className="px-6 py-4 flex-row items-center justify-between">
-        <View className="flex-row items-center">
-          <TouchableOpacity 
-            onPress={() => router.back()}
-            className="w-10 h-10 rounded-full bg-slate-900 justify-center items-center mr-4"
-          >
-            <ArrowLeft size={20} color="#f8fafc" />
-          </TouchableOpacity>
-          <View>
-            <Text className="text-xl font-bold text-slate-50">Dispatch Center</Text>
-            <Text className="text-slate-400 text-xs">Assign pending orders</Text>
-          </View>
-        </View>
-        <TouchableOpacity 
-          onPress={loadData}
-          disabled={isLoading}
-          className="w-10 h-10 rounded-full bg-slate-900 justify-center items-center"
-        >
-          {isLoading ? (
-            <ActivityIndicator size="small" color="#6366f1" />
-          ) : (
-            <RefreshCw size={18} color="#94a3b8" />
-          )}
-        </TouchableOpacity>
-      </View>
+      <DispatchHeader
+        onBack={() => router.back()}
+        onRefresh={loadData}
+        isLoading={isLoading}
+      />
 
       <ScrollView className="flex-1 px-6" showsVerticalScrollIndicator={false}>
-        {/* Section 1: Pending Orders */}
-        <View className="mt-4 mb-6">
-          <View className="flex-row justify-between items-center mb-4">
-            <Text className="text-slate-50 font-bold text-lg">Pending Orders</Text>
-            <View className="bg-amber-500/20 px-2 py-0.5 rounded-full">
-              <Text className="text-amber-500 text-[10px] font-bold">{pendingOrders.length}</Text>
-            </View>
-          </View>
-          
-          {pendingOrders.length === 0 ? (
-            <View className="bg-slate-900/50 rounded-3xl p-8 items-center border border-dashed border-slate-800">
-              <AlertCircle size={32} color="#475569" />
-              <Text className="text-slate-400 mt-2 text-center text-sm">No pending orders available</Text>
-            </View>
-          ) : (
-            pendingOrders.map(order => (
-              <OrderDispatchItem
-                key={order.id}
-                order={order}
-                isSelected={selectedOrderId === order.id}
-                onPress={() => setSelectedOrderId(order.id === selectedOrderId ? null : order.id)}
-              />
-            ))
-          )}
-        </View>
+        <OrdersSection
+          pendingOrders={pendingOrders}
+          selectedOrderId={selectedOrderId}
+          onSelectOrder={setSelectedOrderId}
+        />
 
-        {/* Section 2: Available Vehicles */}
-        <View className="mb-24">
-          <View className="flex-row justify-between items-center mb-4">
-            <Text className="text-slate-50 font-bold text-lg">Available Resources</Text>
-            <View className="bg-emerald-500/20 px-2 py-0.5 rounded-full">
-              <Text className="text-emerald-500 text-[10px] font-bold">{availableVehicles.length}</Text>
-            </View>
-          </View>
+        <SmartDispatchBanner
+          selectedOrderId={selectedOrderId}
+          isSuggestLoading={isSuggestLoading}
+          suggestedCount={partitionedVehicles.suggested.length}
+        />
 
-          {availableVehicles.length === 0 ? (
-            <View className="bg-slate-900/50 rounded-3xl p-8 items-center border border-dashed border-slate-800">
-              <AlertCircle size={32} color="#475569" />
-              <Text className="text-slate-400 mt-2 text-center text-sm">No available vehicles with drivers</Text>
-            </View>
-          ) : (
-            availableVehicles.map(vehicle => (
-              <VehicleDispatchItem
-                key={vehicle.id}
-                vehicle={vehicle}
-                isSelected={selectedVehicleId === vehicle.id}
-                onPress={() => setSelectedVehicleId(vehicle.id === selectedVehicleId ? null : vehicle.id)}
-              />
-            ))
-          )}
-        </View>
+        <VehiclesSection
+          availableVehiclesCount={availableVehicles.length}
+          suggestedVehicles={partitionedVehicles.suggested}
+          otherVehicles={partitionedVehicles.others}
+          selectedVehicleId={selectedVehicleId}
+          onSelectVehicle={setSelectedVehicleId}
+        />
       </ScrollView>
 
-      {/* Floating Action Button */}
-      {selectedOrderId && selectedVehicleId && (
-        <View className="absolute bottom-10 left-6 right-6">
-          <TouchableOpacity 
-            onPress={handleAssign}
-            disabled={isSubmitting}
-            className="bg-indigo-600 h-16 rounded-2xl flex-row justify-center items-center shadow-xl shadow-indigo-500/20"
-          >
-            {isSubmitting ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <>
-                <Send size={20} color="#fff" />
-                <Text className="text-white font-bold ml-3 text-lg">Confirm Assignment</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
-      )}
+      <ConfirmDispatchButton
+        selectedOrderId={selectedOrderId}
+        selectedVehicleId={selectedVehicleId}
+        isSubmitting={isSubmitting}
+        onConfirm={handleAssign}
+      />
     </SafeAreaView>
   );
 }

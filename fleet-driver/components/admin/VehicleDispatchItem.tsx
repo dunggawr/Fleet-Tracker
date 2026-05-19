@@ -9,6 +9,8 @@ interface VehicleDispatchItemProps {
   onPress: () => void;
   distanceKm?: number;
   rank?: number;
+  capacityWarning?: boolean;
+  licenseWarning?: boolean;
 }
 
 export const VehicleDispatchItem: React.FC<VehicleDispatchItemProps> = ({ 
@@ -16,7 +18,9 @@ export const VehicleDispatchItem: React.FC<VehicleDispatchItemProps> = ({
   isSelected, 
   onPress,
   distanceKm,
-  rank
+  rank,
+  capacityWarning = false,
+  licenseWarning = false
 }) => {
   const driverName = vehicle.driver?.user?.fullName || 'No Driver Assigned';
   const capacityPercent = Math.round((vehicle.currentLoadKg / vehicle.maxCapacityKg) * 100);
@@ -98,6 +102,22 @@ export const VehicleDispatchItem: React.FC<VehicleDispatchItemProps> = ({
               <Text className="text-indigo-400 text-[9px] font-bold uppercase">{distanceKm.toFixed(1)} km</Text>
             </View>
           )}
+          {capacityWarning && (
+            <View 
+              className="px-2 py-0.5 rounded-md border"
+              style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)' }}
+            >
+              <Text className="text-red-500 text-[9px] font-bold uppercase">Overloaded</Text>
+            </View>
+          )}
+          {licenseWarning && (
+            <View 
+              className="px-2 py-0.5 rounded-md border"
+              style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)' }}
+            >
+              <Text className="text-red-500 text-[9px] font-bold uppercase">Exp. License</Text>
+            </View>
+          )}
           <View 
             className="px-2 py-0.5 rounded-md"
             style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}
@@ -108,24 +128,26 @@ export const VehicleDispatchItem: React.FC<VehicleDispatchItemProps> = ({
       </View>
 
       <View className="flex-row items-center mb-3">
-        <User size={14} color="#94a3b8" />
-        <Text className="text-slate-300 text-xs ml-2 font-medium">
-          {driverName}
+        <User size={14} color={licenseWarning ? "#ef4444" : "#94a3b8"} />
+        <Text className={`text-xs ml-2 font-medium ${licenseWarning ? "text-red-400" : "text-slate-300"}`}>
+          {driverName} {licenseWarning && "(License Expired)"}
         </Text>
       </View>
 
       <View className="space-y-1.5">
         <View className="flex-row justify-between items-center">
           <View className="flex-row items-center">
-            <Gauge size={14} color="#94a3b8" />
-            <Text className="text-slate-400 text-[11px] ml-1.5">Current Load</Text>
+            <Gauge size={14} color={capacityWarning ? "#ef4444" : "#94a3b8"} />
+            <Text className={`text-[11px] ml-1.5 ${capacityWarning ? "text-red-400" : "text-slate-400"}`}>
+              Current Load {capacityWarning && "(Exceeds Order)"}
+            </Text>
           </View>
-          <Text className="text-slate-200 text-[11px] font-bold">{capacityPercent}%</Text>
+          <Text className={`text-[11px] font-bold ${capacityWarning ? "text-red-400" : "text-slate-200"}`}>{capacityPercent}%</Text>
         </View>
         <View className="w-full h-1.5 bg-slate-700 rounded-full overflow-hidden">
           <View 
-            className={`h-full rounded-full ${capacityPercent > 80 ? 'bg-amber-500' : 'bg-emerald-500'}`}
-            style={{ width: `${capacityPercent}%` }}
+            className={`h-full rounded-full ${capacityWarning ? 'bg-red-500' : capacityPercent > 80 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+            style={{ width: `${Math.min(capacityPercent, 100)}%` }}
           />
         </View>
       </View>
