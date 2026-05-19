@@ -57,7 +57,13 @@ export class Vehicle {
   status: VehicleStatus;
 
   @Column({ name: 'image_url', nullable: true })
-  imageUrl: string;
+  imageUrl: string | null;
+
+  @Column({ nullable: true })
+  model: string | null;
+
+  @Column({ nullable: true })
+  year: number | null;
 
   @Index()
   @Column({ name: 'device_id', type: 'varchar', nullable: true, unique: true })
