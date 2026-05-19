@@ -154,20 +154,22 @@ export default function AdminTrackingScreen() {
               autoCorrect={false}
               autoCapitalize="none"
             />
-            {searchQuery.length > 0 && (
+            {isSearching && (
               <TouchableOpacity onPress={() => {
                 setSearchQuery('');
                 setIsSearching(false);
                 Keyboard.dismiss();
               }}>
-                <Text className="text-indigo-500 text-xs font-semibold ml-2">Clear</Text>
+                <Text className="text-indigo-500 text-xs font-semibold ml-2">
+                  {searchQuery.length > 0 ? 'Clear' : 'Cancel'}
+                </Text>
               </TouchableOpacity>
             )}
           </View>
         </BlurView>
 
         {/* Search Results Dropdown */}
-        {isSearching && searchQuery.trim().length > 0 && (
+        {isSearching && (
           <BlurView intensity={95} tint="dark" className="mt-2 rounded-2xl overflow-hidden border border-white/10 shadow-lg shadow-black/30 z-[999]">
             <FlatList
               data={filteredVehicles}

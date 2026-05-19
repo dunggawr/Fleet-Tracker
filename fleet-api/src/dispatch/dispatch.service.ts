@@ -40,6 +40,7 @@ export class DispatchService {
     const result = await this.vehicleRepository
       .createQueryBuilder('vehicle')
       .innerJoinAndSelect('vehicle.driver', 'driver')
+      .leftJoinAndSelect('driver.user', 'driverUser')
       .where('vehicle.status = :vStatus', { vStatus: VehicleStatus.AVAILABLE })
       .andWhere('driver.status = :dStatus', { dStatus: DriverStatus.AVAILABLE })
       .andWhere('driver.license_expiry > :today', { today: new Date() })
