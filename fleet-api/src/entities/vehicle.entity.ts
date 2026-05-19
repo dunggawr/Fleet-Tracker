@@ -56,13 +56,13 @@ export class Vehicle {
   })
   status: VehicleStatus;
 
-  @Column({ name: 'image_url', nullable: true })
+  @Column({ name: 'image_url', type: 'varchar', nullable: true })
   imageUrl: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   model: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   year: number | null;
 
   @Index()
