@@ -41,6 +41,11 @@ export class CreateVehicleDto {
   @IsOptional()
   deviceId?: string | null;
 
+  @ApiProperty({ example: 'http://example.com/vehicle.jpg', nullable: true })
+  @IsString()
+  @IsOptional()
+  imageUrl?: string | null;
+
   @ApiPropertyOptional({
     enum: VehicleStatus,
     example: VehicleStatus.AVAILABLE,

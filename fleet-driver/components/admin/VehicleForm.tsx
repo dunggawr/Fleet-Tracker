@@ -1,16 +1,24 @@
 import React, { useState } from 'react';
 import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  ScrollView,
   KeyboardAvoidingView,
+  ScrollView,
   Platform,
-  ActivityIndicator
+  ActivityIndicator,
+  TouchableOpacity,
+  Text
 } from 'react-native';
-import { Truck, Scale, Settings2, User as UserIcon } from 'lucide-react-native';
+import axios from 'axios';
+import Toast from 'react-native-toast-message';
 import { Vehicle, VehicleStatus, VehicleType, useFleetStore } from '../../store/useFleetStore';
+import { useAuthStore } from '../../store/useAuthStore';
+import { formatError } from '../../utils/error';
+import { VehicleImagePicker } from './vehicle-form/VehicleImagePicker';
+import { VehicleBasicInfo } from './vehicle-form/VehicleBasicInfo';
+import { VehicleTypeSelector } from './vehicle-form/VehicleTypeSelector';
+import { VehicleStatusSelector } from './vehicle-form/VehicleStatusSelector';
+import { DriverAssigner } from './vehicle-form/DriverAssigner';
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 interface VehicleFormProps {
   initialData?: Vehicle;
@@ -20,19 +28,76 @@ interface VehicleFormProps {
 
 export const VehicleForm: React.FC<VehicleFormProps> = ({ initialData, onSubmit, loading }) => {
   const { drivers } = useFleetStore();
+  const [isUploading, setIsUploading] = useState(false);
   const [formData, setFormData] = useState({
     plateNumber: initialData?.plateNumber || '',
     type: initialData?.type || VehicleType.MEDIUM,
     maxCapacityKg: initialData?.maxCapacityKg?.toString() || '3000',
     status: initialData?.status || VehicleStatus.AVAILABLE,
     driverId: initialData?.driverId || '',
+    deviceId: initialData?.deviceId || '',
+    imageUrl: initialData?.imageUrl || '',
   });
 
-  const handleSubmit = () => {
+  const uploadImage = async (uri: string): Promise<string> => {
+    try {
+      const { token } = useAuthStore.getState();
+      
+      const filename = uri.split('/').pop() || 'vehicle.jpg';
+      const match = /\.(\w+)$/.exec(filename);
+      const fileType = match ? `image/${match[1]}` : `image/jpeg`;
+
+      const uploadData = new FormData();
+      uploadData.append('file', {
+        uri: Platform.OS === 'ios' ? uri.replace('file://', '') : uri,
+        name: filename,
+        type: fileType,
+      } as any);
+
+      const response = await axios.post(`${API_URL}/upload?folder=vehicles`, uploadData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.data && response.data.url) {
+        return response.data.url;
+      }
+      throw new Error('No URL returned from server');
+    } catch (err: any) {
+      throw err;
+    }
+  };
+
+  const handleSubmit = async () => {
+    let finalImageUrl = formData.imageUrl;
+    
+    // Nếu ảnh là file nội bộ (chưa upload), thì thực hiện upload trước
+    if (finalImageUrl && finalImageUrl.startsWith('file://')) {
+      setIsUploading(true);
+      try {
+        finalImageUrl = await uploadImage(finalImageUrl);
+        setFormData(prev => ({ ...prev, imageUrl: finalImageUrl }));
+      } catch (err: any) {
+        const errorMessage = formatError(err, 'Failed to upload vehicle image');
+        Toast.show({
+          type: 'error',
+          text1: 'Upload Failed',
+          text2: errorMessage
+        });
+        setIsUploading(false);
+        return; // Dừng lại nếu upload lỗi
+      }
+      setIsUploading(false);
+    }
+
     onSubmit({
       ...formData,
       maxCapacityKg: parseInt(formData.maxCapacityKg),
       driverId: formData.driverId || null,
+      deviceId: formData.deviceId.trim() || null,
+      imageUrl: finalImageUrl || null,
     });
   };
 
@@ -42,109 +107,20 @@ export const VehicleForm: React.FC<VehicleFormProps> = ({ initialData, onSubmit,
       className="flex-1"
     >
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
-        <View className="mb-6">
-          <Text className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-3">Basic Info</Text>
-          
-          <View className="flex-row items-center bg-slate-800 rounded-2xl border border-white/5 px-4 mb-3 h-14">
-            <Settings2 size={20} color="#64748b" style={{ marginRight: 12 }} />
-            <TextInput
-              className="flex-1 color-slate-50 text-base"
-              placeholder="Plate Number"
-              placeholderTextColor="#64748b"
-              autoCapitalize="characters"
-              value={formData.plateNumber}
-              onChangeText={(text) => setFormData({ ...formData, plateNumber: text })}
-            />
-          </View>
+        
+        <VehicleImagePicker 
+          imageUrl={formData.imageUrl} 
+          onImageUploaded={(url) => setFormData(prev => ({ ...prev, imageUrl: url }))} 
+          onImageRemoved={() => setFormData(prev => ({ ...prev, imageUrl: '' }))} 
+        />
 
-          <View className="flex-row items-center bg-slate-800 rounded-2xl border border-white/5 px-4 mb-3 h-14">
-            <Scale size={20} color="#64748b" style={{ marginRight: 12 }} />
-            <TextInput
-              className="flex-1 color-slate-50 text-base"
-              placeholder="Max Capacity (kg)"
-              placeholderTextColor="#64748b"
-              keyboardType="numeric"
-              value={formData.maxCapacityKg}
-              onChangeText={(text) => setFormData({ ...formData, maxCapacityKg: text })}
-            />
-          </View>
-        </View>
+        <VehicleBasicInfo formData={formData} setFormData={setFormData} />
 
-        <View className="mb-6">
-          <Text className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-3">Vehicle Type</Text>
-          <View className="flex-row gap-2 flex-wrap">
-            {Object.values(VehicleType).map((type) => (
-              <TouchableOpacity
-                key={type}
-                className={`flex-1 flex-row items-center justify-center gap-2 py-3 rounded-xl bg-slate-800 border border-white/5 min-w-[100px] ${
-                  formData.type === type ? 'bg-emerald-500 border-emerald-500' : ''
-                }`}
-                onPress={() => setFormData({ ...formData, type })}
-              >
-                <Truck size={20} color={formData.type === type ? '#fff' : '#64748b'} />
-                <Text className={`text-slate-400 font-bold text-[13px] capitalize ${
-                  formData.type === type ? 'text-white' : ''
-                }`}>
-                  {type}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
+        <VehicleTypeSelector type={formData.type} setType={(type) => setFormData(prev => ({ ...prev, type }))} />
 
-        <View className="mb-6">
-          <Text className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-3">Status</Text>
-          <View className="flex-row gap-2 flex-wrap">
-            {Object.values(VehicleStatus).map((status) => (
-              <TouchableOpacity
-                key={status}
-                className={`px-4 py-2.5 rounded-xl bg-slate-800 border border-white/5 ${
-                  formData.status === status ? 'bg-indigo-500 border-indigo-500' : ''
-                }`}
-                onPress={() => setFormData({ ...formData, status })}
-              >
-                <Text className={`text-slate-400 font-bold text-[13px] capitalize ${
-                  formData.status === status ? 'text-white' : ''
-                }`}>
-                  {status}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
+        <VehicleStatusSelector status={formData.status} setStatus={(status) => setFormData(prev => ({ ...prev, status }))} />
 
-        <View className="mb-6">
-          <Text className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-3">Assign Driver</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
-            <TouchableOpacity
-              className={`flex-row items-center bg-slate-800 px-3.5 py-2 rounded-full mr-2 border border-white/5 gap-1.5 ${
-                formData.driverId === '' ? 'bg-indigo-500 border-indigo-500' : ''
-              }`}
-              onPress={() => setFormData({ ...formData, driverId: '' })}
-            >
-              <Text className={`text-slate-400 text-[13px] font-semibold ${
-                formData.driverId === '' ? 'text-white' : ''
-              }`}>Unassigned</Text>
-            </TouchableOpacity>
-            
-            {drivers.map((driver) => (
-              <TouchableOpacity
-                key={driver.id}
-                className={`flex-row items-center bg-slate-800 px-3.5 py-2 rounded-full mr-2 border border-white/5 gap-1.5 ${
-                  formData.driverId === driver.id ? 'bg-indigo-500 border-indigo-500' : ''
-                }`}
-                onPress={() => setFormData({ ...formData, driverId: driver.id })}
-              >
-                <UserIcon size={14} color={formData.driverId === driver.id ? '#fff' : '#64748b'} />
-                <Text className={`text-slate-400 text-[13px] font-semibold ${
-                  formData.driverId === driver.id ? 'text-white' : ''
-                }`}>
-                  {driver.user.fullName}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+        <DriverAssigner drivers={drivers} selectedDriverId={formData.driverId} setDriverId={(id) => setFormData(prev => ({ ...prev, driverId: id }))} />
 
         <TouchableOpacity 
           className="bg-indigo-500 h-14 rounded-2xl justify-center items-center mt-3"
@@ -156,9 +132,9 @@ export const VehicleForm: React.FC<VehicleFormProps> = ({ initialData, onSubmit,
             elevation: 4
           }}
           onPress={handleSubmit}
-          disabled={loading}
+          disabled={loading || isUploading}
         >
-          {loading ? (
+          {loading || isUploading ? (
             <ActivityIndicator color="#fff" />
           ) : (
             <Text className="text-white text-base font-bold">
@@ -170,4 +146,5 @@ export const VehicleForm: React.FC<VehicleFormProps> = ({ initialData, onSubmit,
     </KeyboardAvoidingView>
   );
 };
+
 
