@@ -9,6 +9,12 @@ interface User {
   email: string;
   fullName: string;
   role: string;
+  driver?: {
+    id: string;
+    status: string;
+    licenseClass?: string;
+    licenseExpiry?: string;
+  } | null;
 }
 
 interface AuthState {

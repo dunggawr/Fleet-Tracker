@@ -4,9 +4,7 @@ import {
   ScrollView, 
   View, 
   Text, 
-  StatusBar, 
-  Platform, 
-  StyleSheet 
+  StatusBar
 } from 'react-native';
 import { LogOut } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -30,6 +28,7 @@ export default function ProfileScreen() {
     showPasswordModal,
     passwords,
     stats,
+    kpi,
     setShowPasswordModal,
     toggleStatus,
     handleChangePassword,
@@ -41,8 +40,8 @@ export default function ProfileScreen() {
       <StatusBar barStyle="light-content" />
       
       {/* Background Glows */}
-      <View style={styles.glow} pointerEvents="none" />
-      <View style={[styles.glow, { top: 400, left: -150, backgroundColor: 'rgba(79, 70, 229, 0.05)' }]} pointerEvents="none" />
+      <View className="absolute -top-[150px] -right-[150px] w-[400px] h-[400px] rounded-full bg-indigo-500/[0.08]" pointerEvents="none" />
+      <View className="absolute top-[400px] -left-[150px] w-[400px] h-[400px] rounded-full bg-indigo-600/[0.05]" pointerEvents="none" />
 
       <ScrollView 
         className="flex-1" 
@@ -52,11 +51,7 @@ export default function ProfileScreen() {
         <ProfileHeader user={user} />
 
         {user?.role !== 'admin' && (
-          <ProfileStats 
-            completedCount={stats.completedCount}
-            totalDistance={stats.totalDistance}
-            avgSpeed={stats.avgSpeed}
-          />
+          <ProfileStats kpi={kpi} />
         )}
 
         <AccountInfo user={user} activeTrip={activeTrip} />
@@ -104,15 +99,3 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  glow: {
-    position: 'absolute',
-    top: -150,
-    right: -150,
-    width: 400,
-    height: 400,
-    borderRadius: 200,
-    backgroundColor: 'rgba(99, 102, 241, 0.08)',
-    // filter: Platform.OS === 'ios' ? 'blur(100px)' : 'none', // Standard RN doesn't support filter
-  }
-});

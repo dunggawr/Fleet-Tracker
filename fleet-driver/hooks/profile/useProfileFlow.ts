@@ -20,6 +20,8 @@ export const useProfileFlow = () => {
   const [isOnline, setIsOnline] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
+  const [kpi, setKpi] = useState<any>(null);
+
   // Fetch current status on mount
   useEffect(() => {
     const fetchStatus = async () => {
@@ -34,7 +36,8 @@ export const useProfileFlow = () => {
           updateUser({ 
             fullName: userData.fullName,
             email: userData.email,
-            role: userData.role 
+            role: userData.role,
+            driver: userData.driver,
           });
         }
       } catch (error) {
@@ -43,6 +46,23 @@ export const useProfileFlow = () => {
     };
     fetchStatus();
   }, []);
+
+  // Fetch KPI whenever user driver ID or online status changes
+  useEffect(() => {
+    const fetchKpi = async () => {
+      if (!user?.driver?.id) return;
+      try {
+        const response = await authFetch(`/drivers/${user.driver.id}/kpi`);
+        if (response.ok) {
+          const data = await response.json();
+          setKpi(data?.data ?? data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch KPI:', error);
+      }
+    };
+    fetchKpi();
+  }, [user?.driver?.id, isOnline]);
 
   const toggleStatus = useCallback(async () => {
     console.log('[useProfileFlow] toggleStatus called', { isOnline, isUpdatingStatus, hasActiveTrip: !!activeTrip });
@@ -234,6 +254,7 @@ export const useProfileFlow = () => {
       totalDistance: totalDistance.toFixed(1),
       avgSpeed: `${avgSpeed}`,
     },
+    kpi,
     setShowPasswordModal,
     toggleStatus,
     handleChangePassword,

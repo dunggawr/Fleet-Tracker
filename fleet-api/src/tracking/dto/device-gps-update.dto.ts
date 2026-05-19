@@ -1,4 +1,11 @@
-import { IsNumber, IsString, IsNotEmpty, Min, Max, IsOptional } from 'class-validator';
+import {
+  IsNumber,
+  IsString,
+  IsNotEmpty,
+  Min,
+  Max,
+  IsOptional,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class DeviceGpsUpdateDto {
@@ -31,5 +38,4 @@ export class DeviceGpsUpdateDto {
   @Min(0)
   @Max(360)
   heading?: number;
-
 }

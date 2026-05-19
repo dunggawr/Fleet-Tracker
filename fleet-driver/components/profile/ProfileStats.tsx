@@ -1,27 +1,47 @@
 import React from 'react';
 import { View } from 'react-native';
-import { Trophy, Map as MapIcon, Activity } from 'lucide-react-native';
+import { Navigation, CheckCircle, AlertTriangle, TrendingUp } from 'lucide-react-native';
 import { StatCard } from '../ui/StatCard';
 
 interface ProfileStatsProps {
-  completedCount: number;
-  totalDistance: string;
-  avgSpeed: string;
+  kpi?: {
+    totalTrips: number;
+    completionRate: number;
+    totalViolations: number;
+    kpiScore: number;
+  } | null;
 }
 
-export const ProfileStats: React.FC<ProfileStatsProps> = ({ 
-  completedCount, 
-  totalDistance, 
-  avgSpeed 
-}) => {
+export const ProfileStats: React.FC<ProfileStatsProps> = ({ kpi }) => {
   const stats = [
-    { label: 'Completed', value: completedCount, icon: Trophy, color: '#fbbf24' },
-    { label: 'Total Km', value: totalDistance, icon: MapIcon, color: '#10b981' },
-    { label: 'Avg Speed', value: avgSpeed, icon: Activity, color: '#6366f1', unit: 'km/h' },
+    { 
+      label: 'Total Trips', 
+      value: kpi?.totalTrips ?? 0, 
+      icon: Navigation, 
+      color: '#6366f1' // indigo 
+    },
+    { 
+      label: 'Completion', 
+      value: `${kpi?.completionRate ?? 0}%`, 
+      icon: CheckCircle, 
+      color: '#10b981' // emerald 
+    },
+    { 
+      label: 'Violations', 
+      value: kpi?.totalViolations ?? 0, 
+      icon: AlertTriangle, 
+      color: '#ef4444' // red
+    },
+    { 
+      label: 'KPI Score', 
+      value: kpi?.kpiScore != null ? Number(kpi.kpiScore).toFixed(1) : '0.0', 
+      icon: TrendingUp, 
+      color: '#fbbf24' // amber
+    },
   ];
 
   return (
-    <View className="flex-row justify-between px-5 -mt-4 mb-8">
+    <View className="flex-row flex-wrap justify-between px-5 -mt-4 mb-8 gap-y-3">
       {stats.map((stat, index) => (
         <StatCard 
           key={index}
@@ -29,7 +49,6 @@ export const ProfileStats: React.FC<ProfileStatsProps> = ({
           value={stat.value}
           icon={stat.icon}
           color={stat.color}
-          unit={stat.unit}
         />
       ))}
     </View>

@@ -56,7 +56,9 @@ describe('DispatchService', () => {
         setParameters: jest.fn().mockReturnThis(),
         limit: jest.fn().mockReturnThis(),
         getMany: jest.fn().mockResolvedValue([]),
-        getRawAndEntities: jest.fn().mockResolvedValue({ entities: [], raw: [] }),
+        getRawAndEntities: jest
+          .fn()
+          .mockResolvedValue({ entities: [], raw: [] }),
       }),
     };
 
@@ -119,12 +121,14 @@ describe('DispatchService', () => {
         weightKg: 100,
         pickupLocation: { type: 'Point', coordinates: [106.6, 10.7] },
       });
-      const mockVehicles = [{ id: 'v1', plateNumber: '51G-12345', type: 'TRUCK' }];
+      const mockVehicles = [
+        { id: 'v1', plateNumber: '51G-12345', type: 'TRUCK' },
+      ];
       const mockRaw = [{ v_id: 'v1', distance: 5000 }];
-      
+
       vehicleRepo.createQueryBuilder().getRawAndEntities.mockResolvedValue({
         entities: mockVehicles,
-        raw: mockRaw
+        raw: mockRaw,
       });
 
       const result = await service.suggestVehicles('o1');

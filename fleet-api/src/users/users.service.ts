@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
@@ -22,12 +26,15 @@ export class UsersService {
     return user;
   }
 
-  async updateProfile(id: string, updateProfileDto: UpdateProfileDto): Promise<User> {
+  async updateProfile(
+    id: string,
+    updateProfileDto: UpdateProfileDto,
+  ): Promise<User> {
     const user = await this.findOne(id);
 
     // Note: email is not updatable via profile
     const { ...updateData } = updateProfileDto;
-    
+
     Object.assign(user, updateData);
     return await this.userRepository.save(user);
   }

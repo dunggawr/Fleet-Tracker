@@ -36,9 +36,7 @@ export class TripsService {
     }
 
     return this.tripRepository.find({
-      where: [
-        { driver: { userId } },
-      ],
+      where: [{ driver: { userId } }],
       relations: ['vehicle', 'driver', 'tripOrders', 'tripOrders.order'],
       order: { createdAt: 'DESC' },
     });
@@ -89,20 +87,24 @@ export class TripsService {
       }
 
       // Fetch relations separately to avoid "FOR UPDATE cannot be applied to the nullable side of an outer join"
-      // We don't necessarily need to lock these rows for reading permission/metadata, 
+      // We don't necessarily need to lock these rows for reading permission/metadata,
       // but we do need the data.
       const fullTrip = await queryRunner.manager.findOne(Trip, {
         where: { id },
         relations: ['driver', 'vehicle', 'tripOrders', 'tripOrders.order'],
       });
-      
+
       if (!fullTrip) {
-        throw new NotFoundException(`Trip with ID ${id} data could not be re-loaded`);
+        throw new NotFoundException(
+          `Trip with ID ${id} data could not be re-loaded`,
+        );
       }
-      
+
       // Capture the correct IDs securely before relations override them in memory
-      const driverId = trip.driverId || fullTrip.driverId || fullTrip.driver?.id || null;
-      const vehicleId = trip.vehicleId || fullTrip.vehicleId || fullTrip.vehicle?.id || null;
+      const driverId =
+        trip.driverId || fullTrip.driverId || fullTrip.driver?.id || null;
+      const vehicleId =
+        trip.vehicleId || fullTrip.vehicleId || fullTrip.vehicle?.id || null;
 
       // Update our locked trip object with relation data
       trip.driver = fullTrip.driver;
@@ -268,7 +270,12 @@ export class TripsService {
     }
   }
 
-  async reportIncident(tripId: string, dto: ReportIncidentDto, userId: string, role?: string) {
+  async reportIncident(
+    tripId: string,
+    dto: ReportIncidentDto,
+    userId: string,
+    role?: string,
+  ) {
     const trip = await this.tripRepository.findOne({
       where: { id: tripId },
       relations: ['driver'],
@@ -280,7 +287,9 @@ export class TripsService {
 
     const isAdmin = role === 'admin' || role === 'dispatcher';
     if (!isAdmin && trip.driver && trip.driver.userId !== userId) {
-      throw new ForbiddenException('You can only report incidents for your assigned trips');
+      throw new ForbiddenException(
+        'You can only report incidents for your assigned trips',
+      );
     }
 
     const alert = this.alertRepository.create({
@@ -290,11 +299,14 @@ export class TripsService {
       type: AlertType.INCIDENT,
       severity: dto.severity || AlertSeverity.HIGH,
       message: dto.message,
-      location: dto.latitude && dto.longitude ? {
-        type: 'Point',
-        coordinates: [dto.longitude, dto.latitude]
-      } : null,
-      isResolved: false
+      location:
+        dto.latitude && dto.longitude
+          ? {
+              type: 'Point',
+              coordinates: [dto.longitude, dto.latitude],
+            }
+          : null,
+      isResolved: false,
     });
 
     const savedAlert = await this.alertRepository.save(alert);

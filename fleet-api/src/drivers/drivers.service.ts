@@ -157,7 +157,7 @@ export class DriversService {
   async getKpi(id: string) {
     await this.findOne(id);
     const kpi = await this.kpiRepository.findOne({ where: { driverId: id } });
-    
+
     if (!kpi) {
       return {
         driverId: id,
@@ -171,7 +171,7 @@ export class DriversService {
         updatedAt: new Date(),
       };
     }
-    
+
     return kpi;
   }
 
@@ -199,11 +199,16 @@ export class DriversService {
     return driver;
   }
 
-  async updateStatusByUserId(userId: string, status: DriverStatus): Promise<Driver> {
+  async updateStatusByUserId(
+    userId: string,
+    status: DriverStatus,
+  ): Promise<Driver> {
     let driver = await this.driversRepository.findOne({ where: { userId } });
 
     if (!driver) {
-      const user = await this.usersRepository.findOne({ where: { id: userId } });
+      const user = await this.usersRepository.findOne({
+        where: { id: userId },
+      });
       if (user && user.role === UserRole.ADMIN) {
         driver = this.driversRepository.create({
           userId,

@@ -234,14 +234,22 @@ export class ReportsService {
   async getTripSummary(from: Date, to: Date) {
     const trips = await this.tripRepository.find({
       where: { createdAt: Between(from, to) },
-      relations: ['vehicle', 'driver', 'driver.user', 'tripOrders', 'tripOrders.order'],
+      relations: [
+        'vehicle',
+        'driver',
+        'driver.user',
+        'tripOrders',
+        'tripOrders.order',
+      ],
       order: { createdAt: 'DESC' },
     });
 
     const tripIds = trips.map((t) => t.id);
     const unresolvedAlerts = await this.alertRepository
       .createQueryBuilder('alert')
-      .where('alert.tripId IN (:...tripIds)', { tripIds: tripIds.length ? tripIds : [null] })
+      .where('alert.tripId IN (:...tripIds)', {
+        tripIds: tripIds.length ? tripIds : [null],
+      })
       .andWhere('alert.isResolved = :isResolved', { isResolved: false })
       .getMany();
 
@@ -249,7 +257,8 @@ export class ReportsService {
 
     return {
       totalTrips: trips.length,
-      activeTrips: trips.filter((t) => t.status === TripStatus.IN_PROGRESS).length,
+      activeTrips: trips.filter((t) => t.status === TripStatus.IN_PROGRESS)
+        .length,
       delayedTrips: delayedTripIds.size,
       trips: trips.map((t) => {
         const sortedOrders = (t.tripOrders || []).sort(
@@ -277,7 +286,7 @@ export class ReportsService {
           vehiclePlate: t.vehicle?.plateNumber || 'N/A',
           driverName: t.driver?.user?.fullName || 'N/A',
           status: t.status,
-          distance: parseFloat(t.totalDistanceKm as any || 0),
+          distance: parseFloat((t.totalDistanceKm as any) || 0),
           duration,
           startLocation: startOrder?.pickupAddress || 'N/A',
           endLocation: endOrder?.deliveryAddress || 'N/A',

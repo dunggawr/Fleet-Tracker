@@ -41,7 +41,10 @@ export class CreateVehicleDto {
   @IsOptional()
   deviceId?: string | null;
 
-  @ApiPropertyOptional({ enum: VehicleStatus, example: VehicleStatus.AVAILABLE })
+  @ApiPropertyOptional({
+    enum: VehicleStatus,
+    example: VehicleStatus.AVAILABLE,
+  })
   @IsEnum(VehicleStatus)
   @IsOptional()
   status?: VehicleStatus;
@@ -51,4 +54,3 @@ export class CreateVehicleDto {
   @IsOptional()
   driverId?: string | null;
 }
-

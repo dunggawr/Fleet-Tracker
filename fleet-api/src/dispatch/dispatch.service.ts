@@ -68,7 +68,8 @@ export class DispatchService {
         vehicle,
         driver: vehicle.driver,
         distanceKm: isNaN(distanceMeters) ? 0 : distanceMeters / 1000,
-        freeCapacityKg: Number(vehicle.maxCapacityKg) - Number(vehicle.currentLoadKg),
+        freeCapacityKg:
+          Number(vehicle.maxCapacityKg) - Number(vehicle.currentLoadKg),
         kpiScore: 0, // In future, fetch from DriverKpi
       };
     });
@@ -113,7 +114,9 @@ export class DispatchService {
       });
 
       if (!driver) {
-        throw new NotFoundException(`Driver for vehicle ${vehicleId} not found`);
+        throw new NotFoundException(
+          `Driver for vehicle ${vehicleId} not found`,
+        );
       }
 
       // Attach driver to vehicle object for compatibility with existing logic
@@ -204,7 +207,9 @@ export class DispatchService {
       });
 
       if (!driver) {
-        throw new NotFoundException(`Driver for vehicle ${vehicleId} not found`);
+        throw new NotFoundException(
+          `Driver for vehicle ${vehicleId} not found`,
+        );
       }
 
       // Attach driver to vehicle object for compatibility with existing logic

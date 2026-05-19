@@ -139,15 +139,15 @@ export class TrackingService implements OnModuleDestroy {
 
   async processGpsBatch(data: GpsUpdateDto[]) {
     if (!data || data.length === 0) return [];
-    
+
     this.logger.log(`Processing batch of ${data.length} GPS points`);
-    
+
     const results: any[] = [];
-    
-    // For batch updates, we process them but maybe skip some heavy logic 
+
+    // For batch updates, we process them but maybe skip some heavy logic
     // or optimize the vehicle update to only the latest point.
     const latestPoint = data[data.length - 1];
-    
+
     for (const pointData of data) {
       const {
         vehicleId,
@@ -172,7 +172,7 @@ export class TrackingService implements OnModuleDestroy {
         recordedAt: new Date(timestamp),
       });
       this.gpsBuffer.push(gpsLocation);
-      
+
       results.push({
         vehicleId,
         tripId,
@@ -183,7 +183,7 @@ export class TrackingService implements OnModuleDestroy {
         timestamp,
       });
     }
-    
+
     // Update vehicle to the latest position only
     await this.vehicleRepository
       .createQueryBuilder()

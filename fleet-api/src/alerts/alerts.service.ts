@@ -87,19 +87,20 @@ export class AlertsService {
   }
 
   async findAll(query: AlertQueryDto) {
-    const { driverId, vehicleId, isResolved, activeOnly, type, severity } = query;
-    
+    const { driverId, vehicleId, isResolved, activeOnly, type, severity } =
+      query;
+
     const where: any = {};
-    
+
     if (driverId) where.driverId = driverId;
     if (vehicleId) where.vehicleId = vehicleId;
-    
+
     if (activeOnly !== undefined) {
       where.isResolved = !activeOnly;
     } else if (isResolved !== undefined) {
       where.isResolved = isResolved;
     }
-    
+
     if (type) where.type = type;
     if (severity) where.severity = severity;
 

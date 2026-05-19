@@ -56,7 +56,7 @@ export class TrackingGateway
     );
     // Broadcast to admins
     this.server.to('admin').emit('trip:status-changed', payload);
-    
+
     // Also emit as driver status change to satisfy existing frontend listeners if any
     this.server.to('admin').emit('driver:status-changed', {
       vehicleId: payload.vehicleId,
@@ -142,12 +142,19 @@ export class TrackingGateway
   @SubscribeMessage('sos:alert')
   async handleSosAlert(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { tripId: string; description?: string; location?: { latitude: number; longitude: number } },
+    @MessageBody()
+    data: {
+      tripId: string;
+      description?: string;
+      location?: { latitude: number; longitude: number };
+    },
   ) {
     const userId = client.data.user.id;
     const { tripId, description, location } = data;
 
-    this.logger.log(`Emergency SOS received from user ${userId} for trip ${tripId}`);
+    this.logger.log(
+      `Emergency SOS received from user ${userId} for trip ${tripId}`,
+    );
 
     // Broadcast to all admins (who should be in the 'admin' room)
     this.server.to('admin').emit('alert:new', {
@@ -216,7 +223,7 @@ export class TrackingGateway
     @MessageBody() data: GpsUpdateDto[],
   ) {
     if (!data || data.length === 0) return { status: 'ok' };
-    
+
     const user = client.data.user;
     if (user.role !== 'driver' && user.role !== 'admin') {
       return { event: 'error', data: 'Unauthorized' };
@@ -224,7 +231,7 @@ export class TrackingGateway
 
     try {
       const results = await this.trackingService.processGpsBatch(data);
-      
+
       // Broadcast the LATEST location to admins to keep dashboard snappy
       if (results.length > 0) {
         const latest: any = results[results.length - 1];
