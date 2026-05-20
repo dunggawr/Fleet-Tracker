@@ -39,6 +39,135 @@ export const MissionPanel: React.FC<MissionPanelProps> = ({
   }, [location, currentOrder?.pickupLocation]);
 
   const isWithinPickupRange = pickupDistance === null || pickupDistance < 200;
+
+  // Render Action Button based on Trip and Order status
+  const renderActionButton = () => {
+    if (activeTrip.status === TripStatus.ACCEPTED) {
+      return (
+        <TouchableOpacity 
+          className="flex-1 h-16 rounded-xl overflow-hidden shadow-2xl shadow-indigo-500/30"
+          onPress={() => onUpdateTripStatus(TripStatus.IN_PROGRESS)}
+          activeOpacity={0.8}
+        >
+          <LinearGradient
+            colors={['#6366f1', '#4f46e5']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={{ width: '100%', height: '100%', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 }}
+          >
+            <Truck size={20} color="#fff" strokeWidth={2.5} />
+            <Text className="text-white font-black text-[13px] uppercase tracking-wider" numberOfLines={1}>Deploy Trip</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      );
+    }
+
+    if (activeTrip.status === TripStatus.IN_PROGRESS) {
+      if (!currentOrder) {
+        return (
+          <TouchableOpacity 
+            className="flex-1 h-16 rounded-xl overflow-hidden shadow-2xl shadow-blue-500/30"
+            onPress={() => onUpdateTripStatus(TripStatus.COMPLETED)}
+            activeOpacity={0.8}
+          >
+            <LinearGradient
+              colors={['#3b82f6', '#2563eb']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{ width: '100%', height: '100%', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 }}
+            >
+              <CheckCircle2 size={20} color="#fff" strokeWidth={2.5} />
+              <Text className="text-white font-black text-[13px] uppercase tracking-wider" numberOfLines={1}>Finalize</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        );
+      }
+
+      if (currentOrder.status === OrderStatus.ASSIGNED || currentOrder.status === OrderStatus.PENDING) {
+        if (isWithinPickupRange) {
+          return (
+            <TouchableOpacity 
+              className="flex-1 h-16 rounded-xl overflow-hidden shadow-2xl shadow-amber-500/30"
+              onPress={() => onUpdateOrderStatus(currentOrder.id, OrderStatus.PICKED_UP)}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={['#f59e0b', '#d97706']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={{ width: '100%', height: '100%', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 }}
+              >
+                <Truck size={20} color="#fff" strokeWidth={2.5} />
+                <Text className="text-white font-black text-[13px] uppercase tracking-wider" numberOfLines={1}>Pickup</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          );
+        } else {
+          const distText = pickupDistance !== null ? `${Math.round(pickupDistance)}m` : 'Unknown distance';
+          return (
+            <TouchableOpacity 
+              className="flex-1 h-16 rounded-xl overflow-hidden shadow-2xl border border-slate-700 bg-slate-800"
+              onPress={() => {
+                Alert.alert(
+                  'Proximity Warning',
+                  `You are still ${distText} away from the pickup point. Please arrive within 200m to confirm pickup.`
+                );
+              }}
+              activeOpacity={0.8}
+            >
+              <View className="flex-1 flex-row justify-center items-center gap-2 bg-slate-800">
+                <Truck size={20} color="#64748b" strokeWidth={2.5} />
+                <Text className="text-slate-400 font-bold text-[12px] uppercase tracking-wider" numberOfLines={1}>
+                  Pickup ({distText})
+                </Text>
+              </View>
+            </TouchableOpacity>
+          );
+        }
+      }
+
+      if (currentOrder.status === OrderStatus.PICKED_UP) {
+        return (
+          <TouchableOpacity 
+            className="flex-1 h-16 rounded-xl overflow-hidden shadow-2xl shadow-violet-500/30"
+            onPress={() => onUpdateOrderStatus(currentOrder.id, OrderStatus.DELIVERING)}
+            activeOpacity={0.8}
+          >
+            <LinearGradient
+              colors={['#8b5cf6', '#7c3aed']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{ width: '100%', height: '100%', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 }}
+            >
+              <Navigation size={20} color="#fff" strokeWidth={2.5} />
+              <Text className="text-white font-black text-[13px] uppercase tracking-wider" numberOfLines={1}>Delivering</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        );
+      }
+
+      return (
+        <TouchableOpacity 
+          className="flex-1 h-16 rounded-xl overflow-hidden shadow-2xl shadow-emerald-500/30"
+          onPress={onProofOfDelivery}
+          activeOpacity={0.8}
+        >
+          <LinearGradient
+            colors={['#10b981', '#059669']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={{ width: '100%', height: '100%', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 }}
+          >
+            <CheckCircle2 size={20} color="#fff" strokeWidth={2.5} />
+            <Text className="text-white font-black text-[13px] uppercase tracking-wider" numberOfLines={1}>Proof of Delivery</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <View className="absolute bottom-32 left-5 right-5">
       <BlurView intensity={45} tint="dark" className="rounded-[44px] border border-white/10 shadow-2xl overflow-hidden">
@@ -55,7 +184,7 @@ export const MissionPanel: React.FC<MissionPanelProps> = ({
             <View className="shadow-2xl">
               <LinearGradient
                 colors={currentOrder ? ['#10b981', '#059669'] : ['#334155', '#1e293b']}
-                className="w-16 h-16 rounded-xl justify-center items-center border border-white/10"
+                style={{ width: 64, height: 64, borderRadius: 12, justifyContent: 'center', alignItems: 'center' }}
               >
                 <MapPin size={32} color="#fff" strokeWidth={2.5} />
               </LinearGradient>
@@ -108,126 +237,7 @@ export const MissionPanel: React.FC<MissionPanelProps> = ({
 
           {/* Tactical Actions */}
           <View className="flex-row gap-3">
-            {activeTrip.status === TripStatus.ACCEPTED && (
-              <TouchableOpacity 
-                className="flex-1 h-16 rounded-xl overflow-hidden shadow-2xl shadow-indigo-500/30"
-                onPress={() => onUpdateTripStatus(TripStatus.IN_PROGRESS)}
-                activeOpacity={0.8}
-              >
-                <LinearGradient
-                  colors={['#6366f1', '#4f46e5']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  className="flex-1 flex-row justify-center items-center gap-2"
-                >
-                  <Truck size={20} color="#fff" strokeWidth={2.5} />
-                  <Text className="text-white font-black text-[13px] uppercase tracking-wider" numberOfLines={1}>Deploy Trip</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            )}
-
-            {activeTrip.status === TripStatus.IN_PROGRESS && (() => {
-              if (!currentOrder) {
-                return (
-                  <TouchableOpacity 
-                    className="flex-1 h-16 rounded-xl overflow-hidden shadow-2xl shadow-blue-500/30"
-                    onPress={() => onUpdateTripStatus(TripStatus.COMPLETED)}
-                    activeOpacity={0.8}
-                  >
-                    <LinearGradient
-                      colors={['#3b82f6', '#2563eb']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      className="flex-1 flex-row justify-center items-center gap-2"
-                    >
-                      <CheckCircle2 size={20} color="#fff" strokeWidth={2.5} />
-                      <Text className="text-white font-black text-[13px] uppercase tracking-wider" numberOfLines={1}>Finalize</Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
-                );
-              }
-
-              if (currentOrder.status === OrderStatus.ASSIGNED || currentOrder.status === OrderStatus.PENDING) {
-                if (isWithinPickupRange) {
-                  return (
-                    <TouchableOpacity 
-                      className="flex-1 h-16 rounded-xl overflow-hidden shadow-2xl shadow-amber-500/30"
-                      onPress={() => onUpdateOrderStatus(currentOrder.id, OrderStatus.PICKED_UP)}
-                      activeOpacity={0.8}
-                    >
-                      <LinearGradient
-                        colors={['#f59e0b', '#d97706']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                        className="flex-1 flex-row justify-center items-center gap-2"
-                      >
-                        <Truck size={20} color="#fff" strokeWidth={2.5} />
-                        <Text className="text-white font-black text-[13px] uppercase tracking-wider" numberOfLines={1}>Pickup</Text>
-                      </LinearGradient>
-                    </TouchableOpacity>
-                  );
-                } else {
-                  const distText = pickupDistance !== null ? `${Math.round(pickupDistance)}m` : 'Unknown distance';
-                  return (
-                    <TouchableOpacity 
-                      className="flex-1 h-16 rounded-xl overflow-hidden shadow-2xl border border-slate-700 bg-slate-800"
-                      onPress={() => {
-                        Alert.alert(
-                          'Proximity Warning',
-                          `You are still ${distText} away from the pickup point. Please arrive within 200m to confirm pickup.`
-                        );
-                      }}
-                      activeOpacity={0.8}
-                    >
-                      <View className="flex-1 flex-row justify-center items-center gap-2 bg-slate-800">
-                        <Truck size={20} color="#64748b" strokeWidth={2.5} />
-                        <Text className="text-slate-400 font-bold text-[12px] uppercase tracking-wider" numberOfLines={1}>
-                          Pickup ({distText})
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  );
-                }
-              }
-
-              if (currentOrder.status === OrderStatus.PICKED_UP) {
-                return (
-                  <TouchableOpacity 
-                    className="flex-1 h-16 rounded-xl overflow-hidden shadow-2xl shadow-violet-500/30"
-                    onPress={() => onUpdateOrderStatus(currentOrder.id, OrderStatus.DELIVERING)}
-                    activeOpacity={0.8}
-                  >
-                    <LinearGradient
-                      colors={['#8b5cf6', '#7c3aed']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      className="flex-1 flex-row justify-center items-center gap-2"
-                    >
-                      <Navigation size={20} color="#fff" strokeWidth={2.5} />
-                      <Text className="text-white font-black text-[13px] uppercase tracking-wider" numberOfLines={1}>Delivering</Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
-                );
-              }
-
-              return (
-                <TouchableOpacity 
-                  className="flex-1 h-16 rounded-xl overflow-hidden shadow-2xl shadow-emerald-500/30"
-                  onPress={onProofOfDelivery}
-                  activeOpacity={0.8}
-                >
-                  <LinearGradient
-                    colors={['#10b981', '#059669']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    className="flex-1 flex-row justify-center items-center gap-2"
-                  >
-                    <CheckCircle2 size={20} color="#fff" strokeWidth={2.5} />
-                    <Text className="text-white font-black text-[13px] uppercase tracking-wider" numberOfLines={1}>Proof of Delivery</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              );
-            })()}
+            {renderActionButton()}
 
             <View className="flex-1">
               <SosButton tripId={activeTrip.id} />
