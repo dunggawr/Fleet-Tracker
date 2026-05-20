@@ -1,3 +1,20 @@
+## [2026-05-20] - Proximity Geofencing & Driver Trip Flow Skipping Fix
+### Added
+- **Mobile (Driver App)**:
+  - Added proximity-based geofence geoguards to the active map panel (`MissionPanel.tsx` and `map.tsx`).
+  - Added real-time distance calculations in `MissionPanel.tsx` utilizing driver GPS coordinate state passed down from the parent tracking layout.
+  - Hardened action flow to auto-calculate proximity to the designated pickup location:
+    - Button locks in a disabled visual state (`slate-800` showing "Pickup (Away Xm)") if distance is >= 200m.
+    - Button automatically transitions to active orange styling showing "Pickup" once the driver crosses into the 200m physical geofence.
+    - Standard fallback is supported to allow manual bypass check triggers if device GPS telemetry fails or coordinate inputs are missing, eliminating driver lockouts.
+  - Implemented axios error boundary mapping in `useProfileFlow.ts` for safety profile queries, bypassing calculation crashes for completed transport profiles without distance fields.
+
+### Fixed
+- **Backend (API)**:
+  - Fixed a critical logical issue in `TripsService` (`trips.service.ts`) where all order statuses linked to a trip were automatically forced to `OrderStatus.PICKED_UP` upon transitioning the parent trip status to `TripStatus.IN_PROGRESS`.
+  - Refactored `TripsService.updateStatus` to keep order statuses unchanged (`OrderStatus.ASSIGNED`/`PENDING`) at the beginning of the trip, requiring the driver to manually mark them as picked up upon physical geofence arrival.
+  - Updated `trips.service.spec.ts` unit tests to explicitly assert order integrity during initial transit dispatch.
+
 ## [2026-05-19] - Mobile Admin Mirror NativeWind Styling Migration
 ### Added
 - **Tailwind CSS Mobile Refactor**:

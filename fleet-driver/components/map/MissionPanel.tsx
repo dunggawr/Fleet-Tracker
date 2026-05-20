@@ -1,15 +1,17 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, Linking, Alert } from 'react-native';
 import { MapPin, User, ShieldCheck, Navigation, Phone, Truck, CheckCircle2 } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Trip, TripStatus, OrderStatus } from '@/types/trip';
 import { SosButton } from '../ui/SosButton';
+import { calculateDistance } from '../../utils/geo';
 
 interface MissionPanelProps {
   activeTrip: Trip;
   currentOrder: any;
   progressPercent?: number;
+  location?: any;
   onNavigate: () => void;
   onUpdateTripStatus: (status: TripStatus) => void;
   onUpdateOrderStatus: (orderId: string, status: OrderStatus) => void;
@@ -20,11 +22,23 @@ export const MissionPanel: React.FC<MissionPanelProps> = ({
   activeTrip, 
   currentOrder, 
   progressPercent = 0,
+  location,
   onNavigate,
   onUpdateTripStatus,
   onUpdateOrderStatus,
   onProofOfDelivery
 }) => {
+  const pickupDistance = React.useMemo(() => {
+    if (!location || !currentOrder?.pickupLocation) return null;
+    return calculateDistance(
+      location.coords.latitude,
+      location.coords.longitude,
+      currentOrder.pickupLocation.latitude,
+      currentOrder.pickupLocation.longitude
+    );
+  }, [location, currentOrder?.pickupLocation]);
+
+  const isWithinPickupRange = pickupDistance === null || pickupDistance < 200;
   return (
     <View className="absolute bottom-32 left-5 right-5">
       <BlurView intensity={45} tint="dark" className="rounded-[44px] border border-white/10 shadow-2xl overflow-hidden">
@@ -134,23 +148,46 @@ export const MissionPanel: React.FC<MissionPanelProps> = ({
               }
 
               if (currentOrder.status === OrderStatus.ASSIGNED || currentOrder.status === OrderStatus.PENDING) {
-                return (
-                  <TouchableOpacity 
-                    className="flex-1 h-16 rounded-xl overflow-hidden shadow-2xl shadow-amber-500/30"
-                    onPress={() => onUpdateOrderStatus(currentOrder.id, OrderStatus.PICKED_UP)}
-                    activeOpacity={0.8}
-                  >
-                    <LinearGradient
-                      colors={['#f59e0b', '#d97706']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      className="flex-1 flex-row justify-center items-center gap-2"
+                if (isWithinPickupRange) {
+                  return (
+                    <TouchableOpacity 
+                      className="flex-1 h-16 rounded-xl overflow-hidden shadow-2xl shadow-amber-500/30"
+                      onPress={() => onUpdateOrderStatus(currentOrder.id, OrderStatus.PICKED_UP)}
+                      activeOpacity={0.8}
                     >
-                      <Truck size={20} color="#fff" strokeWidth={2.5} />
-                      <Text className="text-white font-black text-[13px] uppercase tracking-wider" numberOfLines={1}>Pickup</Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
-                );
+                      <LinearGradient
+                        colors={['#f59e0b', '#d97706']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        className="flex-1 flex-row justify-center items-center gap-2"
+                      >
+                        <Truck size={20} color="#fff" strokeWidth={2.5} />
+                        <Text className="text-white font-black text-[13px] uppercase tracking-wider" numberOfLines={1}>Pickup</Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  );
+                } else {
+                  const distText = pickupDistance !== null ? `${Math.round(pickupDistance)}m` : 'Unknown distance';
+                  return (
+                    <TouchableOpacity 
+                      className="flex-1 h-16 rounded-xl overflow-hidden shadow-2xl border border-slate-700 bg-slate-800"
+                      onPress={() => {
+                        Alert.alert(
+                          'Proximity Warning',
+                          `You are still ${distText} away from the pickup point. Please arrive within 200m to confirm pickup.`
+                        );
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <View className="flex-1 flex-row justify-center items-center gap-2 bg-slate-800">
+                        <Truck size={20} color="#64748b" strokeWidth={2.5} />
+                        <Text className="text-slate-400 font-bold text-[12px] uppercase tracking-wider" numberOfLines={1}>
+                          Pickup ({distText})
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                }
               }
 
               if (currentOrder.status === OrderStatus.PICKED_UP) {

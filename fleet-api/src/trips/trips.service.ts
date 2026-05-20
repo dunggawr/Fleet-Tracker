@@ -153,15 +153,6 @@ export class TripsService {
 
       if (status === TripStatus.IN_PROGRESS) {
         trip.startedAt = new Date();
-        // Update all orders to PICKED_UP
-        if (trip.tripOrders) {
-          for (const tripOrder of trip.tripOrders) {
-            if (tripOrder.order) {
-              tripOrder.order.status = OrderStatus.PICKED_UP;
-              await queryRunner.manager.save(Order, tripOrder.order);
-            }
-          }
-        }
       }
 
       if (status === TripStatus.COMPLETED) {

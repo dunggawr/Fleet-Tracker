@@ -181,7 +181,7 @@ describe('TripsService', () => {
       expect(mockQueryRunner.rollbackTransaction).toHaveBeenCalled();
     });
 
-    it('should update orders to PICKED_UP when status is IN_PROGRESS', async () => {
+    it('should keep order status unchanged when status is IN_PROGRESS', async () => {
       const tripWithOrders = {
         ...mockTrip,
         status: TripStatus.ACCEPTED,
@@ -202,7 +202,7 @@ describe('TripsService', () => {
 
       expect(result.status).toBe(TripStatus.IN_PROGRESS);
       expect(tripWithOrders.tripOrders[0].order.status).toBe(
-        OrderStatus.PICKED_UP,
+        OrderStatus.PENDING,
       );
     });
 

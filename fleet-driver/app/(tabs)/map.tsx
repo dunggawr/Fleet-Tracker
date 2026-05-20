@@ -158,6 +158,7 @@ export default function ActiveTripMap() {
       <MissionPanel 
         activeTrip={activeTrip}
         currentOrder={currentOrder}
+        location={location}
         onUpdateTripStatus={handleStatusUpdate}
         onUpdateOrderStatus={handleOrderStatusUpdate}
         onProofOfDelivery={handleProofOfDelivery}

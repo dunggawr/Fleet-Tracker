@@ -156,6 +156,38 @@ export const useMapFlow = () => {
     let message = `Change order status to ${newStatus.replace('_', ' ')}?`;
 
     if (newStatus === OrderStatus.PICKED_UP) {
+      if (!location) {
+        Alert.alert('Proximity Warning', 'Missing current location data. Please check your GPS.');
+        return;
+      }
+
+      const order = activeTrip?.orders.find(o => o.id === orderId);
+      if (!order) {
+        Alert.alert('Error', 'Order not found in active trip.');
+        return;
+      }
+
+      if (!order.pickupLocation) {
+        Alert.alert('Error', 'Pickup location not specified for this order.');
+        return;
+      }
+
+      const distance = calculateDistance(
+        location.coords.latitude,
+        location.coords.longitude,
+        order.pickupLocation.latitude,
+        order.pickupLocation.longitude
+      );
+
+      // Geofencing: Must be within 200m
+      if (distance > 200) {
+        Alert.alert(
+          'Proximity Warning',
+          `You are still ${Math.round(distance)}m away from the pickup point. Please arrive within 200m to confirm pickup.`
+        );
+        return;
+      }
+
       title = 'Confirm Pickup';
       message = 'Have you successfully picked up the items for this order?';
     } else if (newStatus === OrderStatus.DELIVERING) {
@@ -172,7 +204,10 @@ export const useMapFlow = () => {
           text: 'Confirm', 
           onPress: async () => {
             try {
-              await updateOrderStatus(orderId, newStatus);
+              await updateOrderStatus(orderId, newStatus, {
+                actionLat: location?.coords.latitude,
+                actionLng: location?.coords.longitude,
+              });
               socketService.emit('order:status_change', {
                 orderId,
                 status: newStatus
@@ -193,7 +228,7 @@ export const useMapFlow = () => {
         },
       ]
     );
-  }, [updateOrderStatus]);
+  }, [updateOrderStatus, location, activeTrip]);
 
   const centerOnLocation = useCallback(() => {
     if (location && mapRef.current) {

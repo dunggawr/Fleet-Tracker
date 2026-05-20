@@ -205,8 +205,10 @@ export const useProfileFlow = () => {
     );
   }, [logout, router]);
 
-  const completedTrips = tripHistory.filter(t => t.status === 'completed');
-  const totalDistance = tripHistory.reduce((acc, trip) => acc + (trip.totalDistanceKm || 0), 0);
+  const completedTrips = Array.isArray(tripHistory) ? tripHistory.filter(t => t && t.status === 'completed') : [];
+  const totalDistance = Array.isArray(tripHistory) 
+    ? tripHistory.reduce((acc, trip) => acc + (Number(trip.totalDistanceKm) || 0), 0) 
+    : 0;
   
   const calculateAvgSpeed = () => {
     if (completedTrips.length === 0) return 0;
@@ -222,7 +224,7 @@ export const useProfileFlow = () => {
         
         if (durationHours > 0) {
           totalHours += durationHours;
-          distanceWithTime += (trip.totalDistanceKm || 0);
+          distanceWithTime += (Number(trip.totalDistanceKm) || 0);
         }
       }
     });
@@ -235,7 +237,7 @@ export const useProfileFlow = () => {
 
   return {
     user,
-    tripHistory,
+    tripHistory: tripHistory || [],
     activeTrip,
     isOnline,
     isUpdatingStatus,
@@ -251,7 +253,7 @@ export const useProfileFlow = () => {
     },
     stats: {
       completedCount: completedTrips.length,
-      totalDistance: totalDistance.toFixed(1),
+      totalDistance: (totalDistance || 0).toFixed(1),
       avgSpeed: `${avgSpeed}`,
     },
     kpi,
