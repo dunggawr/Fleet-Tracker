@@ -25,9 +25,17 @@ export function DriverTable({
       header: 'Driver', 
       accessor: (d: DriverWithUser) => (
         <div className="flex items-center gap-md">
-          <div className="w-8 h-8 bg-surface-high rounded-full flex items-center justify-center text-primary-light">
-            <UserIcon size={16} />
-          </div>
+          {d.avatarUrl ? (
+            <img 
+              src={d.avatarUrl} 
+              alt={d.fullName} 
+              className="w-8 h-8 rounded-full object-cover border border-border" 
+            />
+          ) : (
+            <div className="w-8 h-8 bg-surface-high rounded-full flex items-center justify-center text-primary-light">
+              <UserIcon size={16} />
+            </div>
+          )}
           <div className="flex flex-col">
             <span className="font-semibold text-text">{d.fullName}</span>
             <span className="text-xs text-dim">{d.user?.email || 'N/A'}</span>

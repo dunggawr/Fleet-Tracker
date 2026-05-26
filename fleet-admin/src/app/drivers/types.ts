@@ -1,7 +1,7 @@
 import { Driver } from '@/types';
 
 export interface DriverWithUser extends Driver {
-  user?: { email: string };
+  user?: { email: string; avatarUrl?: string };
 }
 
 export interface DriverStats {
@@ -17,4 +17,5 @@ export interface DriverFormValues {
   phone: string;
   licenseClass: string;
   licenseExpiry: string;
+  avatarUrl?: string;
 }

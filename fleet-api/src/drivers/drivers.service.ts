@@ -26,7 +26,7 @@ export class DriversService {
   ) {}
 
   async create(createDriverDto: CreateDriverDto): Promise<Driver> {
-    const { email, password, fullName, phone, ...driverData } = createDriverDto;
+    const { email, password, fullName, phone, avatarUrl, ...driverData } = createDriverDto;
 
     // Check if user already exists
     const existingUser = await this.usersRepository.findOne({
@@ -46,6 +46,7 @@ export class DriversService {
       role: UserRole.DRIVER,
       fullName,
       phone,
+      avatarUrl,
     });
 
     await this.usersRepository.save(user);
@@ -82,10 +83,11 @@ export class DriversService {
 
     const [data, total] = await query.getManyAndCount();
 
-    // Map fullName for convenience
+    // Map fullName & avatarUrl for convenience
     data.forEach((driver) => {
       if (driver.user) {
         (driver as any).fullName = driver.user.fullName;
+        (driver as any).avatarUrl = driver.user.avatarUrl;
       }
     });
 
@@ -110,6 +112,7 @@ export class DriversService {
 
     if (driver.user) {
       (driver as any).fullName = driver.user.fullName;
+      (driver as any).avatarUrl = driver.user.avatarUrl;
     }
 
     return driver;
@@ -117,12 +120,13 @@ export class DriversService {
 
   async update(id: string, updateDriverDto: UpdateDriverDto): Promise<Driver> {
     const driver = await this.findOne(id);
-    const { fullName, phone, ...driverData } = updateDriverDto;
+    const { fullName, phone, avatarUrl, ...driverData } = updateDriverDto as any;
 
     // Update User profile if needed
-    if (fullName || phone) {
+    if (fullName || phone || avatarUrl !== undefined) {
       if (fullName) driver.user.fullName = fullName;
       if (phone) driver.user.phone = phone;
+      if (avatarUrl !== undefined) driver.user.avatarUrl = avatarUrl;
       await this.usersRepository.save(driver.user);
     }
 
