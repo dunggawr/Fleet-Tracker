@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { User as UserIcon, ShieldCheck, Activity, ChevronRight } from 'lucide-react-native';
 import { Driver, DriverStatus } from '../../../store/useFleetStore';
 
@@ -23,9 +23,17 @@ export const DriverCard: React.FC<DriverCardProps> = ({ driver, onPress }) => {
       onPress={onPress}
     >
       <View className="flex-row items-center mb-4">
-        <View className="w-12 h-12 rounded-2xl bg-indigo-500/10 justify-center items-center mr-3">
-          <UserIcon size={24} color="#6366f1" />
-        </View>
+        {driver.avatarUrl || driver.user?.avatarUrl ? (
+          <Image 
+            source={{ uri: driver.avatarUrl || driver.user.avatarUrl }} 
+            className="w-12 h-12 rounded-2xl mr-3" 
+            style={{ resizeMode: 'cover' }}
+          />
+        ) : (
+          <View className="w-12 h-12 rounded-2xl bg-indigo-500/10 justify-center items-center mr-3">
+            <UserIcon size={24} color="#6366f1" />
+          </View>
+        )}
         <View className="flex-1">
           <Text className="text-base font-bold text-slate-50">{driver.user.fullName}</Text>
           <Text className="text-[13px] text-slate-400">{driver.user.email}</Text>
