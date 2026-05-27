@@ -1,92 +1,46 @@
 import { DataSource } from 'typeorm';
-import * as bcrypt from 'bcrypt';
-import * as dotenv from 'dotenv';
 import { User, UserRole } from '../../entities/user.entity';
 import { Driver, DriverStatus } from '../../entities/driver.entity';
-import {
-  Vehicle,
-  VehicleType,
-  VehicleStatus,
-} from '../../entities/vehicle.entity';
+import { Vehicle, VehicleType, VehicleStatus } from '../../entities/vehicle.entity';
 import { Order, OrderStatus } from '../../entities/order.entity';
 import { Trip, TripStatus } from '../../entities/trip.entity';
 import { TripOrder } from '../../entities/trip-order.entity';
-import { Alert, AlertSeverity, AlertType } from '../../entities/alert.entity';
-import { DriverKpi } from '../../entities/driver-kpi.entity';
 import { GpsLocation } from '../../entities/gps-location.entity';
+import { Alert, AlertType, AlertSeverity } from '../../entities/alert.entity';
+import { DriverKpi } from '../../entities/driver-kpi.entity';
 import { OrderVerification, VerificationStep } from '../../entities/order-verification.entity';
+import * as bcrypt from 'bcrypt';
 
-dotenv.config();
-
-const dataSource = new DataSource({
-  type: 'postgres',
-  url: process.env.DATABASE_URL,
-  entities: [
-    User,
-    Driver,
-    Vehicle,
-    Order,
-    Trip,
-    TripOrder,
-    Alert,
-    DriverKpi,
-    GpsLocation,
-    OrderVerification,
-  ],
-  synchronize: false,
-  ssl: {
-    rejectUnauthorized: false,
-  },
-});
-
-// Helper for PostGIS geography
-const getPoint = (lng: number, lat: number) => {
-  return { type: 'Point', coordinates: [lng, lat] };
-};
-
-const getLineString = (points: [number, number][]) => {
-  return { type: 'LineString', coordinates: points };
-};
-
-async function seed() {
+export async function seedDatabase(dataSource: DataSource, adminEmail?: string, adminPassword?: string) {
+  const queryRunner = dataSource.createQueryRunner();
+  await queryRunner.connect();
+  
   try {
-    await dataSource.initialize();
-    console.log('Data Source initialized!');
-
-    console.log('Wiping database...');
-    await dataSource.query(`
-      TRUNCATE TABLE 
-        "gps_locations", 
-        "order_verifications",
-        "alerts", 
-        "trip_orders", 
-        "trips", 
-        "orders", 
-        "vehicles", 
-        "driver_kpi", 
-        "drivers", 
-        "users" 
-      CASCADE;
-    `);
-    console.log('Database wiped.');
-
-    const salt = await bcrypt.genSalt();
+    console.log('Initiating database clean wipe (TRUNCATE CASCADE)...');
     
-    // Hash passwords
-    const adminEmail = process.env.SEED_ADMIN_EMAIL || 'admin2@fleettracker.com';
-    const adminPassword = process.env.SEED_ADMIN_PASSWORD || 'Admin@456';
-    const adminPasswordHash = await bcrypt.hash(adminPassword, salt);
-    const standardPasswordHash = await bcrypt.hash('Test@123', salt);
+    // Clear all tables while ignoring constraint blocks using CASCADE
+    await queryRunner.query('TRUNCATE TABLE "order_verifications" CASCADE;');
+    await queryRunner.query('TRUNCATE TABLE "alerts" CASCADE;');
+    await queryRunner.query('TRUNCATE TABLE "gps_locations" CASCADE;');
+    await queryRunner.query('TRUNCATE TABLE "driver_kpi" CASCADE;');
+    await queryRunner.query('TRUNCATE TABLE "trip_orders" CASCADE;');
+    await queryRunner.query('TRUNCATE TABLE "trips" CASCADE;');
+    await queryRunner.query('TRUNCATE TABLE "orders" CASCADE;');
+    await queryRunner.query('TRUNCATE TABLE "vehicles" CASCADE;');
+    await queryRunner.query('TRUNCATE TABLE "drivers" CASCADE;');
+    await queryRunner.query('TRUNCATE TABLE "users" CASCADE;');
+
+    console.log('Database wiped.');
 
     const userRepository = dataSource.getRepository(User);
     const driverRepository = dataSource.getRepository(Driver);
-    const kpiRepository = dataSource.getRepository(DriverKpi);
     const vehicleRepository = dataSource.getRepository(Vehicle);
     const orderRepository = dataSource.getRepository(Order);
     const tripRepository = dataSource.getRepository(Trip);
     const tripOrderRepository = dataSource.getRepository(TripOrder);
-    const verificationRepository = dataSource.getRepository(OrderVerification);
     const alertRepository = dataSource.getRepository(Alert);
+    const kpiRepository = dataSource.getRepository(DriverKpi);
+    const verificationRepository = dataSource.getRepository(OrderVerification);
     const gpsRepository = dataSource.getRepository(GpsLocation);
 
     console.log('Seeding system users...');
@@ -94,7 +48,7 @@ async function seed() {
     const adminUser = await userRepository.save(
       userRepository.create({
         email: adminEmail,
-        passwordHash: adminPasswordHash,
+        passwordHash: adminPassword,
         role: UserRole.ADMIN,
         fullName: 'Hệ thống Admin',
         phone: '0999888777',
@@ -105,7 +59,7 @@ async function seed() {
     await userRepository.save(
       userRepository.create({
         email: 'dispatcher@fleettracker.com',
-        passwordHash: standardPasswordHash,
+        passwordHash: adminPassword,
         role: UserRole.DISPATCHER,
         fullName: 'Điều phối viên',
         phone: '0999777666',
@@ -115,18 +69,18 @@ async function seed() {
     // 5 Drivers (Realistic Vietnamese Names & phones)
     const driversData: Driver[] = [];
     const driversInfo = [
-      { email: 'driver1@fleettracker.com', name: 'Nguyễn Văn Hùng', phone: '0901234567', license: 'C' },
-      { email: 'driver2@fleettracker.com', name: 'Trần Thanh Hải', phone: '0912345678', license: 'B2' },
-      { email: 'driver3@fleettracker.com', name: 'Lê Minh Quốc', phone: '0987654321', license: 'D' },
-      { email: 'driver4@fleettracker.com', name: 'Phạm Hoàng Nam', phone: '0934567890', license: 'FC' },
-      { email: 'driver5@fleettracker.com', name: 'Vũ Tiến Đạt', phone: '0977889900', license: 'C' },
+      { email: 'driver1@fleettracker.com', name: 'Nguyễn Văn Hùng', phone: '0901234567', license: 'C', fingerprintId: '1' },
+      { email: 'driver2@fleettracker.com', name: 'Trần Thanh Hải', phone: '0912345678', license: 'B2', fingerprintId: '2' },
+      { email: 'driver3@fleettracker.com', name: 'Lê Minh Quốc', phone: '0987654321', license: 'D', fingerprintId: '3' },
+      { email: 'driver4@fleettracker.com', name: 'Phạm Hoàng Nam', phone: '0934567890', license: 'FC', fingerprintId: '4' },
+      { email: 'driver5@fleettracker.com', name: 'Vũ Tiến Đạt', phone: '0977889900', license: 'C', fingerprintId: '5' },
     ];
 
     for (const info of driversInfo) {
       const u = await userRepository.save(
         userRepository.create({
           email: info.email,
-          passwordHash: standardPasswordHash,
+          passwordHash: adminPassword,
           role: UserRole.DRIVER,
           fullName: info.name,
           phone: info.phone,
@@ -139,6 +93,7 @@ async function seed() {
           licenseClass: info.license,
           licenseExpiry: new Date('2031-12-31'),
           status: DriverStatus.AVAILABLE,
+          fingerprintId: info.fingerprintId,
         })
       );
       driversData.push(d);
@@ -165,492 +120,226 @@ async function seed() {
       { plateNumber: '51D-876.54', type: VehicleType.LARGE, capacity: 8000, model: 'Hino 500', year: 2021, status: VehicleStatus.MAINTENANCE },
       { plateNumber: '51A-999.99', type: VehicleType.SMALL, capacity: 1500, model: 'Suzuki Carry Pro', year: 2023, status: VehicleStatus.AVAILABLE },
       { plateNumber: '29C-543.21', type: VehicleType.MEDIUM, capacity: 4000, model: 'Hyundai Mighty', year: 2020, status: VehicleStatus.AVAILABLE },
-      { plateNumber: '43C-888.88', type: VehicleType.LARGE, capacity: 10000, model: 'Thaco Auman', year: 2022, status: VehicleStatus.DELIVERING },
+      { plateNumber: '43C-888.88', type: VehicleType.LARGE, capacity: 10000, model: 'Thaco Auman', year: 2019, status: VehicleStatus.DELIVERING },
     ];
 
-    for (const info of vehiclesInfo) {
-      const v = await vehicleRepository.save(
+    for (let i = 0; i < vehiclesInfo.length; i++) {
+      const v = vehiclesInfo[i];
+      const assignedDriver = i < 3 ? driversData[i] : null;
+      
+      const vehicle = await vehicleRepository.save(
         vehicleRepository.create({
-          plateNumber: info.plateNumber,
-          type: info.type,
-          maxCapacityKg: info.capacity,
-          model: info.model,
-          year: info.year,
-          status: info.status,
-          lastKnownLocation: getPoint(106.6 + Math.random() * 0.1, 10.7 + Math.random() * 0.1),
+          plateNumber: v.plateNumber,
+          type: v.type,
+          maxCapacityKg: v.capacity,
+          model: v.model,
+          year: v.year,
+          status: v.status,
+          deviceId: `device_00${i + 1}`,
+          driver: assignedDriver,
+          imageUrl: `https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&h=400&fit=crop`,
+          lastKnownLocation: {
+            type: 'Point',
+            coordinates: [106.660172 + i * 0.015, 10.762622 + i * 0.012],
+          },
         })
       );
-      vehiclesData.push(v);
+      vehiclesData.push(vehicle);
     }
     console.log(`Seeded ${vehiclesData.length} vehicles.`);
 
-    // High quality Image assets for verification
-    const facePhotos = [
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop',
-    ];
-
-    const cargoPhotosPickup = [
-      'https://images.unsplash.com/photo-1566576912321-d58edd7a2858?w=500&fit=crop',
-      'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=500&fit=crop',
-    ];
-
-    const cargoPhotosDelivery = [
-      'https://images.unsplash.com/photo-1595079676339-1534801ad6cf?w=500&fit=crop',
-      'https://images.unsplash.com/photo-1616401784845-180882ba9ba8?w=500&fit=crop',
-    ];
-
-    const signatureUrl = 'https://images.unsplash.com/photo-1578301978693-85fa9c0320b9?w=300&fit=crop';
-
-    // 10 Detailed Orders in HCM City area
+    // 10 Orders centered in HCM City
     console.log('Seeding realistic orders...');
+    const ordersData: Order[] = [];
     const ordersInfo = [
-      {
-        pickupAddress: 'Vincom Center, 72 Lê Thánh Tôn, Bến Nghé, Quận 1, TP. HCM',
-        pickupLocation: [106.7018, 10.7779],
-        deliveryAddress: 'Landmark 81, 208 Nguyễn Hữu Cảnh, Phường 22, Bình Thạnh, TP. HCM',
-        deliveryLocation: [106.7218, 10.7950],
-        weightKg: 120,
-        description: 'Thùng hàng thiết bị linh kiện điện tử nhạy cảm',
-        status: OrderStatus.DELIVERED,
-      },
-      {
-        pickupAddress: 'Chợ Bến Thành, Lê Lợi, Bến Thành, Quận 1, TP. HCM',
-        pickupLocation: [106.6974, 10.7725],
-        deliveryAddress: 'Khu đô thị Phú Mỹ Hưng, Quận 7, TP. HCM',
-        deliveryLocation: [106.7210, 10.7289],
-        weightKg: 500,
-        description: 'Vải vóc và nguyên liệu may mặc',
-        status: OrderStatus.DELIVERED,
-      },
-      {
-        pickupAddress: 'Cảng Cát Lái, Nguyễn Thị Định, Thạnh Mỹ Lợi, TP. Thủ Đức, TP. HCM',
-        pickupLocation: [106.7865, 10.7584],
-        deliveryAddress: 'Khu Công Nghệ Cao (SHTP), Long Thạnh Mỹ, TP. Thủ Đức, TP. HCM',
-        deliveryLocation: [106.8118, 10.8465],
-        weightKg: 2500,
-        description: 'Lô hàng linh kiện bán dẫn cao cấp',
-        status: OrderStatus.DELIVERING,
-      },
-      {
-        pickupAddress: 'Sân bay Tân Sơn Nhất, Trường Sơn, Phường 2, Tân Bình, TP. HCM',
-        pickupLocation: [106.6622, 10.8184],
-        deliveryAddress: 'Khu chế xuất Tân Thuận, Tân Thuận Đông, Quận 7, TP. HCM',
-        deliveryLocation: [106.7351, 10.7417],
-        weightKg: 450,
-        description: 'Hàng nhập khẩu chuyển phát nhanh hàng không',
-        status: OrderStatus.DELIVERING,
-      },
-      {
-        pickupAddress: 'Gigamall, 240-242 Phạm Văn Đồng, Hiệp Bình Chánh, TP. Thủ Đức, TP. HCM',
-        pickupLocation: [106.7214, 10.8277],
-        deliveryAddress: 'Aeon Mall Bình Tân, 1 Đường Số 17A, Bình Trị Đông B, Bình Tân, TP. HCM',
-        deliveryLocation: [106.6083, 10.7428],
-        weightKg: 80,
-        description: 'Đồ gia dụng thông minh gia đình',
-        status: OrderStatus.ASSIGNED,
-      },
-      {
-        pickupAddress: 'Thảo Cầm Viên, 2 Nguyễn Bỉnh Khiêm, Bến Nghé, Quận 1, TP. HCM',
-        pickupLocation: [106.7052, 10.7875],
-        deliveryAddress: 'Đầm Sen Park, 3 Hòa Bình, Phường 3, Quận 11, TP. HCM',
-        deliveryLocation: [106.6375, 10.7681],
-        weightKg: 35,
-        description: 'Tài liệu quảng cáo sự kiện ngoài trời',
-        status: OrderStatus.PENDING,
-      },
-      {
-        pickupAddress: 'Tòa nhà Bitexco, 2 Hải Triều, Bến Nghé, Quận 1, TP. HCM',
-        pickupLocation: [106.7044, 10.7715],
-        deliveryAddress: 'Đại học Quốc gia TP.HCM, Linh Trung, TP. Thủ Đức, TP. HCM',
-        deliveryLocation: [106.8031, 10.8700],
-        weightKg: 15,
-        description: 'Mẫu thử nghiệm công nghệ giáo dục số',
-        status: OrderStatus.FAILED,
-      },
-      {
-        pickupAddress: 'Hồ Con Rùa, Phường 6, Quận 3, TP. HCM',
-        pickupLocation: [106.6972, 10.7826],
-        deliveryAddress: 'Bệnh viện Chợ Rẫy, 201B Nguyễn Chí Thanh, Phường 12, Quận 5, TP. HCM',
-        deliveryLocation: [106.6601, 10.7578],
-        weightKg: 5,
-        description: 'Tài liệu y khoa khẩn cấp',
-        status: OrderStatus.CANCELLED,
-      },
-      {
-        pickupAddress: 'Khu du lịch Suối Tiên, Xa lộ Hà Nội, Tân Phú, TP. Thủ Đức, TP. HCM',
-        pickupLocation: [106.8028, 10.8617],
-        deliveryAddress: 'Công viên Tao Đàn, Nguyễn Thị Minh Khai, Bến Thành, Quận 1, TP. HCM',
-        deliveryLocation: [106.6931, 10.7753],
-        weightKg: 300,
-        description: 'Thiết bị trang trí lễ hội âm nhạc đường phố',
-        status: OrderStatus.DELIVERED,
-      },
-      {
-        pickupAddress: 'Nhà thờ Đức Bà, Công xã Paris, Bến Nghé, Quận 1, TP. HCM',
-        pickupLocation: [106.6998, 10.7798],
-        deliveryAddress: 'Trung tâm Triển lãm SECC, 799 Nguyễn Văn Linh, Tân Phú, Quận 7, TP. HCM',
-        deliveryLocation: [106.7222, 10.7315],
-        weightKg: 180,
-        description: 'Vật tư triển lãm thương mại quốc tế',
-        status: OrderStatus.DELIVERED,
-      },
+      { weight: 1200, desc: 'Lô hàng may mặc xuất khẩu - Quận 1', pickup: 'Chợ Bến Thành, Quận 1, TP. HCM', pLng: 106.6979, pLat: 10.7725, deliv: 'Cảng Cát Lái, Quận 2, TP. HCM', dLng: 106.7900, dLat: 10.7600, status: OrderStatus.DELIVERED },
+      { weight: 800, desc: 'Thiết bị điện tử gia dụng - Phú Nhuận', pickup: 'Nguyễn Kiệm, Phú Nhuận, TP. HCM', pLng: 106.6800, pLat: 10.8000, deliv: 'Khu công nghệ cao Q9, TP. HCM', dLng: 106.7972, dLat: 10.8444, status: OrderStatus.DELIVERED },
+      { weight: 2400, desc: 'Thực phẩm đông lạnh nhập khẩu - Tân Bình', pickup: 'Cảng Hàng Không Tân Sơn Nhất, Tân Bình, TP. HCM', pLng: 106.6600, pLat: 10.8166, deliv: 'Siêu thị Co.opmart Thủ Đức, TP. HCM', dLng: 106.7600, dLat: 10.8500, status: OrderStatus.DELIVERED },
+      { weight: 1500, desc: 'Vật liệu xây dựng & phụ gia - Quận 7', pickup: 'Lotte Mart Quận 7, TP. HCM', pLng: 106.7020, pLat: 10.7410, deliv: 'Khu đô thị Sala, Quận 2, TP. HCM', dLng: 106.7230, dLat: 10.7750, status: OrderStatus.DELIVERED },
+      { weight: 950, desc: 'Nông sản & Trái cây miền Tây - Bình Tân', pickup: 'Chợ đầu mối Bình Điền, Bình Chánh, TP. HCM', pLng: 106.6080, pLat: 10.6860, deliv: 'Chợ Tân Định, Quận 1, TP. HCM', dLng: 106.6890, dLat: 10.7890, status: OrderStatus.DELIVERED },
+      { weight: 3100, desc: 'Hóa mỹ phẩm & Chai lọ thủy tinh - Bình Dương', pickup: 'VSIP 1, Thuận An, Bình Dương', pLng: 106.7050, pLat: 10.9300, deliv: 'Kho tổng kho ngoại quan Cát Lái, TP. HCM', dLng: 106.7950, dLat: 10.7650, status: OrderStatus.DELIVERED },
+      { weight: 1900, desc: 'Dược phẩm & Vật tư y tế - Quận 10', pickup: 'Bệnh viện Chợ Rẫy, Quận 5, TP. HCM', pLng: 106.6600, pLat: 10.7570, deliv: 'Trung tâm Y tế Quận 9, TP. HCM', dLng: 106.8100, dLat: 10.8300, status: OrderStatus.DELIVERING },
+      { weight: 700, desc: 'Phụ tùng ô tô & Xe máy chuyên dụng - Thủ Đức', pickup: 'Linh Trung 1, Thủ Đức, TP. HCM', pLng: 106.7850, pLat: 10.8650, deliv: 'Đường Cộng Hòa, Tân Bình, TP. HCM', dLng: 106.6400, dLat: 10.8000, status: OrderStatus.ASSIGNED },
+      { weight: 1350, desc: 'Bao bì giấy & Hộp carton - Tân Phú', pickup: 'KCN Tân Bình, Tân Phú, TP. HCM', pLng: 106.6200, pLat: 10.8100, deliv: 'Đại lộ Võ Văn Kiệt, Quận 5, TP. HCM', dLng: 106.6750, dLat: 10.7520, status: OrderStatus.ASSIGNED },
+      { weight: 2800, desc: 'Thức ăn chăn nuôi dạng hạt - Long An', pickup: 'KCN Tân Đô, Đức Hòa, Long An', pLng: 106.4900, pLat: 10.7800, deliv: 'Trang trại chăn nuôi Củ Chi, TP. HCM', dLng: 106.5200, dLat: 10.9600, status: OrderStatus.ASSIGNED },
     ];
 
-    const savedOrders: Order[] = [];
     for (const info of ordersInfo) {
-      const order = orderRepository.create({
-        pickupAddress: info.pickupAddress,
-        pickupLocation: getPoint(info.pickupLocation[0], info.pickupLocation[1]),
-        deliveryAddress: info.deliveryAddress,
-        deliveryLocation: getPoint(info.deliveryLocation[0], info.deliveryLocation[1]),
-        weightKg: info.weightKg,
-        description: info.description,
-        status: info.status,
-      });
-
-      // Add signatures/photoUrls for delivered orders
-      if (info.status === OrderStatus.DELIVERED) {
-        order.signatureUrl = signatureUrl;
-        order.photoUrl = cargoPhotosDelivery[Math.floor(Math.random() * cargoPhotosDelivery.length)];
-        order.pickupActualLocation = getPoint(info.pickupLocation[0] + 0.0001, info.pickupLocation[1] - 0.0001);
-        order.deliveryActualLocation = getPoint(info.deliveryLocation[0] + 0.0001, info.deliveryLocation[1] - 0.0001);
-      }
-      
-      savedOrders.push(await orderRepository.save(order));
+      const order = await orderRepository.save(
+        orderRepository.create({
+          weightKg: info.weight,
+          description: info.desc,
+          pickupAddress: info.pickup,
+          pickupLocation: { type: 'Point', coordinates: [info.pLng, info.pLat] },
+          deliveryAddress: info.deliv,
+          deliveryLocation: { type: 'Point', coordinates: [info.dLng, info.dLat] },
+          status: info.status,
+          photoUrl: `https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&h=400&fit=crop`,
+          signatureUrl: `https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=600&h=400&fit=crop`,
+        })
+      );
+      ordersData.push(order);
     }
-    console.log(`Seeded ${savedOrders.length} orders.`);
+    console.log(`Seeded ${ordersData.length} orders.`);
 
-    // Trips
+    // Trips and verifications
     console.log('Seeding trips & journey verifications...');
     
-    // Trip 1: Completed, Driver 1, Vehicle 1, Order 1
-    const t1StartedAt = new Date(Date.now() - 4 * 3600000);
-    const t1CompletedAt = new Date(Date.now() - 2 * 3600000);
+    // Trip 1 (Nguyễn Văn Hùng - Isuzu medium plate '51C-432.10') - status: IN_PROGRESS
     const trip1 = await tripRepository.save(
       tripRepository.create({
-        driver: driversData[0],
         vehicle: vehiclesData[0],
-        status: TripStatus.COMPLETED,
-        plannedRoute: getLineString([[106.7018, 10.7779], [106.7118, 10.7850], [106.7218, 10.7950]]),
-        actualRoute: getLineString([[106.7018, 10.7779], [106.7088, 10.7820], [106.7158, 10.7890], [106.7218, 10.7950]]),
-        startedAt: t1StartedAt,
-        completedAt: t1CompletedAt,
-        createdAt: t1StartedAt,
-        totalDistanceKm: 4.8,
-        estimatedFuelCost: 12000,
+        driver: driversData[0],
+        status: TripStatus.IN_PROGRESS,
+        startedAt: new Date(Date.now() - 3 * 3600000), // 3 hours ago
+        totalDistanceKm: 18.5,
+        estimatedFuelCost: 150000,
+        plannedRoute: {
+          type: 'LineString',
+          coordinates: [
+            [106.6600, 10.7570],
+            [106.7000, 10.7800],
+            [106.7500, 10.8000],
+            [106.8100, 10.8300],
+          ]
+        },
+        actualRoute: {
+          type: 'LineString',
+          coordinates: [
+            [106.6600, 10.7570],
+            [106.6850, 10.7700],
+            [106.7020, 10.7820],
+          ]
+        }
       })
     );
-    await tripOrderRepository.save(
-      tripOrderRepository.create({ trip: trip1, order: savedOrders[0], sequence: 1 })
+
+    // Bind Order 7 & 8 to Trip 1
+    await tripOrderRepository.save(tripOrderRepository.create({ tripId: trip1.id, orderId: ordersData[6].id, sequence: 1 }));
+    await tripOrderRepository.save(tripOrderRepository.create({ tripId: trip1.id, orderId: ordersData[7].id, sequence: 2 }));
+
+    // Seeding verifications for active Trip 1, Order 7 (delivering)
+    console.log('Seeding verifications for Order 7...');
+    await verificationRepository.save(
+      verificationRepository.create({
+        orderId: ordersData[6].id,
+        step: VerificationStep.ACCEPT,
+        fingerprintStatus: true,
+        facePhotoUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=300&h=300&fit=crop',
+        cargoPhotoUrl: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=400&h=400&fit=crop',
+        location: { type: 'Point', coordinates: [106.6600, 10.7570] },
+      })
+    );
+    await verificationRepository.save(
+      verificationRepository.create({
+        orderId: ordersData[6].id,
+        step: VerificationStep.PICKUP,
+        fingerprintStatus: true,
+        facePhotoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop',
+        cargoPhotoUrl: 'https://images.unsplash.com/photo-1549194388-f61be84a6e9e?w=400&h=400&fit=crop',
+        location: { type: 'Point', coordinates: [106.6620, 10.7580] },
+      })
     );
 
-    // Seed verifications for Order 1 (Delivered)
-    console.log('Seeding verifications for Order 1...');
-    await verificationRepository.save([
-      verificationRepository.create({
-        order: savedOrders[0],
-        step: VerificationStep.ACCEPT,
-        location: getPoint(106.7018, 10.7779),
-        createdAt: new Date(t1StartedAt.getTime() + 5 * 60000),
-      }),
-      verificationRepository.create({
-        order: savedOrders[0],
-        step: VerificationStep.PICKUP,
-        location: getPoint(106.7018, 10.7779),
-        cargoPhotoUrl: cargoPhotosPickup[0],
-        createdAt: new Date(t1StartedAt.getTime() + 20 * 60000),
-      }),
-      verificationRepository.create({
-        order: savedOrders[0],
-        step: VerificationStep.CHECKPOINT,
-        location: getPoint(106.7118, 10.7850),
-        createdAt: new Date(t1StartedAt.getTime() + 45 * 60000),
-      }),
-      verificationRepository.create({
-        order: savedOrders[0],
-        step: VerificationStep.DELIVERY,
-        location: getPoint(106.7218, 10.7950),
-        fingerprintStatus: true,
-        facePhotoUrl: facePhotos[0],
-        cargoPhotoUrl: cargoPhotosDelivery[0],
-        createdAt: new Date(t1CompletedAt.getTime() - 5 * 60000),
-      }),
-    ]);
-
-    // Trip 2: Completed, Driver 2, Vehicle 3, Orders 2 & 9
-    const t2StartedAt = new Date(Date.now() - 6 * 3600000);
-    const t2CompletedAt = new Date(Date.now() - 3 * 3600000);
+    // Trip 2 (Trần Thanh Hải - status: DELIVERED/COMPLETED history)
     const trip2 = await tripRepository.save(
       tripRepository.create({
-        driver: driversData[1],
-        vehicle: vehiclesData[2],
-        status: TripStatus.COMPLETED,
-        plannedRoute: getLineString([[106.6974, 10.7725], [106.7210, 10.7289], [106.8028, 10.8617], [106.6931, 10.7753]]),
-        actualRoute: getLineString([[106.6974, 10.7725], [106.7210, 10.7289], [106.8028, 10.8617], [106.6931, 10.7753]]),
-        startedAt: t2StartedAt,
-        completedAt: t2CompletedAt,
-        createdAt: t2StartedAt,
-        totalDistanceKm: 25.5,
-        estimatedFuelCost: 65000,
-      })
-    );
-    await tripOrderRepository.save([
-      tripOrderRepository.create({ trip: trip2, order: savedOrders[1], sequence: 1 }),
-      tripOrderRepository.create({ trip: trip2, order: savedOrders[8], sequence: 2 }),
-    ]);
-
-    // Seed verifications for Order 2 (Delivered)
-    await verificationRepository.save([
-      verificationRepository.create({
-        order: savedOrders[1],
-        step: VerificationStep.ACCEPT,
-        location: getPoint(106.6974, 10.7725),
-        createdAt: new Date(t2StartedAt.getTime() + 10 * 60000),
-      }),
-      verificationRepository.create({
-        order: savedOrders[1],
-        step: VerificationStep.PICKUP,
-        location: getPoint(106.6974, 10.7725),
-        cargoPhotoUrl: cargoPhotosPickup[1],
-        createdAt: new Date(t2StartedAt.getTime() + 30 * 60000),
-      }),
-      verificationRepository.create({
-        order: savedOrders[1],
-        step: VerificationStep.CHECKPOINT,
-        location: getPoint(106.7090, 10.7500),
-        createdAt: new Date(t2StartedAt.getTime() + 50 * 60000),
-      }),
-      verificationRepository.create({
-        order: savedOrders[1],
-        step: VerificationStep.DELIVERY,
-        location: getPoint(106.7210, 10.7289),
-        fingerprintStatus: true,
-        facePhotoUrl: facePhotos[1],
-        cargoPhotoUrl: cargoPhotosDelivery[1],
-        createdAt: new Date(t2StartedAt.getTime() + 90 * 60000),
-      }),
-    ]);
-
-    // Seed verifications for Order 9 (Delivered)
-    await verificationRepository.save([
-      verificationRepository.create({
-        order: savedOrders[8],
-        step: VerificationStep.ACCEPT,
-        location: getPoint(106.8028, 10.8617),
-        createdAt: new Date(t2StartedAt.getTime() + 100 * 60000),
-      }),
-      verificationRepository.create({
-        order: savedOrders[8],
-        step: VerificationStep.PICKUP,
-        location: getPoint(106.8028, 10.8617),
-        cargoPhotoUrl: cargoPhotosPickup[0],
-        createdAt: new Date(t2StartedAt.getTime() + 120 * 60000),
-      }),
-      verificationRepository.create({
-        order: savedOrders[8],
-        step: VerificationStep.CHECKPOINT,
-        location: getPoint(106.7500, 10.8100),
-        createdAt: new Date(t2StartedAt.getTime() + 150 * 60000),
-      }),
-      verificationRepository.create({
-        order: savedOrders[8],
-        step: VerificationStep.DELIVERY,
-        location: getPoint(106.6931, 10.7753),
-        fingerprintStatus: true,
-        facePhotoUrl: facePhotos[2],
-        cargoPhotoUrl: cargoPhotosDelivery[0],
-        createdAt: new Date(t2CompletedAt.getTime() - 5 * 60000),
-      }),
-    ]);
-
-    // Trip 3: In Progress, Driver 3, Vehicle 4, Order 3
-    const t3StartedAt = new Date(Date.now() - 45 * 60000);
-    const trip3 = await tripRepository.save(
-      tripRepository.create({
-        driver: driversData[2],
-        vehicle: vehiclesData[3],
-        status: TripStatus.IN_PROGRESS,
-        plannedRoute: getLineString([[106.7865, 10.7584], [106.8000, 10.8000], [106.8118, 10.8465]]),
-        startedAt: t3StartedAt,
-        createdAt: t3StartedAt,
-        totalDistanceKm: 12.2,
-      })
-    );
-    await tripOrderRepository.save(
-      tripOrderRepository.create({ trip: trip3, order: savedOrders[2], sequence: 1 })
-    );
-
-    // Seed active verifications for Order 3 (Delivering)
-    await verificationRepository.save([
-      verificationRepository.create({
-        order: savedOrders[2],
-        step: VerificationStep.ACCEPT,
-        location: getPoint(106.7865, 10.7584),
-        createdAt: new Date(t3StartedAt.getTime() + 5 * 60000),
-      }),
-      verificationRepository.create({
-        order: savedOrders[2],
-        step: VerificationStep.PICKUP,
-        location: getPoint(106.7865, 10.7584),
-        cargoPhotoUrl: cargoPhotosPickup[0],
-        createdAt: new Date(t3StartedAt.getTime() + 15 * 60000),
-      }),
-      verificationRepository.create({
-        order: savedOrders[2],
-        step: VerificationStep.CHECKPOINT,
-        location: getPoint(106.8000, 10.8000),
-        createdAt: new Date(t3StartedAt.getTime() + 35 * 60000),
-      }),
-    ]);
-
-    // Trip 4: In Progress, Driver 5, Vehicle 5, Order 4
-    const t4StartedAt = new Date(Date.now() - 20 * 60000);
-    const trip4 = await tripRepository.save(
-      tripRepository.create({
-        driver: driversData[4],
-        vehicle: vehiclesData[4],
-        status: TripStatus.IN_PROGRESS,
-        plannedRoute: getLineString([[106.6622, 10.8184], [106.7000, 10.7800], [106.7351, 10.7417]]),
-        startedAt: t4StartedAt,
-        createdAt: t4StartedAt,
-        totalDistanceKm: 14.5,
-      })
-    );
-    await tripOrderRepository.save(
-      tripOrderRepository.create({ trip: trip4, order: savedOrders[3], sequence: 1 })
-    );
-
-    // Seed active verifications for Order 4 (Delivering)
-    await verificationRepository.save([
-      verificationRepository.create({
-        order: savedOrders[3],
-        step: VerificationStep.ACCEPT,
-        location: getPoint(106.6622, 10.8184),
-        createdAt: new Date(t4StartedAt.getTime() + 3 * 60000),
-      }),
-      verificationRepository.create({
-        order: savedOrders[3],
-        step: VerificationStep.PICKUP,
-        location: getPoint(106.6622, 10.8184),
-        cargoPhotoUrl: cargoPhotosPickup[1],
-        createdAt: new Date(t4StartedAt.getTime() + 12 * 60000),
-      }),
-    ]);
-
-    // Trip 5: Accepted (Assigned), Driver 4, Vehicle 2 (change status to available to assign, then let it be assigned)
-    const trip5 = await tripRepository.save(
-      tripRepository.create({
-        driver: driversData[3],
         vehicle: vehiclesData[1],
-        status: TripStatus.ACCEPTED,
-        plannedRoute: getLineString([[106.7214, 10.8277], [106.6083, 10.7428]]),
-        createdAt: new Date(Date.now() - 10 * 60000),
+        driver: driversData[1],
+        status: TripStatus.COMPLETED,
+        startedAt: new Date(Date.now() - 24 * 3600000), // 1 day ago
+        completedAt: new Date(Date.now() - 20 * 3600000),
+        totalDistanceKm: 28.2,
+        estimatedFuelCost: 320000,
       })
     );
-    await tripOrderRepository.save(
-      tripOrderRepository.create({ trip: trip5, order: savedOrders[4], sequence: 1 })
-    );
+    await tripOrderRepository.save(tripOrderRepository.create({ tripId: trip2.id, orderId: ordersData[0].id, sequence: 1 }));
+    await tripOrderRepository.save(tripOrderRepository.create({ tripId: trip2.id, orderId: ordersData[1].id, sequence: 2 }));
 
-    // Seed active verifications for Order 5 (Assigned)
-    await verificationRepository.save([
-      verificationRepository.create({
-        order: savedOrders[4],
-        step: VerificationStep.ACCEPT,
-        location: getPoint(106.7214, 10.8277),
-        createdAt: new Date(Date.now() - 5 * 60000),
-      }),
-    ]);
-
-    console.log('Seeded trips and journey verifications successfully.');
-
-    // Seed GPS History for active trips
-    console.log('Seeding GPS locations...');
-    const now = new Date();
-    
-    // GPS history for Trip 3 (Active)
-    for (let i = 0; i < 5; i++) {
-      const recordedAt = new Date(t3StartedAt.getTime() + i * 8 * 60000);
-      const lng = 106.7865 + (i * (106.8000 - 106.7865) / 4);
-      const lat = 10.7584 + (i * (10.8000 - 10.7584) / 4);
-      await gpsRepository.save(
-        gpsRepository.create({
-          vehicle: vehiclesData[3],
-          trip: trip3,
-          location: getPoint(lng, lat),
-          speedKmh: 45 + Math.random() * 15,
-          heading: 45,
-          recordedAt,
+    // Seed historical verifications for Trip 2
+    for (const order of [ordersData[0], ordersData[1]]) {
+      await verificationRepository.save(
+        verificationRepository.create({
+          orderId: order.id,
+          step: VerificationStep.ACCEPT,
+          fingerprintStatus: true,
+          facePhotoUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&h=300&fit=crop',
+          cargoPhotoUrl: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=400&h=400&fit=crop',
+          location: { type: 'Point', coordinates: [106.6979, 10.7725] },
+        })
+      );
+      await verificationRepository.save(
+        verificationRepository.create({
+          orderId: order.id,
+          step: VerificationStep.DELIVERY,
+          fingerprintStatus: true,
+          facePhotoUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&h=300&fit=crop',
+          cargoPhotoUrl: 'https://images.unsplash.com/photo-1598257006458-087169a1f08d?w=400&h=400&fit=crop',
+          location: { type: 'Point', coordinates: [106.7900, 10.7600] },
         })
       );
     }
 
-    // GPS history for Trip 4 (Active)
-    for (let i = 0; i < 3; i++) {
-      const recordedAt = new Date(t4StartedAt.getTime() + i * 7 * 60000);
-      const lng = 106.6622 + (i * (106.7000 - 106.6622) / 2);
-      const lat = 10.8184 + (i * (10.7800 - 10.8184) / 2);
+    console.log('Seeded trips and journey verifications successfully.');
+
+    // Seed GPS locations
+    console.log('Seeding GPS locations...');
+    const gpsPoints = [
+      { lng: 106.6600, lat: 10.7570, speed: 0, heading: 0 },
+      { lng: 106.6700, lat: 10.7620, speed: 45, heading: 60 },
+      { lng: 106.6800, lat: 10.7680, speed: 50, heading: 60 },
+      { lng: 106.6900, lat: 10.7750, speed: 12, heading: 75 }, // Abnormal slow stop violation point
+      { lng: 106.7020, lat: 10.7820, speed: 30, heading: 45 },
+    ];
+
+    for (let j = 0; j < gpsPoints.length; j++) {
+      const pt = gpsPoints[j];
       await gpsRepository.save(
         gpsRepository.create({
-          vehicle: vehiclesData[4],
-          trip: trip4,
-          location: getPoint(lng, lat),
-          speedKmh: 35 + Math.random() * 10,
-          heading: 135,
-          recordedAt,
+          vehicleId: vehiclesData[0].id,
+          tripId: trip1.id,
+          location: { type: 'Point', coordinates: [pt.lng, pt.lat] },
+          speedKmh: pt.speed,
+          heading: pt.heading,
+          recordedAt: new Date(Date.now() - (gpsPoints.length - j) * 60000),
         })
       );
     }
     console.log('GPS locations seeded.');
 
-    // Alerts (Speed, Route Deviation, Abnormal Stop)
+    // Seed alerts
     console.log('Seeding alerts...');
-    await alertRepository.save([
+    await alertRepository.save(
       alertRepository.create({
-        trip: trip3,
-        vehicle: vehiclesData[3],
-        driver: driversData[2],
-        type: AlertType.SPEED_VIOLATION,
-        severity: AlertSeverity.MEDIUM,
-        message: 'Tài xế chạy quá tốc độ giới hạn (65 km/h trên đường Nguyễn Thị Định)',
-        location: getPoint(106.7900, 10.7700),
-        isResolved: false,
-        createdAt: new Date(t3StartedAt.getTime() + 10 * 60000),
-      }),
-      alertRepository.create({
-        trip: trip4,
-        vehicle: vehiclesData[4],
-        driver: driversData[4],
-        type: AlertType.ABNORMAL_STOP,
-        severity: AlertSeverity.LOW,
-        message: 'Phương tiện dừng bất thường quá 10 phút trên đường Cộng Hòa',
-        location: getPoint(106.6800, 10.8000),
-        isResolved: false,
-        createdAt: new Date(t4StartedAt.getTime() + 15 * 60000),
-      }),
-      alertRepository.create({
-        trip: trip1,
         vehicle: vehiclesData[0],
         driver: driversData[0],
-        type: AlertType.ROUTE_DEVIATION,
+        trip: trip1,
+        type: AlertType.SPEED_VIOLATION,
+        severity: AlertSeverity.MEDIUM,
+        message: 'Tài xế Nguyễn Văn Hùng vượt quá tốc độ cho phép 85km/h tại Đại Lộ Đông Tây.',
+        location: { type: 'Point', coordinates: [106.6800, 10.7680] },
+        isResolved: false,
+      })
+    );
+    await alertRepository.save(
+      alertRepository.create({
+        vehicle: vehiclesData[0],
+        driver: driversData[0],
+        trip: trip1,
+        type: AlertType.ABNORMAL_STOP,
         severity: AlertSeverity.HIGH,
-        message: 'Phương tiện đi sai lộ trình đã định hơn 500m',
-        location: getPoint(106.7088, 10.7820),
-        isResolved: true,
-        resolvedAt: new Date(t1StartedAt.getTime() + 35 * 60000),
-        createdAt: new Date(t1StartedAt.getTime() + 25 * 60000),
-      }),
-    ]);
+        message: 'Dừng bất thường quá 15 phút không rõ nguyên nhân tại giao lộ Nguyễn Văn Cừ.',
+        location: { type: 'Point', coordinates: [106.6900, 10.7750] },
+        isResolved: false,
+      })
+    );
     console.log('Alerts seeded.');
 
     console.log('Seeding completed successfully! Database is populated with premium, realistic data.');
-  } catch (error) {
-    console.error('Error during seeding:', error);
+  } catch (err) {
+    console.error('Fatal error encountered during database seeding:', err.message);
+    throw err;
   } finally {
-    await dataSource.destroy();
+    await queryRunner.release();
   }
 }
-
-seed();

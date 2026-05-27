@@ -8,6 +8,8 @@ import {
   Query,
   UnauthorizedException,
   Headers,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TrackingService } from './tracking.service';
@@ -16,7 +18,9 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../entities/user.entity';
 import { DeviceGpsUpdateDto } from './dto/device-gps-update.dto';
+import { VerifyHardwareDto } from './dto/verify-hardware.dto';
 import { TrackingGateway } from './tracking.gateway';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('tracking')
 export class TrackingController {
@@ -25,6 +29,22 @@ export class TrackingController {
     private readonly trackingGateway: TrackingGateway,
     private readonly configService: ConfigService,
   ) {}
+
+  @Post('verify')
+  @UseInterceptors(FileInterceptor('image'))
+  async verifyFromHardware(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() body: VerifyHardwareDto,
+    @Headers('x-device-api-key') headerApiKey?: string,
+  ) {
+    // Security check: Verify API Key
+    const configuredApiKey = this.configService.get<string>('DEVICE_API_KEY');
+    if (!configuredApiKey || headerApiKey !== configuredApiKey) {
+      throw new UnauthorizedException('Invalid or missing Device API Key');
+    }
+
+    return this.trackingService.processHardwareVerification(file, body);
+  }
 
   @Post('device')
   async updateFromDevice(

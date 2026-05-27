@@ -10,11 +10,15 @@ import { Vehicle } from '../entities/vehicle.entity';
 import { Trip } from '../entities/trip.entity';
 import { Driver } from '../entities/driver.entity';
 import { AlertsModule } from '../alerts/alerts.module';
+import { OrderVerificationsModule } from '../order-verifications/order-verifications.module';
+import { UploadModule } from '../upload/upload.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([GpsLocation, Vehicle, Trip, Driver]),
     AlertsModule,
+    OrderVerificationsModule,
+    UploadModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
