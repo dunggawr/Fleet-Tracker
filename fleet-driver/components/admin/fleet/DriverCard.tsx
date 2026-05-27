@@ -16,6 +16,7 @@ interface DriverCardProps {
 
 export const DriverCard: React.FC<DriverCardProps> = ({ driver, onPress }) => {
   const status = DRIVER_STATUS_CONFIG[driver.status] || DRIVER_STATUS_CONFIG[DriverStatus.OFF_DUTY];
+  const d = driver as any;
   
   return (
     <TouchableOpacity 
@@ -23,9 +24,9 @@ export const DriverCard: React.FC<DriverCardProps> = ({ driver, onPress }) => {
       onPress={onPress}
     >
       <View className="flex-row items-center mb-4">
-        {driver.avatarUrl || driver.user?.avatarUrl ? (
+        {d.avatarUrl || d.user?.avatarUrl ? (
           <Image 
-            source={{ uri: driver.avatarUrl || driver.user.avatarUrl }} 
+            source={{ uri: d.avatarUrl || d.user.avatarUrl }} 
             className="w-12 h-12 rounded-2xl mr-3" 
             style={{ resizeMode: 'cover' }}
           />
@@ -43,22 +44,24 @@ export const DriverCard: React.FC<DriverCardProps> = ({ driver, onPress }) => {
           style={{ backgroundColor: `${status.color}20` }}
         >
           <View className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: status.color }} />
-          <Text className="text-[11px] font-extrabold uppercase" style={{ color: status.color }}>
+          <Text className="text-xs font-semibold" style={{ color: status.color }}>
             {status.label}
           </Text>
         </View>
       </View>
 
-      <View className="flex-row items-center pt-4 border-t border-white/5 gap-4">
-        <View className="flex-1 flex-row items-center gap-1.5">
-          <ShieldCheck size={16} color="#94a3b8" />
-          <Text className="text-slate-400 text-xs font-semibold">{driver.licenseClass || 'N/A'}</Text>
+      <View className="flex-row justify-between items-center pt-4 border-t border-white/5">
+        <View className="flex-row items-center gap-4">
+          <View className="flex-row items-center gap-1">
+            <ShieldCheck size={16} color="#94a3b8" />
+            <Text className="text-[13px] text-slate-400 font-medium">Class {driver.licenseClass || 'N/A'}</Text>
+          </View>
+          <View className="flex-row items-center gap-1">
+            <Activity size={16} color="#94a3b8" />
+            <Text className="text-[13px] text-slate-400 font-medium">92% KPI</Text>
+          </View>
         </View>
-        <View className="flex-1 flex-row items-center gap-1.5">
-          <Activity size={16} color="#94a3b8" />
-          <Text className="text-slate-400 text-xs font-semibold">Active</Text>
-        </View>
-        <ChevronRight size={20} color="#475569" />
+        <ChevronRight size={18} color="#475569" />
       </View>
     </TouchableOpacity>
   );

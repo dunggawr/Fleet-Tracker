@@ -5,10 +5,10 @@ export class VerifyHardwareDto {
   @ApiProperty({ example: '1' })
   @IsString()
   @IsNotEmpty()
-  fingerprintId: string;
+  fingerprintId!: string;
 
   @ApiProperty({ example: 'device_001' })
   @IsString()
   @IsNotEmpty()
-  deviceId: string;
+  deviceId!: string;
 }
