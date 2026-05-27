@@ -28,7 +28,9 @@ export interface Driver {
     fullName: string;
     email: string;
     phone?: string;
+    avatarUrl?: string;
   };
+  avatarUrl?: string;
   licenseClass?: string;
   licenseExpiry?: string;
   status: DriverStatus;

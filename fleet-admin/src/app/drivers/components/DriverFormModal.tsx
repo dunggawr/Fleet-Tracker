@@ -17,6 +17,7 @@ const driverSchema = z.object({
   phone: z.string().min(10, 'Phone number must be at least 10 digits'),
   licenseClass: z.string().min(1, 'License class is required'),
   licenseExpiry: z.string().min(1, 'License expiry is required'),
+  avatarUrl: z.string().url('Invalid URL format').optional().or(z.literal('')),
 });
 
 interface DriverFormModalProps {
@@ -47,6 +48,7 @@ export function DriverFormModal({
         phone: editingDriver.phone,
         licenseClass: editingDriver.licenseClass || '',
         licenseExpiry: editingDriver.licenseExpiry ? new Date(editingDriver.licenseExpiry).toISOString().split('T')[0] : '',
+        avatarUrl: editingDriver.avatarUrl || '',
       });
     } else {
       reset({
@@ -56,6 +58,7 @@ export function DriverFormModal({
         phone: '',
         licenseClass: '',
         licenseExpiry: '',
+        avatarUrl: '',
       });
     }
   }, [editingDriver, reset, isOpen]);
@@ -107,6 +110,12 @@ export function DriverFormModal({
             placeholder="e.g. 0943..." 
             {...register('phone')}
             error={errors.phone?.message}
+          />
+          <Input 
+            label="Avatar Image URL" 
+            placeholder="https://images.unsplash.com/..." 
+            {...register('avatarUrl')}
+            error={errors.avatarUrl?.message}
           />
           <Select 
             label="License Class" 

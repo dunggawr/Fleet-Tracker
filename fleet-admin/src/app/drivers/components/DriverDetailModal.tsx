@@ -20,9 +20,17 @@ export function DriverDetailModal({ driver, onClose, mounted }: DriverDetailModa
     >
       <div className="flex flex-col gap-lg">
         <div className="flex items-center gap-lg mb-lg pb-lg border-b border-border">
-          <div className="w-16 h-16 bg-primary/10 text-primary-light rounded-full flex items-center justify-center shadow-glow">
-            <UserIcon size={28} />
-          </div>
+          {driver.avatarUrl ? (
+            <img 
+              src={driver.avatarUrl} 
+              alt={driver.fullName} 
+              className="w-16 h-16 rounded-full object-cover border border-border" 
+            />
+          ) : (
+            <div className="w-16 h-16 bg-primary/10 text-primary-light rounded-full flex items-center justify-center shadow-glow">
+              <UserIcon size={28} />
+            </div>
+          )}
           <div>
             <h3 className="text-xl font-bold">{driver.fullName}</h3>
             <p className="text-dim">{driver.user?.email}</p>

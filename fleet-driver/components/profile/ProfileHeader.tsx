@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, Image } from 'react-native';
 import { User, Check, Award } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
@@ -19,9 +19,16 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ user }) => {
             style={{ transform: [{ scale: 1.2 }] }}
           />
           <View className="w-full h-full rounded-full p-1 bg-slate-900 border border-white/10 overflow-hidden shadow-2xl">
-            <View className="flex-1 rounded-full bg-slate-800 justify-center items-center">
-              <User size={56} color="#6366f1" />
-            </View>
+            {user?.avatarUrl ? (
+              <Image 
+                source={{ uri: user.avatarUrl }} 
+                className="w-full h-full rounded-full" 
+              />
+            ) : (
+              <View className="flex-1 rounded-full bg-slate-800 justify-center items-center">
+                <User size={56} color="#6366f1" />
+              </View>
+            )}
           </View>
           <View className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-emerald-500 border-4 border-slate-950 items-center justify-center">
             <Check size={14} color="white" strokeWidth={3} />

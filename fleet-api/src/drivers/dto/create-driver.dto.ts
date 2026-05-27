@@ -46,6 +46,11 @@ export class CreateDriverDto {
   @IsOptional()
   licenseExpiry?: string;
 
+  @ApiProperty({ example: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d', required: false })
+  @IsString()
+  @IsOptional()
+  avatarUrl?: string;
+
   @ApiProperty({ enum: DriverStatus, default: DriverStatus.AVAILABLE })
   @IsEnum(DriverStatus)
   @IsOptional()

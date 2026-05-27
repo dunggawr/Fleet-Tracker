@@ -1,13 +1,19 @@
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy, BadRequestException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { GpsLocation } from '../entities/gps-location.entity';
 import { Vehicle } from '../entities/vehicle.entity';
 import { Trip, TripStatus } from '../entities/trip.entity';
 import { Driver } from '../entities/driver.entity';
 import { GpsUpdateDto } from './dto/gps-update.dto';
 import { DeviceGpsUpdateDto } from './dto/device-gps-update.dto';
+import { VerifyHardwareDto } from './dto/verify-hardware.dto';
 import { ViolationDetectorService } from '../alerts/violation-detector.service';
+import { UploadService } from '../upload/upload.service';
+import { OrderVerificationsService } from '../order-verifications/order-verifications.service';
+import { TripOrder } from '../entities/trip-order.entity';
+import { OrderVerification, VerificationStep } from '../entities/order-verification.entity';
+import { Order } from '../entities/order.entity';
 
 @Injectable()
 export class TrackingService implements OnModuleDestroy {
@@ -27,6 +33,9 @@ export class TrackingService implements OnModuleDestroy {
     @InjectRepository(Driver)
     private readonly driverRepository: Repository<Driver>,
     private readonly violationDetector: ViolationDetectorService,
+    private readonly uploadService: UploadService,
+    private readonly orderVerificationsService: OrderVerificationsService,
+    private readonly dataSource: DataSource,
   ) {}
 
   onModuleInit() {
@@ -332,5 +341,132 @@ export class TrackingService implements OnModuleDestroy {
     });
 
     return !!trip;
+  }
+
+  async processHardwareVerification(
+    file: Express.Multer.File,
+    body: VerifyHardwareDto,
+  ) {
+    const { deviceId, fingerprintId } = body;
+
+    this.logger.log(
+      `Received hardware verification request from device ${deviceId} and fingerprint ${fingerprintId}`,
+    );
+
+    // 1. Find vehicle by deviceId
+    const vehicle = await this.vehicleRepository.findOne({
+      where: { deviceId },
+      relations: ['driver', 'driver.user'],
+    });
+
+    if (!vehicle) {
+      throw new NotFoundException(`Vehicle with deviceId ${deviceId} not found`);
+    }
+
+    // 2. Check for active trip
+    const activeTrip = await this.tripRepository.findOne({
+      where: { vehicleId: vehicle.id, status: TripStatus.IN_PROGRESS },
+    });
+
+    if (!activeTrip) {
+      throw new BadRequestException(`No active trip in progress for vehicle ${vehicle.plateNumber}`);
+    }
+
+    // 3. Verify Biometrics: Does fingerprintId match driver's registered fingerprintId?
+    const driver = vehicle.driver;
+    if (!driver) {
+      throw new BadRequestException(`No driver assigned to vehicle ${vehicle.plateNumber}`);
+    }
+
+    if (driver.fingerprintId !== fingerprintId) {
+      throw new UnauthorizedException(
+        `Biometric mismatch. Scanned fingerprint ID ${fingerprintId} does not match driver's registered ID.`,
+      );
+    }
+
+    // 4. Identify the active order & step to verify
+    // Query all trip orders for this active trip, sorted by sequence
+    const tripOrders = await this.dataSource.getRepository(TripOrder).find({
+      where: { tripId: activeTrip.id },
+      order: { sequence: 'ASC' },
+      relations: ['order'],
+    });
+
+    if (tripOrders.length === 0) {
+      throw new BadRequestException(`No orders found for active trip ${activeTrip.id}`);
+    }
+
+    // Find the first incomplete order and check its verification status
+    let activeOrder: Order | null = null;
+    let targetStep: VerificationStep | null = null;
+
+    for (const to of tripOrders) {
+       const order = to.order;
+       if (!order) continue;
+
+       // Query verifications for this order
+       const verifications = await this.dataSource.getRepository(OrderVerification).find({
+         where: { orderId: order.id },
+         order: { createdAt: 'ASC' },
+       });
+
+       const hasPickup = verifications.some((v) => v.step === VerificationStep.PICKUP);
+       const hasCheckpoint = verifications.some((v) => v.step === VerificationStep.CHECKPOINT);
+       const hasDelivery = verifications.some((v) => v.step === VerificationStep.DELIVERY);
+
+       if (!hasPickup) {
+         activeOrder = order;
+         targetStep = VerificationStep.PICKUP;
+         break;
+       } else if (!hasCheckpoint) {
+         activeOrder = order;
+         targetStep = VerificationStep.CHECKPOINT;
+         break;
+       } else if (!hasDelivery) {
+         activeOrder = order;
+         targetStep = VerificationStep.DELIVERY;
+         break;
+       }
+       // If all steps (including delivery) are verified, this order is fully completed. Go to next order.
+    }
+
+    if (!activeOrder || !targetStep) {
+       throw new BadRequestException('All orders for this trip are already fully verified and delivered.');
+    }
+
+    // 5. Upload Face Photo from ESP32 to Supabase Storage
+    this.logger.log(`Uploading ESP32 face photo to Supabase storage...`);
+    const facePhotoUrl = await this.uploadService.uploadFile(file, 'verifications');
+    this.logger.log(`Uploaded successfully: ${facePhotoUrl}`);
+
+    // Get vehicle last known location coordinates
+    let latitude: number | undefined = undefined;
+    let longitude: number | undefined = undefined;
+    if (vehicle.lastKnownLocation && vehicle.lastKnownLocation.coordinates) {
+       longitude = vehicle.lastKnownLocation.coordinates[0];
+       latitude = vehicle.lastKnownLocation.coordinates[1];
+    }
+
+    // 6. Submit Verification via OrderVerificationsService
+    this.logger.log(`Creating order verification: Order ${activeOrder.id}, Step ${targetStep}`);
+    const verification = await this.orderVerificationsService.create(activeOrder.id, {
+      step: targetStep,
+      fingerprintStatus: true,
+      facePhotoUrl,
+      cargoPhotoUrl: facePhotoUrl, // ESP32 Camera selfie as both face and cargo photo
+      latitude,
+      longitude,
+    });
+
+    return {
+      success: true,
+      orderId: activeOrder.id,
+      step: targetStep,
+      driverName: driver.user?.fullName || 'Driver',
+      plateNumber: vehicle.plateNumber,
+      facePhotoUrl,
+      verificationId: verification.id,
+      timestamp: new Date().toISOString(),
+    };
   }
 }
