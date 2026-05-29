@@ -33,5 +33,5 @@ COPY tsconfig.json ./
 # Expose port
 EXPOSE 3001
 
-# Run migrations and then start the application
+# Run migrations using pre-compiled JS and then start the application
 CMD ["sh", "-c", "npm run migration:run:prod && node dist/src/main"]
