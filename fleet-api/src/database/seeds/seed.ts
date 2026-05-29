@@ -343,3 +343,20 @@ export async function seedDatabase(dataSource: DataSource, adminEmail?: string, 
     await queryRunner.release();
   }
 }
+
+// Auto-execute if run directly
+import { AppDataSource } from '../data-source';
+AppDataSource.initialize()
+  .then(async (dataSource) => {
+    console.log('Database connection initialized for seeding.');
+    await seedDatabase(
+      dataSource,
+      process.env.SEED_ADMIN_EMAIL || 'admin2@fleettracker.com',
+      process.env.SEED_ADMIN_PASSWORD || 'Admin@456',
+    );
+    await dataSource.destroy();
+    console.log('Seeding process finished, connection closed.');
+  })
+  .catch((err) => {
+    console.error('Error during seeding database connection:', err);
+  });
