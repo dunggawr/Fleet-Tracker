@@ -14,7 +14,7 @@ import { UploadService } from '../upload/upload.service';
 import { OrderVerificationsService } from '../order-verifications/order-verifications.service';
 import { TripOrder } from '../entities/trip-order.entity';
 import { OrderVerification, VerificationStep } from '../entities/order-verification.entity';
-import { Order } from '../entities/order.entity';
+import { Order, OrderStatus } from '../entities/order.entity';
 
 @Injectable()
 export class TrackingService implements OnModuleDestroy {
@@ -366,13 +366,16 @@ export class TrackingService implements OnModuleDestroy {
       throw new NotFoundException(`Vehicle with deviceId ${deviceId} not found`);
     }
 
-    // 2. Check for active trip
+    // 2. Check for active trip (can be accepted or in_progress)
     const activeTrip = await this.tripRepository.findOne({
-      where: { vehicleId: vehicle.id, status: TripStatus.IN_PROGRESS },
+      where: [
+        { vehicleId: vehicle.id, status: TripStatus.IN_PROGRESS },
+        { vehicleId: vehicle.id, status: TripStatus.ACCEPTED }
+      ],
     });
 
     if (!activeTrip) {
-      throw new BadRequestException(`No active trip in progress for vehicle ${vehicle.plateNumber}`);
+      throw new BadRequestException(`No active trip in progress or accepted for vehicle ${vehicle.plateNumber}`);
     }
 
     // 3. Verify Biometrics: Does fingerprintId match driver's registered fingerprintId?
@@ -459,6 +462,36 @@ export class TrackingService implements OnModuleDestroy {
       cargoPhotoUrl: facePhotoUrl, // ESP32 Camera selfie as both face and cargo photo
       latitude,
       longitude,
+    });
+
+    // 7. Auto-advance statuses if step is PICKUP
+    if (targetStep === VerificationStep.PICKUP) {
+      this.logger.log(`Auto-advancing order ${activeOrder.id} status to DELIVERING and trip ${activeTrip.id} status to IN_PROGRESS`);
+      
+      activeOrder.status = OrderStatus.DELIVERING;
+      await this.dataSource.getRepository(Order).save(activeOrder);
+
+      activeTrip.status = TripStatus.IN_PROGRESS;
+      activeTrip.startedAt = new Date();
+      await this.tripRepository.save(activeTrip);
+
+      // Emit trip status changed event so gateways/controllers/dashboard know
+      this.eventEmitter.emit('trip.status_changed', {
+        id: activeTrip.id,
+        status: TripStatus.IN_PROGRESS,
+        vehicleId: activeTrip.vehicleId,
+        driverId: activeTrip.driverId,
+      });
+    }
+
+    // 8. Emit order.verified event
+    this.eventEmitter.emit('order.verified', {
+      orderId: activeOrder.id,
+      tripId: activeTrip.id,
+      driverId: driver.id,
+      step: targetStep,
+      success: true,
+      verification,
     });
 
     return {
