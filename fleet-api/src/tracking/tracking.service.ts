@@ -24,6 +24,7 @@ export class TrackingService implements OnModuleDestroy {
   private flushInterval: NodeJS.Timeout;
   private isFlushing = false;
   private pendingEnrollments = new Map<string, number>();
+  private readonly lastHardwareGpsMap = new Map<string, number>();
 
   constructor(
     @InjectRepository(GpsLocation)
@@ -92,6 +93,32 @@ export class TrackingService implements OnModuleDestroy {
       timestamp,
     } = data;
 
+    // Check if hardware GPS is active for this vehicle (within last 30s)
+    const lastHardwareTime = this.lastHardwareGpsMap.get(vehicleId);
+    if (lastHardwareTime && Date.now() - lastHardwareTime < 30000) {
+      this.logger.debug(
+        `Skipping phone GPS update for vehicle ${vehicleId} due to active hardware GPS`,
+      );
+      
+      const vehicle = await this.vehicleRepository.findOne({
+        where: { id: vehicleId },
+        relations: ['driver', 'driver.user'],
+      });
+
+      return {
+        vehicleId,
+        tripId,
+        latitude,
+        longitude,
+        speed,
+        heading,
+        timestamp,
+        status: vehicle?.status || 'available',
+        licensePlate: vehicle?.plateNumber || `VH-${vehicleId.slice(0, 6)}`,
+        driverName: vehicle?.driver?.user?.fullName || 'Unknown Driver',
+      };
+    }
+
     // 1. Create PostGIS Point
     const point = {
       type: 'Point',
@@ -156,10 +183,6 @@ export class TrackingService implements OnModuleDestroy {
 
     const results: any[] = [];
 
-    // For batch updates, we process them but maybe skip some heavy logic
-    // or optimize the vehicle update to only the latest point.
-    const latestPoint = data[data.length - 1];
-
     for (const pointData of data) {
       const {
         vehicleId,
@@ -170,6 +193,15 @@ export class TrackingService implements OnModuleDestroy {
         heading,
         timestamp,
       } = pointData;
+
+      // Check if hardware GPS is active for this vehicle (within last 30s)
+      const lastHardwareTime = this.lastHardwareGpsMap.get(vehicleId);
+      if (lastHardwareTime && Date.now() - lastHardwareTime < 30000) {
+        this.logger.debug(
+          `Skipping phone GPS batch point for vehicle ${vehicleId} due to active hardware GPS`,
+        );
+        continue;
+      }
 
       // Add to buffer
       const gpsLocation = this.gpsRepository.create({
@@ -196,22 +228,29 @@ export class TrackingService implements OnModuleDestroy {
       });
     }
 
-    // Update vehicle to the latest position only
-    await this.vehicleRepository
-      .createQueryBuilder()
-      .update(Vehicle)
-      .set({
-        lastKnownLocation: () => `ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)`,
-      })
-      .where('id = :vehicleId', { vehicleId: latestPoint.vehicleId })
-      .setParameters({ lng: latestPoint.longitude, lat: latestPoint.latitude })
-      .execute();
+    // Update vehicle to the latest position only (if any points were not skipped)
+    if (results.length > 0) {
+      const latestPoint = results[results.length - 1];
+      await this.vehicleRepository
+        .createQueryBuilder()
+        .update(Vehicle)
+        .set({
+          lastKnownLocation: () => `ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)`,
+        })
+        .where('id = :vehicleId', { vehicleId: latestPoint.vehicleId })
+        .setParameters({ lng: latestPoint.longitude, lat: latestPoint.latitude })
+        .execute();
+    }
 
     return results;
   }
 
   async processDeviceGpsUpdate(data: DeviceGpsUpdateDto) {
     const { deviceId, latitude, longitude, speed = 0, heading = 0 } = data;
+
+    this.logger.log(
+      `[Hardware GPS] Received update from device ID ${deviceId}: Lat ${latitude}, Lng ${longitude}, Speed ${speed} km/h, Heading ${heading}°`,
+    );
 
     // 1. Find vehicle by deviceId
     const vehicle = await this.vehicleRepository.findOne({
@@ -220,13 +259,31 @@ export class TrackingService implements OnModuleDestroy {
     });
 
     if (!vehicle) {
+      this.logger.warn(`[Hardware GPS] Device ID ${deviceId} has no matching vehicle in database`);
       throw new Error(`Vehicle with deviceId ${deviceId} not found`);
     }
+
+    this.logger.log(
+      `[Hardware GPS] Device ID ${deviceId} matched with Vehicle Plate: ${vehicle.plateNumber} (ID: ${vehicle.id})`,
+    );
+
+    // Update last known hardware GPS timestamp
+    this.lastHardwareGpsMap.set(vehicle.id, Date.now());
 
     // 2. Check for active trip to link history
     const activeTrip = await this.tripRepository.findOne({
       where: { vehicleId: vehicle.id, status: TripStatus.IN_PROGRESS },
     });
+
+    if (activeTrip) {
+      this.logger.log(
+        `[Hardware GPS] Vehicle ${vehicle.plateNumber} is currently on active Trip ID: ${activeTrip.id}`,
+      );
+    } else {
+      this.logger.log(
+        `[Hardware GPS] Vehicle ${vehicle.plateNumber} has no active trip in progress`,
+      );
+    }
 
     // 3. Create PostGIS Point
     const point = {
@@ -353,7 +410,7 @@ export class TrackingService implements OnModuleDestroy {
     const { deviceId, fingerprintId } = body;
 
     this.logger.log(
-      `Received hardware verification request from device ${deviceId} and fingerprint ${fingerprintId}`,
+      `[Hardware Biometric] Received verification request from device ${deviceId} with fingerprint ID ${fingerprintId}`,
     );
 
     // 1. Find vehicle by deviceId
@@ -363,6 +420,7 @@ export class TrackingService implements OnModuleDestroy {
     });
 
     if (!vehicle) {
+      this.logger.warn(`[Hardware Biometric] Verification failed: Device ID ${deviceId} not found`);
       throw new NotFoundException(`Vehicle with deviceId ${deviceId} not found`);
     }
 
@@ -375,20 +433,29 @@ export class TrackingService implements OnModuleDestroy {
     });
 
     if (!activeTrip) {
+      this.logger.warn(`[Hardware Biometric] Verification failed: No active/accepted trip for vehicle ${vehicle.plateNumber}`);
       throw new BadRequestException(`No active trip in progress or accepted for vehicle ${vehicle.plateNumber}`);
     }
 
     // 3. Verify Biometrics: Does fingerprintId match driver's registered fingerprintId?
     const driver = vehicle.driver;
     if (!driver) {
+      this.logger.warn(`[Hardware Biometric] Verification failed: No driver assigned to vehicle ${vehicle.plateNumber}`);
       throw new BadRequestException(`No driver assigned to vehicle ${vehicle.plateNumber}`);
     }
 
     if (driver.fingerprintId !== fingerprintId) {
+      this.logger.error(
+        `[Hardware Biometric] FAILED! Scanned fingerprint ID ${fingerprintId} does not match registered ID ${driver.fingerprintId} for driver ${driver.user?.fullName}`,
+      );
       throw new UnauthorizedException(
         `Biometric mismatch. Scanned fingerprint ID ${fingerprintId} does not match driver's registered ID.`,
       );
     }
+
+    this.logger.log(
+      `[Hardware Biometric] SUCCESS! Fingerprint ID ${fingerprintId} matched for driver ${driver.user?.fullName || 'Unknown'} (Vehicle: ${vehicle.plateNumber})`,
+    );
 
     // 4. Identify the active order & step to verify
     // Query all trip orders for this active trip, sorted by sequence
@@ -441,9 +508,9 @@ export class TrackingService implements OnModuleDestroy {
     }
 
     // 5. Upload Face Photo from ESP32 to Supabase Storage
-    this.logger.log(`Uploading ESP32 face photo to Supabase storage...`);
+    this.logger.log(`[Hardware Biometric] Uploading ESP32 selfie snapshot (${file?.size || 0} bytes) to storage...`);
     const facePhotoUrl = await this.uploadService.uploadFile(file, 'verifications');
-    this.logger.log(`Uploaded successfully: ${facePhotoUrl}`);
+    this.logger.log(`[Hardware Biometric] Snapshot uploaded successfully: ${facePhotoUrl}`);
 
     // Get vehicle last known location coordinates
     let latitude: number | undefined = undefined;
@@ -454,7 +521,9 @@ export class TrackingService implements OnModuleDestroy {
     }
 
     // 6. Submit Verification via OrderVerificationsService
-    this.logger.log(`Creating order verification: Order ${activeOrder.id}, Step ${targetStep}`);
+    this.logger.log(
+      `[Hardware Biometric] Registering verification: Order ${activeOrder.id}, Step ${targetStep}, Face URL: ${facePhotoUrl}, Location: [${latitude || 'N/A'}, ${longitude || 'N/A'}]`,
+    );
     const verification = await this.orderVerificationsService.create(activeOrder.id, {
       step: targetStep,
       fingerprintStatus: true,
@@ -466,7 +535,9 @@ export class TrackingService implements OnModuleDestroy {
 
     // 7. Auto-advance statuses if step is PICKUP
     if (targetStep === VerificationStep.PICKUP) {
-      this.logger.log(`Auto-advancing order ${activeOrder.id} status to DELIVERING and trip ${activeTrip.id} status to IN_PROGRESS`);
+      this.logger.log(
+        `[Hardware Biometric] Auto-advancing order ${activeOrder.id} status to DELIVERING and trip ${activeTrip.id} status to IN_PROGRESS`,
+      );
       
       activeOrder.status = OrderStatus.DELIVERING;
       await this.dataSource.getRepository(Order).save(activeOrder);
@@ -508,20 +579,24 @@ export class TrackingService implements OnModuleDestroy {
 
   requestEnrollment(deviceId: string, fingerprintId: number) {
     this.pendingEnrollments.set(deviceId, fingerprintId);
-    this.logger.log(`Requested remote enrollment for device ${deviceId} at slot ${fingerprintId}`);
+    this.logger.log(`[Hardware Biometric] Command: Requested remote fingerprint enrollment for device ${deviceId} at slot #${fingerprintId}`);
   }
 
   getPendingEnrollment(deviceId: string): number | null {
     const enrollId = this.pendingEnrollments.get(deviceId) || null;
     if (enrollId) {
+      this.logger.log(`[Hardware Biometric] Polled: Device ${deviceId} fetched pending enrollment slot #${enrollId}`);
       this.pendingEnrollments.delete(deviceId); // Consume the request once
     }
     return enrollId;
   }
 
   async saveEnrollmentResult(deviceId: string, fingerprintId: number, success: boolean) {
-    this.logger.log(`Received enrollment result for device ${deviceId}, slot ${fingerprintId}: ${success ? 'SUCCESS' : 'FAILED'}`);
+    this.logger.log(
+      `[Hardware Biometric] Result: Received enrollment callback from device ${deviceId}, slot #${fingerprintId}: Status=${success ? 'SUCCESS' : 'FAILED'}`,
+    );
     if (!success) {
+      this.logger.warn(`[Hardware Biometric] Enrollment failed on device ${deviceId} for slot #${fingerprintId}`);
       return { success: false, message: 'Enrollment failed on device' };
     }
 
@@ -532,17 +607,21 @@ export class TrackingService implements OnModuleDestroy {
     });
 
     if (!vehicle) {
+      this.logger.warn(`[Hardware Biometric] Enrollment save failed: Device ${deviceId} not matched with any vehicle`);
       throw new NotFoundException(`Vehicle with deviceId ${deviceId} not found`);
     }
 
     if (!vehicle.driver) {
+      this.logger.warn(`[Hardware Biometric] Enrollment save failed: Vehicle ${vehicle.plateNumber} has no assigned driver`);
       throw new NotFoundException(`No driver assigned to vehicle ${vehicle.plateNumber}`);
     }
 
     // Save driver's fingerprintId in DB
     vehicle.driver.fingerprintId = String(fingerprintId);
     await this.driverRepository.save(vehicle.driver);
-    this.logger.log(`Successfully updated fingerprint ID to ${fingerprintId} for driver ${vehicle.driver.id}`);
+    this.logger.log(
+      `[Hardware Biometric] DB Update: Assigned fingerprint ID #${fingerprintId} to driver ID ${vehicle.driver.id}`,
+    );
 
     return { success: true, driverId: vehicle.driver.id, fingerprintId };
   }
@@ -587,7 +666,9 @@ export class TrackingService implements OnModuleDestroy {
         }
       }
 
-      this.logger.log(`Tài xế mới ${driver.id} chưa có vân tay. Tự động gán slot ${autoId} trên thiết bị ${vehicle.deviceId}`);
+      this.logger.log(
+        `[Hardware Biometric] Driver ${driver.id} has no fingerprint. Auto-allocating slot #${autoId} on device ${vehicle.deviceId}`,
+      );
 
       // Register remote enrollment in memory
       this.requestEnrollment(vehicle.deviceId, autoId);
