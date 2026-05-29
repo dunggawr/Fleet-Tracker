@@ -44,11 +44,13 @@ export async function seedDatabase(dataSource: DataSource, adminEmail?: string, 
     const gpsRepository = dataSource.getRepository(GpsLocation);
 
     console.log('Seeding system users...');
+    const hashedPassword = await bcrypt.hash(adminPassword || 'Admin@456', 10);
+    
     // Admin
     const adminUser = await userRepository.save(
       userRepository.create({
         email: adminEmail,
-        passwordHash: adminPassword,
+        passwordHash: hashedPassword,
         role: UserRole.ADMIN,
         fullName: 'Hệ thống Admin',
         phone: '0999888777',
@@ -59,7 +61,7 @@ export async function seedDatabase(dataSource: DataSource, adminEmail?: string, 
     await userRepository.save(
       userRepository.create({
         email: 'dispatcher@fleettracker.com',
-        passwordHash: adminPassword,
+        passwordHash: hashedPassword,
         role: UserRole.DISPATCHER,
         fullName: 'Điều phối viên',
         phone: '0999777666',
@@ -80,7 +82,7 @@ export async function seedDatabase(dataSource: DataSource, adminEmail?: string, 
       const u = await userRepository.save(
         userRepository.create({
           email: info.email,
-          passwordHash: adminPassword,
+          passwordHash: hashedPassword,
           role: UserRole.DRIVER,
           fullName: info.name,
           phone: info.phone,
@@ -343,3 +345,20 @@ export async function seedDatabase(dataSource: DataSource, adminEmail?: string, 
     await queryRunner.release();
   }
 }
+
+// Auto-execute if run directly
+import { AppDataSource } from '../data-source';
+AppDataSource.initialize()
+  .then(async (dataSource) => {
+    console.log('Database connection initialized for seeding.');
+    await seedDatabase(
+      dataSource,
+      process.env.SEED_ADMIN_EMAIL || 'admin2@fleettracker.com',
+      process.env.SEED_ADMIN_PASSWORD || 'Admin@456',
+    );
+    await dataSource.destroy();
+    console.log('Seeding process finished, connection closed.');
+  })
+  .catch((err) => {
+    console.error('Error during seeding database connection:', err);
+  });
