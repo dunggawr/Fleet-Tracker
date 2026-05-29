@@ -25,6 +25,8 @@ export const useMapFlow = () => {
   const submitOrderVerification = useTripStore(state => state.submitOrderVerification);
   const fetchTrips = useTripStore(state => state.fetchTrips);
   
+  const isSocketConnected = useTripStore(state => state.isSocketConnected);
+  
   const [isVerificationVisible, setIsVerificationVisible] = useState(false);
   const [verificationStep, setVerificationStep] = useState<'accept' | 'pickup' | 'checkpoint' | 'delivery'>('accept');
   
@@ -51,15 +53,17 @@ export const useMapFlow = () => {
   }, [phoneLocation, hardwareLocation]);
 
   useEffect(() => {
-    if (!activeTrip) {
+    if (!activeTrip || !isSocketConnected) {
       setHardwareLocation(null);
       return;
     }
 
+    console.log(`[Socket] Subscribing to trip room: trip:${activeTrip.id}`);
     // Subscribe to trip room to receive backend prioritized GPS coordinates
     socketService.emit('subscribe:trip', { tripId: activeTrip.id });
 
     const onTripLocation = (data: any) => {
+      console.log('[Socket] Received hardware trip location:', data);
       if (data && data.latitude !== undefined && data.longitude !== undefined) {
         setHardwareLocation({
           latitude: data.latitude,
@@ -75,7 +79,7 @@ export const useMapFlow = () => {
     return () => {
       socketService.off('trip:location', onTripLocation);
     };
-  }, [activeTrip?.id]);
+  }, [activeTrip?.id, isSocketConnected]);
   
   const mapRef = useRef<any>(null);
   const fitTimeoutRef = useRef<any>(null);
