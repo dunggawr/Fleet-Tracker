@@ -248,6 +248,10 @@ export class TrackingService implements OnModuleDestroy {
   async processDeviceGpsUpdate(data: DeviceGpsUpdateDto) {
     const { deviceId, latitude, longitude, speed = 0, heading = 0 } = data;
 
+    this.logger.log(
+      `[Hardware GPS] Received update from device ID ${deviceId}: Lat ${latitude}, Lng ${longitude}, Speed ${speed} km/h, Heading ${heading}°`,
+    );
+
     // 1. Find vehicle by deviceId
     const vehicle = await this.vehicleRepository.findOne({
       where: { deviceId },
@@ -255,8 +259,13 @@ export class TrackingService implements OnModuleDestroy {
     });
 
     if (!vehicle) {
+      this.logger.warn(`[Hardware GPS] Device ID ${deviceId} has no matching vehicle in database`);
       throw new Error(`Vehicle with deviceId ${deviceId} not found`);
     }
+
+    this.logger.log(
+      `[Hardware GPS] Device ID ${deviceId} matched with Vehicle Plate: ${vehicle.plateNumber} (ID: ${vehicle.id})`,
+    );
 
     // Update last known hardware GPS timestamp
     this.lastHardwareGpsMap.set(vehicle.id, Date.now());
@@ -265,6 +274,16 @@ export class TrackingService implements OnModuleDestroy {
     const activeTrip = await this.tripRepository.findOne({
       where: { vehicleId: vehicle.id, status: TripStatus.IN_PROGRESS },
     });
+
+    if (activeTrip) {
+      this.logger.log(
+        `[Hardware GPS] Vehicle ${vehicle.plateNumber} is currently on active Trip ID: ${activeTrip.id}`,
+      );
+    } else {
+      this.logger.log(
+        `[Hardware GPS] Vehicle ${vehicle.plateNumber} has no active trip in progress`,
+      );
+    }
 
     // 3. Create PostGIS Point
     const point = {
