@@ -220,6 +220,13 @@ export async function seedDatabase(dataSource: DataSource, adminEmail?: string, 
     await tripOrderRepository.save(tripOrderRepository.create({ tripId: trip1.id, orderId: ordersData[6].id, sequence: 1 }));
     await tripOrderRepository.save(tripOrderRepository.create({ tripId: trip1.id, orderId: ordersData[7].id, sequence: 2 }));
 
+    // Ensure active driver Nguyễn Văn Hùng is ON_TRIP and vehicle is DELIVERING
+    driversData[0].status = DriverStatus.ON_TRIP;
+    await driverRepository.save(driversData[0]);
+
+    vehiclesData[0].status = VehicleStatus.DELIVERING;
+    await vehicleRepository.save(vehiclesData[0]);
+
     // Seeding verifications for active Trip 1, Order 7 (delivering)
     console.log('Seeding verifications for Order 7...');
     await verificationRepository.save(
