@@ -34,6 +34,7 @@ export interface Driver {
   licenseClass?: string;
   licenseExpiry?: string;
   status: DriverStatus;
+  fingerprintId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -76,6 +77,7 @@ interface FleetState {
   updateVehicle: (id: string, data: any) => Promise<void>;
   deleteDriver: (id: string) => Promise<void>;
   deleteVehicle: (id: string) => Promise<void>;
+  clearFingerprint: (id: string) => Promise<void>;
   assignDriverToVehicle: (driverId: string, vehicleId: string) => Promise<void>;
 }
 
@@ -232,6 +234,24 @@ export const useFleetStore = create<FleetState>((set, get) => ({
       }));
     } catch (error: any) {
       const message = formatError(error, 'Failed to delete vehicle');
+      set({ error: message, loading: false });
+      throw new Error(message);
+    }
+  },
+
+  clearFingerprint: async (id) => {
+    set({ loading: true, error: null });
+    try {
+      const { token } = useAuthStore.getState();
+      await axios.delete(`${API_URL}/drivers/${id}/fingerprint`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      set(state => ({
+        drivers: state.drivers.map(d => d.id === id ? { ...d, fingerprintId: null } : d),
+        loading: false
+      }));
+    } catch (error: any) {
+      const message = formatError(error, 'Failed to clear fingerprint');
       set({ error: message, loading: false });
       throw new Error(message);
     }

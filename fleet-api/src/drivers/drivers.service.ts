@@ -6,6 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Driver, DriverStatus } from '../entities/driver.entity';
 import { User, UserRole } from '../entities/user.entity';
 import { DriverKpi } from '../entities/driver-kpi.entity';
@@ -23,6 +24,7 @@ export class DriversService {
     @InjectRepository(DriverKpi)
     private readonly kpiRepository: Repository<DriverKpi>,
     private readonly dataSource: DataSource,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async create(createDriverDto: CreateDriverDto): Promise<Driver> {
@@ -236,6 +238,13 @@ export class DriversService {
     const driver = await this.driversRepository.findOne({ where: { id } });
     if (!driver) {
       throw new NotFoundException(`Driver with ID ${id} not found`);
+    }
+
+    if (driver.fingerprintId) {
+      this.eventEmitter.emit('fingerprint.cleared', {
+        driverId: driver.id,
+        fingerprintId: driver.fingerprintId,
+      });
     }
 
     driver.fingerprintId = null;
