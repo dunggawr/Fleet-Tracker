@@ -64,6 +64,7 @@ import { toastConfig } from '../components/ui/ExpandableToast';
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const user = useAuthStore((state) => state.user);
   const activeTrip = useTripStore((state) => state.activeTrip);
   const fetchTrips = useTripStore((state) => state.fetchTrips);
   
@@ -107,6 +108,9 @@ function RootLayoutNav() {
       };
 
       const handleEnrollRequired = (data: any) => {
+        // Only show fingerprint enroll prompt to driver users
+        if (user?.role !== 'driver') return;
+
         Toast.show({
           type: 'info',
           text1: 'Đăng Ký Vân Tay 👤',
