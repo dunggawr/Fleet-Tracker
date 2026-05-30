@@ -80,6 +80,10 @@ export class TrackingGateway
     this.logger.log(
       `Broadcasting order verification success to driver ${payload.driverId} for order ${payload.orderId}`,
     );
+    if (!this.server) {
+      this.logger.warn('WebSocket server not initialized yet');
+      return;
+    }
     this.server.to(`driver:${payload.driverId}`).emit('order:verified', payload);
     this.server.to('admin').emit('order:verified', payload);
   }
@@ -89,6 +93,10 @@ export class TrackingGateway
     this.logger.log(
       `Broadcasting trip assignment: ${payload.id} to driver ${payload.driverId}`,
     );
+    if (!this.server) {
+      this.logger.warn('WebSocket server not initialized yet');
+      return;
+    }
     // Notify the specific driver
     this.server.to(`driver:${payload.driverId}`).emit('trip:assigned', payload);
     // Also notify admins
@@ -98,12 +106,20 @@ export class TrackingGateway
   @OnEvent('alert.resolved')
   handleAlertResolved(payload: any) {
     this.logger.log(`Broadcasting alert resolution: ${payload.id}`);
+    if (!this.server) {
+      this.logger.warn('WebSocket server not initialized yet');
+      return;
+    }
     this.server.to('admin').emit('alert:resolved', payload);
   }
 
   @OnEvent('enroll.required')
   handleEnrollRequired(payload: any) {
     this.logger.log(`Broadcasting remote enroll request for driver ${payload.driverId} on device ${payload.deviceId}`);
+    if (!this.server) {
+      this.logger.warn('WebSocket server not initialized yet');
+      return;
+    }
     this.server.to(`driver:${payload.driverId}`).emit('enroll:required', payload);
     this.server.to('admin').emit('enroll:required', payload);
   }
@@ -111,6 +127,10 @@ export class TrackingGateway
   @OnEvent('enroll.result')
   handleEnrollResult(payload: any) {
     this.logger.log(`Broadcasting remote enroll result for driver ${payload.driverId} on device ${payload.deviceId}: ${payload.success ? 'SUCCESS' : 'FAILED'}`);
+    if (!this.server) {
+      this.logger.warn('WebSocket server not initialized yet');
+      return;
+    }
     this.server.to(`driver:${payload.driverId}`).emit('enroll:result', payload);
     this.server.to('admin').emit('enroll:result', payload);
   }
@@ -118,6 +138,10 @@ export class TrackingGateway
   @OnEvent('fingerprint.deleted')
   handleFingerprintDeleted(payload: any) {
     this.logger.log(`Broadcasting remote delete result for driver ${payload.driverId} on device ${payload.deviceId}: ${payload.success ? 'SUCCESS' : 'FAILED'}`);
+    if (!this.server) {
+      this.logger.warn('WebSocket server not initialized yet');
+      return;
+    }
     this.server.to(`driver:${payload.driverId}`).emit('fingerprint:deleted', payload);
     this.server.to('admin').emit('fingerprint:deleted', payload);
   }

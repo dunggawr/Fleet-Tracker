@@ -532,7 +532,6 @@ export class TrackingService implements OnModuleDestroy {
     const enrollId = this.pendingEnrollments.get(deviceId) || null;
     if (enrollId) {
       this.logger.log(`[Hardware Biometric] Polled: Device ${deviceId} fetched pending enrollment slot #${enrollId}`);
-      this.pendingEnrollments.delete(deviceId); // Consume the request once
     }
     return enrollId;
   }
@@ -541,7 +540,6 @@ export class TrackingService implements OnModuleDestroy {
     const deleteId = this.pendingDeletions.get(deviceId) || null;
     if (deleteId) {
       this.logger.log(`[Hardware Biometric] Polled: Device ${deviceId} fetched pending deletion slot #${deleteId}`);
-      this.pendingDeletions.delete(deviceId); // Consume the request once
     }
     return deleteId;
   }
@@ -550,6 +548,9 @@ export class TrackingService implements OnModuleDestroy {
     this.logger.log(
       `[Hardware Biometric] Result: Received enrollment callback from device ${deviceId}, slot #${fingerprintId}: Status=${success ? 'SUCCESS' : 'FAILED'}`,
     );
+
+    // Consume the pending enrollment request upon receiving the result callback from the device
+    this.pendingEnrollments.delete(deviceId);
 
     // Find vehicle & driver associated with the device
     const vehicle = await this.vehicleRepository.findOne({
@@ -607,6 +608,9 @@ export class TrackingService implements OnModuleDestroy {
     this.logger.log(
       `[Hardware Biometric] Result: Received deletion callback from device ${deviceId}, slot #${fingerprintId}: Status=${success ? 'SUCCESS' : 'FAILED'}`,
     );
+
+    // Consume the pending deletion request upon receiving the result callback from the device
+    this.pendingDeletions.delete(deviceId);
 
     // Find vehicle & driver associated with the device
     const vehicle = await this.vehicleRepository.findOne({
