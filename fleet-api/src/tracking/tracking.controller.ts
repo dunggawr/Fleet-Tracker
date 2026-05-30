@@ -69,6 +69,16 @@ export class TrackingController {
         .emit('trip:location', result);
     }
 
+    // Check if there is a pending remote clear_all request for this device
+    const pendingClearAll = this.trackingService.getPendingClearAll(data.deviceId);
+    if (pendingClearAll) {
+      return {
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        action: 'clear_all',
+      };
+    }
+
     // Check if there is a pending remote deletion request for this device
     const pendingDelete = this.trackingService.getPendingDeletion(data.deviceId);
     if (pendingDelete) {
@@ -127,6 +137,18 @@ export class TrackingController {
       throw new UnauthorizedException('Invalid or missing Device API Key');
     }
     return this.trackingService.saveDeletionResult(body.deviceId, body.fingerprintId, body.success);
+  }
+
+  @Post('device/clear-all-result')
+  async handleRemoteClearAllResult(
+    @Body() body: { deviceId: string; success: boolean },
+    @Headers('x-device-api-key') headerApiKey?: string,
+  ) {
+    const configuredApiKey = this.configService.get<string>('DEVICE_API_KEY');
+    if (!configuredApiKey || headerApiKey !== configuredApiKey) {
+      throw new UnauthorizedException('Invalid or missing Device API Key');
+    }
+    return this.trackingService.saveClearAllResult(body.deviceId, body.success);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

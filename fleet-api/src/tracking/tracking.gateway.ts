@@ -146,6 +146,16 @@ export class TrackingGateway
     this.server.to('admin').emit('fingerprint:deleted', payload);
   }
 
+  @OnEvent('fingerprint.all_cleared')
+  handleFingerprintAllCleared(payload: any) {
+    this.logger.log(`Broadcasting remote clear-all result for device ${payload.deviceId}: ${payload.success ? 'SUCCESS' : 'FAILED'}`);
+    if (!this.server) {
+      this.logger.warn('WebSocket server not initialized yet');
+      return;
+    }
+    this.server.to('admin').emit('fingerprint:all_cleared', payload);
+  }
+
   afterInit(server: Server) {
     this.logger.log('WebSocket Gateway Initialized');
   }

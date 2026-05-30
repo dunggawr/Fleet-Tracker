@@ -111,4 +111,11 @@ export class DriversController {
   clearFingerprint(@Param('id') id: string) {
     return this.driversService.clearFingerprint(id);
   }
+
+  @Delete('fingerprints/all')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Clear all drivers\' fingerprint registrations in DB and hardware (Admin only)' })
+  clearAllFingerprints() {
+    return this.driversService.clearAllFingerprints();
+  }
 }

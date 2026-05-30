@@ -62,6 +62,7 @@ uint8_t enrollFingerprint(uint16_t id);
 void sendDataToBackend(double lat, double lng, int fingerId, int sats);
 void sendEnrollResult(int enrollId, bool success);
 void sendDeleteResult(int deleteId, bool success);
+void sendClearAllResult(bool success);
 
 // ── Setup ─────────────────────────────────────────────────────
 void setup() {
@@ -422,6 +423,24 @@ void sendDataToBackend(double lat, double lng, int fingerId, int sats) {
           }
         }
       }
+
+      // Parse remote fingerprint clear_all command
+      // Example response format: {"status":"ok","action":"clear_all"}
+      if (response.indexOf("\"action\":\"clear_all\"") != -1) {
+        Serial.println(F("[Remote] Nhận lệnh XÓA TẤT CẢ vân tay!"));
+        
+        // Empty AS608 hardware database
+        uint8_t res = finger.emptyDatabase();
+        bool success = (res == FINGERPRINT_OK);
+        if (success) {
+          Serial.println(F("[Remote] Xóa toàn bộ vân tay THÀNH CÔNG!"));
+        } else {
+          Serial.printf("[Remote] Xóa toàn bộ vân tay THẤT BẠI! Lỗi: %d\n", res);
+        }
+        
+        // Gửi kết quả về backend
+        sendClearAllResult(success);
+      }
     } else {
       Serial.print(F("FAILED: "));
       if (httpResponseCode > 0) {
@@ -488,6 +507,33 @@ void sendDeleteResult(int deleteId, bool success) {
       Serial.println(F("[Backend] Gửi kết quả Remote Delete THÀNH CÔNG!"));
     } else {
       Serial.printf("[Backend] Gửi kết quả Remote Delete THẤT BẠI: %d\n", httpResponseCode);
+    }
+    http.end();
+  }
+}
+
+void sendClearAllResult(bool success) {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    String url = BACKEND_URL;
+    url.replace("/device", "/device/clear-all-result");
+    
+    http.begin(url);
+    http.addHeader("Content-Type", "application/json");
+    http.addHeader("x-device-api-key", DEVICE_API_KEY);
+    
+    char payload[150];
+    snprintf(payload, sizeof(payload),
+             "{\"deviceId\":\"%s\",\"success\":%s}",
+             DEVICE_ID, success ? "true" : "false");
+             
+    Serial.printf("[Backend] Gửi kết quả Remote Clear All: %s\n", payload);
+    int httpResponseCode = http.POST((uint8_t *)payload, strlen(payload));
+    
+    if (httpResponseCode >= 200 && httpResponseCode < 300) {
+      Serial.println(F("[Backend] Gửi kết quả Remote Clear All THÀNH CÔNG!"));
+    } else {
+      Serial.printf("[Backend] Gửi kết quả Remote Clear All THẤT BẠI: %d\n", httpResponseCode);
     }
     http.end();
   }
