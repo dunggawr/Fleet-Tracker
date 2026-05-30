@@ -9,7 +9,8 @@ import {
   ActivityIndicator,
   Platform,
   ScrollView,
-  TextInput
+  TextInput,
+  Alert
 } from 'react-native';
 import { 
   Users, 
@@ -21,7 +22,8 @@ import {
   ShieldCheck,
   Activity,
   AlertTriangle,
-  Settings2
+  Settings2,
+  Fingerprint
 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
@@ -60,11 +62,34 @@ export default function AdminFleetScreen() {
     vehicles, 
     loading, 
     fetchDrivers, 
-    fetchVehicles 
+    fetchVehicles,
+    clearAllFingerprints
   } = useFleetStore();
 
   const [activeTab, setActiveTab] = useState<'drivers' | 'vehicles'>('drivers');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const handleClearAllFingerprints = () => {
+    Alert.alert(
+      "Xóa tất cả vân tay",
+      "Bạn có chắc chắn muốn xóa toàn bộ đăng ký vân tay của tất cả tài xế trong hệ thống và bộ nhớ phần cứng của tất cả xe? Hành động này không thể hoàn tác.",
+      [
+        { text: "Hủy", style: "cancel" },
+        { 
+          text: "Xóa tất cả", 
+          style: "destructive", 
+          onPress: async () => {
+            try {
+              await clearAllFingerprints();
+              Alert.alert("Thành công", "Đã xóa toàn bộ đăng ký vân tay thành công!");
+            } catch (error: any) {
+              Alert.alert("Thất bại", error.message || "Không thể xóa vân tay.");
+            }
+          }
+        }
+      ]
+    );
+  };
 
   useEffect(() => {
     loadData();
@@ -131,6 +156,15 @@ export default function AdminFleetScreen() {
           <Text className="text-3xl font-bold text-slate-50">Fleet</Text>
         </View>
         <View className="flex-row items-center gap-3">
+          {activeTab === 'drivers' && (
+            <TouchableOpacity 
+              className="bg-red-500/10 w-12 h-12 rounded-2xl justify-center items-center border border-red-500/20"
+              onPress={handleClearAllFingerprints}
+              activeOpacity={0.7}
+            >
+              <Fingerprint size={22} color="#ef4444" />
+            </TouchableOpacity>
+          )}
           <TouchableOpacity 
             className="bg-slate-800 w-12 h-12 rounded-2xl justify-center items-center border border-white/10"
             onPress={() => router.push('/admin/dispatch' as any)}
