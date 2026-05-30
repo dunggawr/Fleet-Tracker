@@ -603,6 +603,41 @@ export class TrackingService implements OnModuleDestroy {
     return { success: true, driverId: vehicle.driver.id, fingerprintId };
   }
 
+  async saveDeletionResult(deviceId: string, fingerprintId: number, success: boolean) {
+    this.logger.log(
+      `[Hardware Biometric] Result: Received deletion callback from device ${deviceId}, slot #${fingerprintId}: Status=${success ? 'SUCCESS' : 'FAILED'}`,
+    );
+
+    // Find vehicle & driver associated with the device
+    const vehicle = await this.vehicleRepository.findOne({
+      where: { deviceId },
+      relations: ['driver'],
+    });
+
+    if (!vehicle) {
+      this.logger.warn(`[Hardware Biometric] Deletion save failed: Device ${deviceId} not matched with any vehicle`);
+      throw new NotFoundException(`Vehicle with deviceId ${deviceId} not found`);
+    }
+
+    if (!vehicle.driver) {
+      this.logger.warn(`[Hardware Biometric] Deletion save failed: Vehicle ${vehicle.plateNumber} has no assigned driver`);
+      throw new NotFoundException(`No driver assigned to vehicle ${vehicle.plateNumber}`);
+    }
+
+    // Emit socket event for success/failure
+    this.eventEmitter.emit('fingerprint.deleted', {
+      driverId: vehicle.driver.id,
+      deviceId,
+      fingerprintId,
+      success,
+      message: success
+        ? 'Đã đồng bộ xóa vân tay thành công trên thiết bị xe!'
+        : 'Xóa vân tay trên thiết bị thất bại! Vui lòng kiểm tra kết nối thiết bị.',
+    });
+
+    return { success, driverId: vehicle.driver.id, fingerprintId };
+  }
+
   @OnEvent('trip.status_changed')
   async handleTripStatusChangedForEnroll(payload: { id: string; status: string; vehicleId: string; driverId: string }) {
     if (payload.status !== TripStatus.ACCEPTED) return;

@@ -61,6 +61,7 @@ int getFingerprintID();
 uint8_t enrollFingerprint(uint16_t id);
 void sendDataToBackend(double lat, double lng, int fingerId, int sats);
 void sendEnrollResult(int enrollId, bool success);
+void sendDeleteResult(int deleteId, bool success);
 
 // ── Setup ─────────────────────────────────────────────────────
 void setup() {
@@ -409,11 +410,15 @@ void sendDataToBackend(double lat, double lng, int fingerId, int sats) {
             
             // Delete from AS608 hardware flash
             uint8_t res = finger.deleteModel(deleteId);
-            if (res == FINGERPRINT_OK) {
+            bool success = (res == FINGERPRINT_OK);
+            if (success) {
               Serial.printf("[Remote] Xóa vân tay ID %d THÀNH CÔNG!\n", deleteId);
             } else {
               Serial.printf("[Remote] Xóa vân tay ID %d THẤT BẠI! Lỗi: %d\n", deleteId, res);
             }
+            
+            // Gửi kết quả về backend
+            sendDeleteResult(deleteId, success);
           }
         }
       }
@@ -456,6 +461,33 @@ void sendEnrollResult(int enrollId, bool success) {
       Serial.println(F("[Backend] Gửi kết quả Remote Enroll THÀNH CÔNG!"));
     } else {
       Serial.printf("[Backend] Gửi kết quả Remote Enroll THẤT BẠI: %d\n", httpResponseCode);
+    }
+    http.end();
+  }
+}
+
+void sendDeleteResult(int deleteId, bool success) {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    String url = BACKEND_URL;
+    url.replace("/device", "/device/delete-result");
+    
+    http.begin(url);
+    http.addHeader("Content-Type", "application/json");
+    http.addHeader("x-device-api-key", DEVICE_API_KEY);
+    
+    char payload[150];
+    snprintf(payload, sizeof(payload),
+             "{\"deviceId\":\"%s\",\"fingerprintId\":%d,\"success\":%s}",
+             DEVICE_ID, deleteId, success ? "true" : "false");
+             
+    Serial.printf("[Backend] Gửi kết quả Remote Delete: %s\n", payload);
+    int httpResponseCode = http.POST((uint8_t *)payload, strlen(payload));
+    
+    if (httpResponseCode >= 200 && httpResponseCode < 300) {
+      Serial.println(F("[Backend] Gửi kết quả Remote Delete THÀNH CÔNG!"));
+    } else {
+      Serial.printf("[Backend] Gửi kết quả Remote Delete THẤT BẠI: %d\n", httpResponseCode);
     }
     http.end();
   }

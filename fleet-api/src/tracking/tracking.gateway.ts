@@ -115,6 +115,13 @@ export class TrackingGateway
     this.server.to('admin').emit('enroll:result', payload);
   }
 
+  @OnEvent('fingerprint.deleted')
+  handleFingerprintDeleted(payload: any) {
+    this.logger.log(`Broadcasting remote delete result for driver ${payload.driverId} on device ${payload.deviceId}: ${payload.success ? 'SUCCESS' : 'FAILED'}`);
+    this.server.to(`driver:${payload.driverId}`).emit('fingerprint:deleted', payload);
+    this.server.to('admin').emit('fingerprint:deleted', payload);
+  }
+
   afterInit(server: Server) {
     this.logger.log('WebSocket Gateway Initialized');
   }
