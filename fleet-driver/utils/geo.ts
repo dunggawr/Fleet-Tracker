@@ -79,13 +79,21 @@ export const getRoute = async (
   origin: { latitude: number; longitude: number },
   destination: { latitude: number; longitude: number }
 ) => {
+  if (
+    !origin || !destination ||
+    (origin.latitude === 0 && origin.longitude === 0) ||
+    (destination.latitude === 0 && destination.longitude === 0)
+  ) {
+    return null;
+  }
+
   try {
     const url = `https://router.project-osrm.org/route/v1/driving/${origin.longitude},${origin.latitude};${destination.longitude},${destination.latitude}?overview=full&geometries=geojson`;
     const response = await fetch(url);
     const data = await response.json();
 
     if (data.code !== 'Ok') {
-      throw new Error('Failed to fetch route');
+      throw new Error(`OSRM returned code: ${data.code}`);
     }
 
     const route = data.routes[0];
@@ -97,8 +105,8 @@ export const getRoute = async (
       distance: route.distance, // meters
       duration: route.duration, // seconds
     };
-  } catch (error) {
-    console.error('Routing error:', error);
+  } catch (error: any) {
+    console.warn('Routing warning (handled gracefully):', error.message || error);
     return null;
   }
 };

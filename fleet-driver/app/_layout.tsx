@@ -106,12 +106,34 @@ function RootLayoutNav() {
         }
       };
 
+      const handleEnrollRequired = (data: any) => {
+        Toast.show({
+          type: 'info',
+          text1: 'Đăng Ký Vân Tay 👤',
+          text2: data.message || 'Hãy đặt ngón tay lên cảm biến trên xe để đăng ký vân tay.',
+          visibilityTime: 12000,
+        });
+      };
+
+      const handleEnrollResult = (data: any) => {
+        Toast.show({
+          type: data.success ? 'success' : 'error',
+          text1: data.success ? 'Đăng Ký Thành Công! 🎉' : 'Đăng Ký Thất Bại ❌',
+          text2: data.message || (data.success ? 'Vân tay đã liên kết thành công.' : 'Vui lòng thử lại.'),
+          visibilityTime: 8000,
+        });
+      };
+
       socketService.on('trip:assigned', handleTripAssigned);
       socketService.on('trip:cancelled', handleTripCancelled);
+      socketService.on('enroll:required', handleEnrollRequired);
+      socketService.on('enroll:result', handleEnrollResult);
 
       return () => {
         socketService.off('trip:assigned', handleTripAssigned);
         socketService.off('trip:cancelled', handleTripCancelled);
+        socketService.off('enroll:required', handleEnrollRequired);
+        socketService.off('enroll:result', handleEnrollResult);
       };
     } else {
       // Disconnect socket when not authenticated

@@ -56,13 +56,25 @@ export default function TripsScreen() {
           text: 'Accept', 
           onPress: async () => {
             try {
+              const hasFingerprint = !!user?.driver?.fingerprintId;
               await acceptTrip(id);
-              Toast.show({
-                type: 'success',
-                text1: 'Trip Accepted',
-                text2: 'You have accepted the assignment.'
-              });
-              router.push('/(tabs)/map');
+              
+              if (!hasFingerprint) {
+                Alert.alert(
+                  'Đăng ký vân tay lần đầu 👤',
+                  'Tài xế mới! Hệ thống phát hiện bạn chưa đăng ký vân tay. Vui lòng đặt ngón tay lên cảm biến AS608 trên xe để hoàn tất đăng ký vân tay trước khi tiến hành lấy hàng.',
+                  [
+                    { text: 'Đã hiểu', onPress: () => router.push('/(tabs)/map') }
+                  ]
+                );
+              } else {
+                Toast.show({
+                  type: 'success',
+                  text1: 'Trip Accepted',
+                  text2: 'You have accepted the assignment.'
+                });
+                router.push('/(tabs)/map');
+              }
             } catch (err: any) {
               Toast.show({
                 type: 'error',

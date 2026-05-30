@@ -16,6 +16,14 @@ const transformTripData = (t: any): Trip | null => {
     plannedRoute: t.plannedRoute ? parseLineString(t.plannedRoute) : undefined,
     startedAt: t.startedAt,
     completedAt: t.completedAt,
+    vehicle: t.vehicle ? {
+      ...t.vehicle,
+      lastKnownLocation: parsePoint(t.vehicle.lastKnownLocation),
+    } : undefined,
+    driver: t.driver ? {
+      id: t.driver.id,
+      fingerprintId: t.driver.fingerprintId,
+    } : undefined,
     orders: (t.tripOrders || []).map((to: any) => {
       if (!to || !to.order) return null;
       

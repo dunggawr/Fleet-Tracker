@@ -6,14 +6,19 @@ import {
   TouchableOpacity,
   Animated,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { X, Cpu, Smartphone, CheckCircle2 } from 'lucide-react-native';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useTripStore } from '../../store/useTripStore';
 import { socketService } from '../../lib/socket';
+import { authFetch } from '../../lib/authFetch';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
+import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
+import Toast from 'react-native-toast-message';
 
 import { StepperProgress } from './verification/StepperProgress';
 import { FingerprintStep } from './verification/FingerprintStep';
@@ -56,12 +61,14 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
   // Mock proof data
   const [facePhoto, setFacePhoto] = useState<string>('');
   const [cargoPhoto, setCargoPhoto] = useState<string>('');
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
   const progressAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const scanIntervalRef = useRef<any>(null);
 
-  const hasHardware = !!user?.driver?.fingerprintId;
+  const activeTrip = useTripStore((state) => state.activeTrip);
+  const hasHardware = !!activeTrip?.vehicle?.deviceId || !!activeTrip?.driver?.fingerprintId || !!user?.driver?.fingerprintId;
 
   useEffect(() => {
     if (visible) {
@@ -71,13 +78,12 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
       setFacePhoto('');
       setCargoPhoto('');
       progressAnim.setValue(0);
+      setHasHardwareVerified(false);
 
       if (step === 'pickup' || step === 'delivery') {
         setIsWaitingHardware(true);
-        setHasHardwareVerified(false);
       } else {
         setIsWaitingHardware(false);
-        setHasHardwareVerified(false);
       }
     }
     return () => {
@@ -88,34 +94,74 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
   }, [visible, step]);
 
   useEffect(() => {
+    let pollingInterval: any = null;
+
     if (visible && isWaitingHardware && !hasHardwareVerified) {
+      let transitioned = false;
+
+      const triggerSuccessTransition = (photoUrl: string) => {
+        if (transitioned) return;
+        transitioned = true;
+
+        setHasHardwareVerified(true);
+        if (photoUrl) {
+          setFacePhoto(photoUrl);
+        }
+        if (Platform.OS !== 'web') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+        fetchTrips();
+
+        if (pollingInterval) {
+          clearInterval(pollingInterval);
+        }
+
+        setTimeout(() => {
+          setIsWaitingHardware(false);
+          if (step === 'pickup' || step === 'delivery') {
+            setCurrentStep(2); // Phone cargo camera capture
+          } else {
+            setCurrentStep(3); // Submit review screen
+          }
+        }, 1500);
+      };
+
+      // 1. Socket Listener
       const handleOrderVerified = (data: any) => {
         console.log('[VerificationModal] Socket order:verified received:', data);
         if (data.orderId === orderId && data.step === step) {
-          setHasHardwareVerified(true);
-          if (data.verification && data.verification.facePhotoUrl) {
-            setFacePhoto(data.verification.facePhotoUrl);
-          }
-          if (Platform.OS !== 'web') {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          }
-          fetchTrips();
-          
-          // Wait 1.5 seconds, then transition to cargo photo step on the phone!
-          setTimeout(() => {
-            setIsWaitingHardware(false);
-            if (step === 'pickup' || step === 'delivery') {
-              setCurrentStep(2); // Phone cargo camera capture
-            } else {
-              setCurrentStep(3); // Submit review screen
+          triggerSuccessTransition(data.verification?.facePhotoUrl);
+        }
+      };
+      socketService.on('order:verified', handleOrderVerified);
+
+      // 2. High-reliability Polling Fallback (every 3 seconds)
+      const checkVerificationStatus = async () => {
+        try {
+          const response = await authFetch(`/orders/${orderId}/verifications`);
+          if (response && response.ok) {
+            const result = await response.json();
+            const verifications = Array.isArray(result) ? result : (result.data || []);
+            const matchedVerify = verifications.find((v: any) => v.step === step);
+            if (matchedVerify) {
+              console.log('[VerificationModal] Polling detected verification in DB:', matchedVerify);
+              triggerSuccessTransition(matchedVerify.facePhotoUrl);
             }
-          }, 1500);
+          }
+        } catch (err) {
+          console.log('[VerificationModal] Polling error:', err);
         }
       };
 
-      socketService.on('order:verified', handleOrderVerified);
+      // Run immediately and poll
+      checkVerificationStatus();
+      pollingInterval = setInterval(checkVerificationStatus, 3000);
+
       return () => {
         socketService.off('order:verified', handleOrderVerified);
+        if (pollingInterval) {
+          clearInterval(pollingInterval);
+        }
       };
     }
   }, [visible, isWaitingHardware, hasHardwareVerified, orderId, step, fetchTrips]);
@@ -203,17 +249,90 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
     }
   };
 
-  const captureCargoPhoto = () => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  const captureCargoPhoto = async () => {
+    try {
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+
+      // 1. Request camera permissions
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Toast.show({
+          type: 'error',
+          text1: 'Quyền Truy Cập Bị Từ Chối',
+          text2: 'Vui lòng cấp quyền sử dụng camera để chụp ảnh hàng hóa.'
+        });
+        return;
+      }
+
+      // 2. Launch Camera
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 1,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setIsUploadingPhoto(true);
+
+        // 3. Optimize image before uploading (resize & compress)
+        const manipulatedImage = await ImageManipulator.manipulateAsync(
+          result.assets[0].uri,
+          [{ resize: { width: 1024 } }],
+          { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+        );
+
+        // 4. Upload photo to backend
+        const formData = new FormData();
+        // @ts-ignore
+        formData.append('file', {
+          uri: manipulatedImage.uri,
+          name: `cargo_${orderId}_${step}.jpg`,
+          type: 'image/jpeg',
+        });
+
+        const response = await authFetch('/upload?folder=orders', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error('Tải ảnh lên thất bại');
+        }
+
+        const resData = await response.json();
+        const url = resData.data?.url || resData.url;
+        if (!url) {
+          throw new Error('Server không trả về URL ảnh');
+        }
+
+        setCargoPhoto(url);
+        
+        Toast.show({
+          type: 'success',
+          text1: 'Tải Lên Thành Công',
+          text2: 'Đã lưu ảnh chụp hàng hóa thực tế.'
+        });
+
+        // Automatically advance to Step 3 (Review step)
+        setTimeout(() => {
+          setCurrentStep(3);
+        }, 500);
+      }
+    } catch (err: any) {
+      console.log('[captureCargoPhoto] error:', err);
+      Toast.show({
+        type: 'error',
+        text1: 'Lỗi Chụp Ảnh',
+        text2: err.message || 'Không thể chụp hoặc upload ảnh.'
+      });
+    } finally {
+      setIsUploadingPhoto(false);
     }
-    // Mock cargo photo URL
-    setCargoPhoto('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=500&q=80');
-    
-    // Automatically advance or show preview
-    setTimeout(() => {
-      setCurrentStep(3); // Success/Review state
-    }, 500);
   };
 
   const handleSkipCargoPhoto = () => {
@@ -384,11 +503,20 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
 
                   {/* STEP 2: PHONE CARGO CAMERA */}
                   {currentStep === 2 && (
-                    <CargoCaptureStep
-                      cargoPhoto={cargoPhoto}
-                      onCapture={captureCargoPhoto}
-                      onSkip={handleSkipCargoPhoto}
-                    />
+                    isUploadingPhoto ? (
+                      <View className="items-center justify-center py-12">
+                        <ActivityIndicator size="large" color="#6366f1" />
+                        <Text className="text-slate-400 text-sm font-bold mt-4">
+                          Đang tải lên ảnh hàng hóa...
+                        </Text>
+                      </View>
+                    ) : (
+                      <CargoCaptureStep
+                        cargoPhoto={cargoPhoto}
+                        onCapture={captureCargoPhoto}
+                        onSkip={handleSkipCargoPhoto}
+                      />
+                    )
                   )}
 
                   {/* STEP 3: SUBMIT REVIEW SCREEN */}
