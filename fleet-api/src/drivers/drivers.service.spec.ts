@@ -7,6 +7,7 @@ import { DriversService } from './drivers.service';
 import { Driver, DriverStatus } from '../entities/driver.entity';
 import { User, UserRole } from '../entities/user.entity';
 import { DriverKpi } from '../entities/driver-kpi.entity';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 jest.mock('bcrypt');
 
@@ -86,6 +87,12 @@ describe('DriversService', () => {
         {
           provide: DataSource,
           useValue: mockDataSource,
+        },
+        {
+          provide: EventEmitter2,
+          useValue: {
+            emit: jest.fn(),
+          },
         },
       ],
     }).compile();

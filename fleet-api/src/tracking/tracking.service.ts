@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleDestroy, BadRequestException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, Not, IsNull } from 'typeorm';
 import { OnEvent, EventEmitter2 } from '@nestjs/event-emitter';
 import { GpsLocation } from '../entities/gps-location.entity';
 import { Vehicle } from '../entities/vehicle.entity';
@@ -25,6 +25,7 @@ export class TrackingService implements OnModuleDestroy {
   private isFlushing = false;
   private pendingEnrollments = new Map<string, number>();
   private pendingDeletions = new Map<string, number>();
+  private pendingClearAll = new Map<string, boolean>();
   private readonly lastHardwareGpsMap = new Map<string, number>();
 
   constructor(
@@ -544,6 +545,14 @@ export class TrackingService implements OnModuleDestroy {
     return deleteId;
   }
 
+  getPendingClearAll(deviceId: string): boolean | null {
+    const clearAll = this.pendingClearAll.get(deviceId) || null;
+    if (clearAll) {
+      this.logger.log(`[Hardware Biometric] Polled: Device ${deviceId} fetched pending clear_all command`);
+    }
+    return clearAll;
+  }
+
   async saveEnrollmentResult(deviceId: string, fingerprintId: number, success: boolean) {
     this.logger.log(
       `[Hardware Biometric] Result: Received enrollment callback from device ${deviceId}, slot #${fingerprintId}: Status=${success ? 'SUCCESS' : 'FAILED'}`,
@@ -640,6 +649,37 @@ export class TrackingService implements OnModuleDestroy {
     });
 
     return { success, driverId: vehicle.driver.id, fingerprintId };
+  }
+
+  async saveClearAllResult(deviceId: string, success: boolean) {
+    this.logger.log(
+      `[Hardware Biometric] Result: Received clear-all callback from device ${deviceId}: Status=${success ? 'SUCCESS' : 'FAILED'}`,
+    );
+
+    // Consume the pending clear_all request upon receiving the result callback from the device
+    this.pendingClearAll.delete(deviceId);
+
+    // Find vehicle & driver associated with the device
+    const vehicle = await this.vehicleRepository.findOne({
+      where: { deviceId },
+      relations: ['driver'],
+    });
+
+    if (!vehicle) {
+      this.logger.warn(`[Hardware Biometric] Clear-all save failed: Device ${deviceId} not matched with any vehicle`);
+      throw new NotFoundException(`Vehicle with deviceId ${deviceId} not found`);
+    }
+
+    // Emit socket event for success/failure
+    this.eventEmitter.emit('fingerprint.all_cleared', {
+      deviceId,
+      success,
+      message: success
+        ? 'Đã xóa toàn bộ bộ nhớ vân tay thành công trên thiết bị xe!'
+        : 'Xóa toàn bộ vân tay trên xe thất bại! Vui lòng kiểm tra kết nối thiết bị.',
+    });
+
+    return { success, deviceId };
   }
 
   @OnEvent('trip.status_changed')
@@ -788,6 +828,23 @@ export class TrackingService implements OnModuleDestroy {
             });
           }
         }
+      }
+    }
+  }
+
+  @OnEvent('fingerprint.cleared_all')
+  async handleFingerprintClearedAll() {
+    this.logger.log(`[Hardware Biometric] handleFingerprintClearedAll triggered`);
+
+    // Get all vehicles with deviceId
+    const vehicles = await this.vehicleRepository.find({
+      where: { deviceId: Not(IsNull()) }
+    });
+
+    for (const vehicle of vehicles) {
+      if (vehicle.deviceId) {
+        this.pendingClearAll.set(vehicle.deviceId, true);
+        this.logger.log(`[Hardware Biometric] Queued full flash clear for device ${vehicle.deviceId}`);
       }
     }
   }

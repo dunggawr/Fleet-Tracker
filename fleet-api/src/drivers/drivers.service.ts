@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, Not, IsNull } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Driver, DriverStatus } from '../entities/driver.entity';
@@ -249,5 +249,27 @@ export class DriversService {
 
     driver.fingerprintId = null;
     return this.driversRepository.save(driver);
+  }
+
+  async clearAllFingerprints(): Promise<{ success: boolean; count: number }> {
+    const drivers = await this.driversRepository.find({
+      where: { fingerprintId: Not(IsNull()) },
+    });
+
+    if (drivers.length > 0) {
+      this.eventEmitter.emit('fingerprint.cleared_all', {
+        clearedDrivers: drivers.map((d) => ({
+          id: d.id,
+          fingerprintId: d.fingerprintId,
+        })),
+      });
+
+      await this.driversRepository.update(
+        { fingerprintId: Not(IsNull()) },
+        { fingerprintId: null },
+      );
+    }
+
+    return { success: true, count: drivers.length };
   }
 }
