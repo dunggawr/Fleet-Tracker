@@ -788,6 +788,69 @@ export class TrackingService implements OnModuleDestroy {
     }
   }
 
+  async checkAndTriggerEnrollmentForActiveDriver(driverId: string) {
+    const driver = await this.driverRepository.findOne({
+      where: { id: driverId },
+    });
+
+    if (driver && !driver.fingerprintId) {
+      // Find active trip for this driver
+      const activeTrip = await this.tripRepository.findOne({
+        where: [
+          { driverId, status: TripStatus.ACCEPTED },
+          { driverId, status: TripStatus.IN_PROGRESS },
+        ],
+        relations: ['vehicle'],
+      });
+
+      if (activeTrip && activeTrip.vehicle && activeTrip.vehicle.deviceId) {
+        const deviceId = activeTrip.vehicle.deviceId;
+        
+        // Find if an enrollment is already queued for this device
+        let enrollId = this.pendingEnrollments.get(deviceId) || null;
+
+        if (!enrollId) {
+          // Allocate a new slot ID
+          const allDrivers = await this.driverRepository.find({
+            select: ['fingerprintId'],
+          });
+
+          const usedIds = new Set(
+            allDrivers
+              .map((d) => d.fingerprintId ? Number(d.fingerprintId) : null)
+              .filter((id) => id !== null && !isNaN(id)),
+          );
+
+          for (const pendingId of this.pendingEnrollments.values()) {
+            usedIds.add(pendingId);
+          }
+
+          let autoId = 1;
+          for (let i = 1; i <= 127; i++) {
+            if (!usedIds.has(i)) {
+              autoId = i;
+              break;
+            }
+          }
+          enrollId = autoId;
+          this.requestEnrollment(deviceId, enrollId);
+        }
+
+        this.logger.log(
+          `[Hardware Biometric] Driver ${driverId} connected with active trip. Triggering/Re-emitting remote fingerprint enrollment slot #${enrollId} on device ${deviceId}`,
+        );
+
+        // Emit WS event to guide Driver via Mobile App
+        this.eventEmitter.emit('enroll.required', {
+          driverId,
+          deviceId,
+          fingerprintId: enrollId,
+          message: 'Chuyến đi đang hoạt động! Vui lòng đặt ngón tay lên cảm biến trên xe để đăng ký vân tay để xác thực chặng.',
+        });
+      }
+    }
+  }
+
   private calculateDistance(
     lat1: number,
     lon1: number,

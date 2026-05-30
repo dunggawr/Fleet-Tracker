@@ -155,6 +155,11 @@ export class TrackingGateway
           this.logger.log(
             `Driver connected: ${client.id} (Driver ID: ${driver.id})`,
           );
+
+          // Proactively trigger fingerprint enrollment if they are currently on an active trip and don't have a fingerprint
+          this.trackingService.checkAndTriggerEnrollmentForActiveDriver(driver.id).catch((err) => {
+            this.logger.error(`[Biometric Connection Check] Failed to trigger enrollment: ${err.message}`);
+          });
         } else {
           this.logger.warn(
             `User ${payload.sub} has driver role but no driver profile found. Disconnecting.`,
