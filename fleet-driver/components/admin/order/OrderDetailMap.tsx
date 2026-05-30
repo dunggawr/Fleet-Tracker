@@ -23,11 +23,15 @@ export const OrderDetailMap: React.FC<OrderDetailMapProps> = ({ order }) => {
   const statusConfig = STATUS_CONFIG[order.status] || STATUS_CONFIG[OrderStatus.PENDING];
   const StatusIcon = statusConfig.icon;
 
-  const latDelta = Math.abs(order.pickupLocation.coordinates[1] - order.deliveryLocation.coordinates[1]) * 1.5 || 0.05;
-  const lngDelta = Math.abs(order.pickupLocation.coordinates[0] - order.deliveryLocation.coordinates[0]) * 1.5 || 0.05;
+  const diffLat = Math.abs(order.pickupLocation.coordinates[1] - order.deliveryLocation.coordinates[1]);
+  const diffLng = Math.abs(order.pickupLocation.coordinates[0] - order.deliveryLocation.coordinates[0]);
+
+  // Dynamic zoom: focus closely on route streets, fallback to 0.012 instead of 0.05 for a much closer look
+  const latDelta = diffLat > 0 ? Math.min(Math.max(diffLat * 1.4, 0.012), 15.0) : 0.012;
+  const lngDelta = diffLng > 0 ? Math.min(Math.max(diffLng * 1.4, 0.012), 15.0) : 0.012;
 
   return (
-    <View className="h-56 w-full overflow-hidden relative">
+    <View className="h-80 w-full overflow-hidden relative border-b border-white/5">
       <MapComponent
         provider={PROVIDER_GOOGLE}
         style={{ flex: 1 }}
@@ -37,8 +41,10 @@ export const OrderDetailMap: React.FC<OrderDetailMapProps> = ({ order }) => {
           latitudeDelta: latDelta,
           longitudeDelta: lngDelta,
         }}
-        scrollEnabled={false}
-        zoomEnabled={false}
+        scrollEnabled={true}
+        zoomEnabled={true}
+        pitchEnabled={true}
+        rotateEnabled={true}
       >
         <MarkerComponent
           coordinate={{
@@ -66,20 +72,15 @@ export const OrderDetailMap: React.FC<OrderDetailMapProps> = ({ order }) => {
           lineDashPattern={[5, 5]}
         />
       </MapComponent>
-      <BlurView 
-        intensity={20} 
-        tint="dark" 
-        className="justify-end"
-        style={{ position: 'absolute', left: 0, right: 0, bottom: 0, top: 0, padding: 16, backgroundColor: 'rgba(15, 23, 42, 0.3)' }}
+      
+      {/* Floating Status Badge (Bottom-Left) */}
+      <View 
+        className="absolute bottom-4 left-4 flex-row items-center px-3 py-1.5 rounded-xl gap-2 shadow-lg shadow-black/40 border border-white/10"
+        style={{ backgroundColor: `${statusConfig.color}E6` }}
       >
-        <View 
-          className="flex-row items-center self-start px-3 py-1.5 rounded-xl gap-2 shadow-lg shadow-black/20"
-          style={{ backgroundColor: `${statusConfig.color}CC` }}
-        >
-          <StatusIcon size={16} color="#fff" />
-          <Text className="text-white font-extrabold text-xs uppercase tracking-wide">{statusConfig.label}</Text>
-        </View>
-      </BlurView>
+        <StatusIcon size={14} color="#fff" />
+        <Text className="text-white font-extrabold text-xs uppercase tracking-wide">{statusConfig.label}</Text>
+      </View>
     </View>
   );
 };
