@@ -117,6 +117,18 @@ export class TrackingController {
     return this.trackingService.saveEnrollmentResult(body.deviceId, body.fingerprintId, body.success);
   }
 
+  @Post('device/delete-result')
+  async handleRemoteDeleteResult(
+    @Body() body: { deviceId: string; fingerprintId: number; success: boolean },
+    @Headers('x-device-api-key') headerApiKey?: string,
+  ) {
+    const configuredApiKey = this.configService.get<string>('DEVICE_API_KEY');
+    if (!configuredApiKey || headerApiKey !== configuredApiKey) {
+      throw new UnauthorizedException('Invalid or missing Device API Key');
+    }
+    return this.trackingService.saveDeletionResult(body.deviceId, body.fingerprintId, body.success);
+  }
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('live')
   @Roles(UserRole.ADMIN, UserRole.DISPATCHER)

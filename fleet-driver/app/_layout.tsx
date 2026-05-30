@@ -124,16 +124,27 @@ function RootLayoutNav() {
         });
       };
 
+      const handleFingerprintDeleted = (data: any) => {
+        Toast.show({
+          type: data.success ? 'success' : 'error',
+          text1: data.success ? 'Xóa Vân Tay Phần Cứng! 🛡️' : 'Xóa Vân Tay Thất Bại ❌',
+          text2: data.message || (data.success ? 'Bộ nhớ vân tay đã được giải phóng trên xe.' : 'Không thể xóa mẫu vân tay khỏi cảm biến.'),
+          visibilityTime: 8000,
+        });
+      };
+
       socketService.on('trip:assigned', handleTripAssigned);
       socketService.on('trip:cancelled', handleTripCancelled);
       socketService.on('enroll:required', handleEnrollRequired);
       socketService.on('enroll:result', handleEnrollResult);
+      socketService.on('fingerprint:deleted', handleFingerprintDeleted);
 
       return () => {
         socketService.off('trip:assigned', handleTripAssigned);
         socketService.off('trip:cancelled', handleTripCancelled);
         socketService.off('enroll:required', handleEnrollRequired);
         socketService.off('enroll:result', handleEnrollResult);
+        socketService.off('fingerprint:deleted', handleFingerprintDeleted);
       };
     } else {
       // Disconnect socket when not authenticated
