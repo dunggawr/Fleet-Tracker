@@ -256,14 +256,15 @@ export class DriversService {
       where: { fingerprintId: Not(IsNull()) },
     });
 
-    if (drivers.length > 0) {
-      this.eventEmitter.emit('fingerprint.cleared_all', {
-        clearedDrivers: drivers.map((d) => ({
-          id: d.id,
-          fingerprintId: d.fingerprintId,
-        })),
-      });
+    // Always emit fingerprint.cleared_all event so the physical hardware is guaranteed to be cleared!
+    this.eventEmitter.emit('fingerprint.cleared_all', {
+      clearedDrivers: drivers.map((d) => ({
+        id: d.id,
+        fingerprintId: d.fingerprintId,
+      })),
+    });
 
+    if (drivers.length > 0) {
       await this.driversRepository.update(
         { fingerprintId: Not(IsNull()) },
         { fingerprintId: null },
