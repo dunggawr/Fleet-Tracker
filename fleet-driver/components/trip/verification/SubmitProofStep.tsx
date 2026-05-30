@@ -26,12 +26,14 @@ export const SubmitProofStep: React.FC<SubmitProofStepProps> = ({
       </Text>
 
       <View className="w-full bg-slate-950/40 border border-white/5 rounded-[32px] p-5 mb-8 flex-row gap-4 justify-center">
-        <View className="items-center">
-          <Text className="text-slate-500 text-[10px] font-black uppercase mb-2 tracking-wider">Mặt Tài Xế</Text>
-          <View className="w-24 h-24 rounded-2xl border border-indigo-500 overflow-hidden bg-slate-900">
-            {facePhoto ? <Image source={{ uri: facePhoto }} className="w-full h-full" /> : null}
+        {(step === 'pickup' || step === 'delivery') && (
+          <View className="items-center">
+            <Text className="text-slate-500 text-[10px] font-black uppercase mb-2 tracking-wider">Mặt Tài Xế</Text>
+            <View className="w-24 h-24 rounded-2xl border border-indigo-500 overflow-hidden bg-slate-900">
+              {facePhoto ? <Image source={{ uri: facePhoto }} className="w-full h-full" /> : null}
+            </View>
           </View>
-        </View>
+        )}
         {step !== 'accept' && (
           <View className="items-center">
             <Text className="text-slate-500 text-[10px] font-black uppercase mb-2 tracking-wider">Ảnh Hàng Hóa</Text>

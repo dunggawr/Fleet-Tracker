@@ -36,8 +36,13 @@ export interface Trip {
     id: string;
     plateNumber: string;
     type: string;
+    lastKnownLocation?: { latitude: number; longitude: number };
   };
   driverId: string;
+  driver?: {
+    id: string;
+    fingerprintId?: string;
+  };
   status: TripStatus;
   totalDistanceKm: number;
   orders: Order[];

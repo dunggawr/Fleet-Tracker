@@ -108,6 +108,13 @@ export class TrackingGateway
     this.server.to('admin').emit('enroll:required', payload);
   }
 
+  @OnEvent('enroll.result')
+  handleEnrollResult(payload: any) {
+    this.logger.log(`Broadcasting remote enroll result for driver ${payload.driverId} on device ${payload.deviceId}: ${payload.success ? 'SUCCESS' : 'FAILED'}`);
+    this.server.to(`driver:${payload.driverId}`).emit('enroll:result', payload);
+    this.server.to('admin').emit('enroll:result', payload);
+  }
+
   afterInit(server: Server) {
     this.logger.log('WebSocket Gateway Initialized');
   }

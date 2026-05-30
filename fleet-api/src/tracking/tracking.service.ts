@@ -434,6 +434,37 @@ export class TrackingService implements OnModuleDestroy {
        latitude = vehicle.lastKnownLocation.coordinates[1];
     }
 
+    // Validate Geofencing for PICKUP and DELIVERY steps
+    if (targetStep === VerificationStep.PICKUP || targetStep === VerificationStep.DELIVERY) {
+      const targetLocation = targetStep === VerificationStep.PICKUP 
+        ? activeOrder.pickupLocation 
+        : activeOrder.deliveryLocation;
+
+      if (!targetLocation || !targetLocation.coordinates) {
+        throw new BadRequestException(`Target location for order step ${targetStep} is not configured.`);
+      }
+
+      if (latitude === undefined || latitude === null || longitude === undefined || longitude === null) {
+        throw new BadRequestException(`Tọa độ GPS của xe hiện chưa sẵn sàng. Không thể xác thực phạm vi.`);
+      }
+
+      const distance = this.calculateDistance(
+        latitude,
+        longitude,
+        targetLocation.coordinates[1],
+        targetLocation.coordinates[0]
+      );
+
+      if (distance > 200) {
+        this.logger.error(
+          `[Hardware Biometric] FAILED! Vehicle is ${Math.round(distance)}m away from target. Geofencing limit is 200m.`
+        );
+        throw new BadRequestException(
+          `Khoảng cách quá xa. Xe cách điểm ${targetStep === VerificationStep.PICKUP ? 'lấy hàng' : 'giao hàng'} ${Math.round(distance)}m (yêu cầu dưới 200m).`
+        );
+      }
+    }
+
     // 6. Submit Verification via OrderVerificationsService
     this.logger.log(
       `[Hardware Biometric] Registering verification: Order ${activeOrder.id}, Step ${targetStep}, Face URL: ${facePhotoUrl}, Location: [${latitude || 'N/A'}, ${longitude || 'N/A'}]`,
@@ -509,10 +540,6 @@ export class TrackingService implements OnModuleDestroy {
     this.logger.log(
       `[Hardware Biometric] Result: Received enrollment callback from device ${deviceId}, slot #${fingerprintId}: Status=${success ? 'SUCCESS' : 'FAILED'}`,
     );
-    if (!success) {
-      this.logger.warn(`[Hardware Biometric] Enrollment failed on device ${deviceId} for slot #${fingerprintId}`);
-      return { success: false, message: 'Enrollment failed on device' };
-    }
 
     // Find vehicle & driver associated with the device
     const vehicle = await this.vehicleRepository.findOne({
@@ -530,12 +557,38 @@ export class TrackingService implements OnModuleDestroy {
       throw new NotFoundException(`No driver assigned to vehicle ${vehicle.plateNumber}`);
     }
 
+    if (!success) {
+      this.logger.warn(`[Hardware Biometric] Enrollment failed on device ${deviceId} for slot #${fingerprintId}`);
+      
+      // Re-queue the remote enrollment request in memory so the vehicle will retry on next poll!
+      this.requestEnrollment(deviceId, fingerprintId);
+      
+      // Emit socket event for failure
+      this.eventEmitter.emit('enroll.result', {
+        driverId: vehicle.driver.id,
+        deviceId,
+        fingerprintId,
+        success: false,
+        message: 'Đăng ký vân tay thất bại! Vui lòng đặt ngón tay lên cảm biến để thử lại.',
+      });
+      return { success: false, message: 'Enrollment failed on device' };
+    }
+
     // Save driver's fingerprintId in DB
     vehicle.driver.fingerprintId = String(fingerprintId);
     await this.driverRepository.save(vehicle.driver);
     this.logger.log(
       `[Hardware Biometric] DB Update: Assigned fingerprint ID #${fingerprintId} to driver ID ${vehicle.driver.id}`,
     );
+
+    // Emit socket event for success
+    this.eventEmitter.emit('enroll.result', {
+      driverId: vehicle.driver.id,
+      deviceId,
+      fingerprintId,
+      success: true,
+      message: 'Đăng ký vân tay thành công! Vân tay của bạn đã được liên kết với thiết bị trên xe.',
+    });
 
     return { success: true, driverId: vehicle.driver.id, fingerprintId };
   }
@@ -571,6 +624,11 @@ export class TrackingService implements OnModuleDestroy {
           .filter((id) => id !== null && !isNaN(id)),
       );
 
+      // Also add currently pending enrollment slots in memory to usedIds
+      for (const pendingId of this.pendingEnrollments.values()) {
+        usedIds.add(pendingId);
+      }
+
       // Allocate first available slot ID between 1 and 127
       let autoId = 1;
       for (let i = 1; i <= 127; i++) {
@@ -587,10 +645,6 @@ export class TrackingService implements OnModuleDestroy {
       // Register remote enrollment in memory
       this.requestEnrollment(vehicle.deviceId, autoId);
 
-      // Update driver fingerprintId immediately to reserve the slot
-      driver.fingerprintId = String(autoId);
-      await this.driverRepository.save(driver);
-
       // Emit WS event to guide Driver via Mobile App & Alert Admin
       this.eventEmitter.emit('enroll.required', {
         driverId: driver.id,
@@ -599,5 +653,29 @@ export class TrackingService implements OnModuleDestroy {
         message: 'Tài xế mới! Hãy đặt ngón tay lên cảm biến trên xe để đăng ký vân tay.',
       });
     }
+  }
+
+  private calculateDistance(
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number,
+  ): number {
+    const R = 6371; // Radius of the earth in km
+    const dLat = this.deg2rad(lat2 - lat1);
+    const dLon = this.deg2rad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(this.deg2rad(lat1)) *
+        Math.cos(this.deg2rad(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const d = R * c; // Distance in km
+    return d * 1000; // Return distance in meters
+  }
+
+  private deg2rad(deg: number): number {
+    return deg * (Math.PI / 180);
   }
 }

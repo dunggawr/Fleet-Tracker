@@ -36,7 +36,17 @@ export const useMapFlow = () => {
     longitude: number;
     heading: number;
     speed: number;
-  } | null>(null);
+  } | null>(() => {
+    if (activeTrip?.vehicle?.lastKnownLocation) {
+      return {
+        latitude: activeTrip.vehicle.lastKnownLocation.latitude,
+        longitude: activeTrip.vehicle.lastKnownLocation.longitude,
+        heading: 0,
+        speed: 0,
+      };
+    }
+    return null;
+  });
 
   const location = useMemo(() => {
     if (hardwareLocation) {
@@ -49,8 +59,8 @@ export const useMapFlow = () => {
         },
       } as any;
     }
-    return phoneLocation;
-  }, [phoneLocation, hardwareLocation]);
+    return null;
+  }, [hardwareLocation]);
 
   useEffect(() => {
     if (!activeTrip || !isSocketConnected) {
