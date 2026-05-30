@@ -5,7 +5,7 @@ import { OnEvent, EventEmitter2 } from '@nestjs/event-emitter';
 import { GpsLocation } from '../entities/gps-location.entity';
 import { Vehicle } from '../entities/vehicle.entity';
 import { Trip, TripStatus } from '../entities/trip.entity';
-import { Driver } from '../entities/driver.entity';
+import { Driver, DriverStatus } from '../entities/driver.entity';
 import { GpsUpdateDto } from './dto/gps-update.dto';
 import { DeviceGpsUpdateDto } from './dto/device-gps-update.dto';
 import { VerifyHardwareDto } from './dto/verify-hardware.dto';
@@ -702,9 +702,10 @@ export class TrackingService implements OnModuleDestroy {
 
   @OnEvent('fingerprint.cleared')
   async handleFingerprintCleared(payload: { driverId: string; fingerprintId: string }) {
-    // Find the vehicle associated with this driver to get their deviceId
+    // Find the vehicle associated with this driver to get their deviceId and load driver info
     const vehicle = await this.vehicleRepository.findOne({
       where: { driverId: payload.driverId },
+      relations: ['driver'],
     });
 
     if (vehicle && vehicle.deviceId) {
@@ -714,6 +715,52 @@ export class TrackingService implements OnModuleDestroy {
         this.logger.log(
           `[Hardware Biometric] Queued deletion for device ${vehicle.deviceId} (slot #${fingerprintIdNum})`,
         );
+
+        // Proactive Enroll: If driver is currently on a trip, auto-trigger a new enrollment immediately!
+        if (vehicle.driver && vehicle.driver.status === DriverStatus.ON_TRIP) {
+          // Find all currently used fingerprint IDs
+          const allDrivers = await this.driverRepository.find({
+            select: ['fingerprintId'],
+          });
+
+          const usedIds = new Set(
+            allDrivers
+              .map((d) => d.fingerprintId ? Number(d.fingerprintId) : null)
+              .filter((id) => id !== null && !isNaN(id)),
+          );
+
+          // Ensure the slot we just queued for deletion is not immediately re-allocated before actual deletion completes
+          usedIds.add(fingerprintIdNum);
+
+          // Also add currently pending enrollment slots in memory to usedIds
+          for (const pendingId of this.pendingEnrollments.values()) {
+            usedIds.add(pendingId);
+          }
+
+          // Allocate first available slot ID between 1 and 127
+          let autoId = 1;
+          for (let i = 1; i <= 127; i++) {
+            if (!usedIds.has(i)) {
+              autoId = i;
+              break;
+            }
+          }
+
+          this.logger.log(
+            `[Hardware Biometric] Driver ${vehicle.driver.id} is ON_TRIP. Auto-triggering remote fingerprint enrollment slot #${autoId} on device ${vehicle.deviceId} after deletion`,
+          );
+
+          // Register remote enrollment in memory
+          this.requestEnrollment(vehicle.deviceId, autoId);
+
+          // Emit WS event to guide Driver via Mobile App & Alert Admin
+          this.eventEmitter.emit('enroll.required', {
+            driverId: vehicle.driver.id,
+            deviceId: vehicle.deviceId,
+            fingerprintId: autoId,
+            message: 'Đăng ký lại vân tay! Vui lòng đặt ngón tay lên cảm biến trên xe để đăng ký vân tay mới cho chuyến đi hiện tại.',
+          });
+        }
       }
     }
   }
