@@ -80,6 +80,17 @@ export class TrackingController {
       };
     }
 
+    // Check if there is a pending remote deletion request for this device
+    const pendingDelete = this.trackingService.getPendingDeletion(data.deviceId);
+    if (pendingDelete) {
+      return {
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        action: 'delete',
+        deleteId: pendingDelete,
+      };
+    }
+
     return { status: 'ok', timestamp: new Date().toISOString() };
   }
 

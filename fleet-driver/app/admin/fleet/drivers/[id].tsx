@@ -15,6 +15,7 @@ import {
   Edit3,
   Trash2,
   User as UserIcon,
+  Fingerprint,
 } from "lucide-react-native";
 import axios from "axios";
 import { useAuthStore } from "../../../../store/useAuthStore";
@@ -41,7 +42,7 @@ const STATUS_CONFIG = {
 export default function DriverDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-  const { drivers, loading, updateDriver, deleteDriver, createDriver } =
+  const { drivers, loading, updateDriver, deleteDriver, createDriver, clearFingerprint } =
     useFleetStore();
 
   const [driver, setDriver] = useState<Driver | undefined>(undefined);
@@ -260,6 +261,57 @@ export default function DriverDetailScreen() {
 
           {activeTab === 'info' && driver && (
             <View className="p-5 gap-5">
+              {driver.fingerprintId ? (
+                <View className="bg-slate-850 p-5 rounded-[24px] border border-white/5 flex-row items-center justify-between">
+                  <View className="flex-row items-center gap-3">
+                    <View className="w-10 h-10 rounded-xl bg-indigo-500/10 items-center justify-center">
+                      <Fingerprint size={20} color="#6366f1" />
+                    </View>
+                    <View>
+                      <Text className="text-slate-50 font-bold text-sm">Sinh trắc học vân tay</Text>
+                      <Text className="text-indigo-400 text-xs mt-0.5 font-medium">Mã vân tay: #{driver.fingerprintId}</Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => {
+                      Alert.alert(
+                        "Xóa vân tay",
+                        `Bạn có chắc chắn muốn xóa đăng ký vân tay (#${driver.fingerprintId}) của tài xế ${driver.user.fullName}?`,
+                        [
+                          { text: "Hủy", style: "cancel" },
+                          {
+                            text: "Xóa",
+                            style: "destructive",
+                            onPress: async () => {
+                              try {
+                                await clearFingerprint(driver.id);
+                                Alert.alert("Thành công", "Đã xóa đăng ký vân tay của tài xế.");
+                              } catch (error: any) {
+                                Alert.alert("Lỗi", error.message);
+                              }
+                            }
+                          }
+                        ]
+                      );
+                    }}
+                    className="bg-red-500/10 px-3 py-2 rounded-xl border border-red-500/20"
+                    activeOpacity={0.7}
+                  >
+                    <Text className="text-red-400 text-xs font-extrabold uppercase">Xóa</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View className="bg-slate-850 p-5 rounded-[24px] border border-white/5 flex-row items-center gap-3">
+                  <View className="w-10 h-10 rounded-xl bg-slate-800 items-center justify-center">
+                    <Fingerprint size={20} color="#64748b" />
+                  </View>
+                  <View>
+                    <Text className="text-slate-400 font-bold text-sm">Sinh trắc học vân tay</Text>
+                    <Text className="text-slate-500 text-xs mt-0.5 font-medium">Chưa đăng ký vân tay</Text>
+                  </View>
+                </View>
+              )}
+
               <DriverContact driver={driver} />
               <DriverLicense driver={driver} />
               <DriverKpi kpi={kpi} kpiLoading={kpiLoading} />

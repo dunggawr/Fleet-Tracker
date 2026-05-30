@@ -24,6 +24,7 @@ export class TrackingService implements OnModuleDestroy {
   private flushInterval: NodeJS.Timeout;
   private isFlushing = false;
   private pendingEnrollments = new Map<string, number>();
+  private pendingDeletions = new Map<string, number>();
   private readonly lastHardwareGpsMap = new Map<string, number>();
 
   constructor(
@@ -536,6 +537,15 @@ export class TrackingService implements OnModuleDestroy {
     return enrollId;
   }
 
+  getPendingDeletion(deviceId: string): number | null {
+    const deleteId = this.pendingDeletions.get(deviceId) || null;
+    if (deleteId) {
+      this.logger.log(`[Hardware Biometric] Polled: Device ${deviceId} fetched pending deletion slot #${deleteId}`);
+      this.pendingDeletions.delete(deviceId); // Consume the request once
+    }
+    return deleteId;
+  }
+
   async saveEnrollmentResult(deviceId: string, fingerprintId: number, success: boolean) {
     this.logger.log(
       `[Hardware Biometric] Result: Received enrollment callback from device ${deviceId}, slot #${fingerprintId}: Status=${success ? 'SUCCESS' : 'FAILED'}`,
@@ -652,6 +662,24 @@ export class TrackingService implements OnModuleDestroy {
         fingerprintId: autoId,
         message: 'Tài xế mới! Hãy đặt ngón tay lên cảm biến trên xe để đăng ký vân tay.',
       });
+    }
+  }
+
+  @OnEvent('fingerprint.cleared')
+  async handleFingerprintCleared(payload: { driverId: string; fingerprintId: string }) {
+    // Find the vehicle associated with this driver to get their deviceId
+    const vehicle = await this.vehicleRepository.findOne({
+      where: { driverId: payload.driverId },
+    });
+
+    if (vehicle && vehicle.deviceId) {
+      const fingerprintIdNum = parseInt(payload.fingerprintId, 10);
+      if (!isNaN(fingerprintIdNum)) {
+        this.pendingDeletions.set(vehicle.deviceId, fingerprintIdNum);
+        this.logger.log(
+          `[Hardware Biometric] Queued deletion for device ${vehicle.deviceId} (slot #${fingerprintIdNum})`,
+        );
+      }
     }
   }
 

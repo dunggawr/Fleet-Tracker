@@ -36,6 +36,7 @@ export interface Trip {
     id: string;
     plateNumber: string;
     type: string;
+    deviceId?: string | null;
     lastKnownLocation?: { latitude: number; longitude: number };
   };
   driverId: string;

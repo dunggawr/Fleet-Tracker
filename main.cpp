@@ -388,6 +388,35 @@ void sendDataToBackend(double lat, double lng, int fingerId, int sats) {
           }
         }
       }
+      
+      // Parse remote fingerprint deletion command
+      // Example response format: {"status":"ok","action":"delete","deleteId":5}
+      if (response.indexOf("\"action\":\"delete\"") != -1) {
+        int idIdx = response.indexOf("\"deleteId\":");
+        if (idIdx != -1) {
+          String idStr = "";
+          for (int i = idIdx + 11; i < response.length(); i++) {
+            char c = response.charAt(i);
+            if (isdigit(c)) {
+              idStr += c;
+            } else if (c == '}' || c == ',') {
+              break;
+            }
+          }
+          int deleteId = idStr.toInt();
+          if (deleteId > 0 && deleteId <= 127) {
+            Serial.printf("[Remote] Nhận lệnh xóa vân tay ID: %d\n", deleteId);
+            
+            // Delete from AS608 hardware flash
+            uint8_t res = finger.deleteModel(deleteId);
+            if (res == FINGERPRINT_OK) {
+              Serial.printf("[Remote] Xóa vân tay ID %d THÀNH CÔNG!\n", deleteId);
+            } else {
+              Serial.printf("[Remote] Xóa vân tay ID %d THẤT BẠI! Lỗi: %d\n", deleteId, res);
+            }
+          }
+        }
+      }
     } else {
       Serial.print(F("FAILED: "));
       if (httpResponseCode > 0) {
