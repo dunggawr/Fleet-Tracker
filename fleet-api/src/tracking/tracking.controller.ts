@@ -69,17 +69,6 @@ export class TrackingController {
         .emit('trip:location', result);
     }
 
-    // Check if there is a pending remote enrollment request for this device
-    const pendingEnroll = this.trackingService.getPendingEnrollment(data.deviceId);
-    if (pendingEnroll) {
-      return {
-        status: 'ok',
-        timestamp: new Date().toISOString(),
-        action: 'enroll',
-        enrollId: pendingEnroll,
-      };
-    }
-
     // Check if there is a pending remote deletion request for this device
     const pendingDelete = this.trackingService.getPendingDeletion(data.deviceId);
     if (pendingDelete) {
@@ -88,6 +77,17 @@ export class TrackingController {
         timestamp: new Date().toISOString(),
         action: 'delete',
         deleteId: pendingDelete,
+      };
+    }
+
+    // Check if there is a pending remote enrollment request for this device
+    const pendingEnroll = this.trackingService.getPendingEnrollment(data.deviceId);
+    if (pendingEnroll) {
+      return {
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        action: 'enroll',
+        enrollId: pendingEnroll,
       };
     }
 
