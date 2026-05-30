@@ -702,11 +702,28 @@ export class TrackingService implements OnModuleDestroy {
 
   @OnEvent('fingerprint.cleared')
   async handleFingerprintCleared(payload: { driverId: string; fingerprintId: string }) {
-    // Find the vehicle associated with this driver to get their deviceId and load driver info
-    const vehicle = await this.vehicleRepository.findOne({
+    this.logger.log(`[Hardware Biometric] handleFingerprintCleared payload: ${JSON.stringify(payload)}`);
+
+    // 1. Check if driver currently has an active trip (ACCEPTED or IN_PROGRESS)
+    const activeTrip = await this.tripRepository.findOne({
+      where: [
+        { driverId: payload.driverId, status: TripStatus.ACCEPTED },
+        { driverId: payload.driverId, status: TripStatus.IN_PROGRESS },
+      ],
+      relations: ['vehicle', 'driver'],
+    });
+
+    // 2. Find vehicle: Use active trip's vehicle first, or fallback to permanently assigned vehicle
+    const vehicle = activeTrip?.vehicle || await this.vehicleRepository.findOne({
       where: { driverId: payload.driverId },
       relations: ['driver'],
     });
+
+    if (vehicle) {
+      this.logger.log(`[Hardware Biometric] Found vehicle ${vehicle.plateNumber} for driver ${payload.driverId}. DeviceId: ${vehicle.deviceId}`);
+    } else {
+      this.logger.warn(`[Hardware Biometric] No vehicle found for driver ${payload.driverId} to sync fingerprint deletion!`);
+    }
 
     if (vehicle && vehicle.deviceId) {
       const fingerprintIdNum = parseInt(payload.fingerprintId, 10);
@@ -716,8 +733,11 @@ export class TrackingService implements OnModuleDestroy {
           `[Hardware Biometric] Queued deletion for device ${vehicle.deviceId} (slot #${fingerprintIdNum})`,
         );
 
-        // Proactive Enroll: If driver is currently on a trip, auto-trigger a new enrollment immediately!
-        if (vehicle.driver && vehicle.driver.status === DriverStatus.ON_TRIP) {
+        // Robust check if driver is currently active on a trip
+        const isCurrentlyOnTrip = !!activeTrip || (vehicle.driver && vehicle.driver.status === DriverStatus.ON_TRIP);
+
+        // Proactive Enroll: If driver is currently active on a trip, auto-trigger a new enrollment immediately!
+        if (isCurrentlyOnTrip) {
           // Find all currently used fingerprint IDs
           const allDrivers = await this.driverRepository.find({
             select: ['fingerprintId'],
@@ -746,20 +766,23 @@ export class TrackingService implements OnModuleDestroy {
             }
           }
 
-          this.logger.log(
-            `[Hardware Biometric] Driver ${vehicle.driver.id} is ON_TRIP. Auto-triggering remote fingerprint enrollment slot #${autoId} on device ${vehicle.deviceId} after deletion`,
-          );
+          const driverEntity = activeTrip?.driver || vehicle.driver;
+          if (driverEntity) {
+            this.logger.log(
+              `[Hardware Biometric] Driver ${driverEntity.id} is active on trip. Auto-triggering remote fingerprint enrollment slot #${autoId} on device ${vehicle.deviceId} after deletion`,
+            );
 
-          // Register remote enrollment in memory
-          this.requestEnrollment(vehicle.deviceId, autoId);
+            // Register remote enrollment in memory
+            this.requestEnrollment(vehicle.deviceId, autoId);
 
-          // Emit WS event to guide Driver via Mobile App & Alert Admin
-          this.eventEmitter.emit('enroll.required', {
-            driverId: vehicle.driver.id,
-            deviceId: vehicle.deviceId,
-            fingerprintId: autoId,
-            message: 'Đăng ký lại vân tay! Vui lòng đặt ngón tay lên cảm biến trên xe để đăng ký vân tay mới cho chuyến đi hiện tại.',
-          });
+            // Emit WS event to guide Driver via Mobile App & Alert Admin
+            this.eventEmitter.emit('enroll.required', {
+              driverId: driverEntity.id,
+              deviceId: vehicle.deviceId,
+              fingerprintId: autoId,
+              message: 'Đăng ký lại vân tay! Vui lòng đặt ngón tay lên cảm biến trên xe để đăng ký vân tay mới cho chuyến đi hiện tại.',
+            });
+          }
         }
       }
     }
