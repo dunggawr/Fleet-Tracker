@@ -231,4 +231,14 @@ export class DriversService {
     driver.status = status;
     return this.driversRepository.save(driver);
   }
+
+  async clearFingerprint(id: string): Promise<Driver> {
+    const driver = await this.driversRepository.findOne({ where: { id } });
+    if (!driver) {
+      throw new NotFoundException(`Driver with ID ${id} not found`);
+    }
+
+    driver.fingerprintId = null;
+    return this.driversRepository.save(driver);
+  }
 }

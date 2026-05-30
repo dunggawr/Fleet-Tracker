@@ -7,11 +7,13 @@ import {
   Star, 
   Phone, 
   Calendar, 
-  CreditCard 
+  CreditCard,
+  Fingerprint
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Driver, DriverKpi } from '@/types';
+import { useDrivers } from '@/hooks/use-drivers';
 
 interface DriverHeaderProps {
   driver: Driver;
@@ -20,6 +22,7 @@ interface DriverHeaderProps {
 
 export function DriverHeader({ driver, kpi }: DriverHeaderProps) {
   const router = useRouter();
+  const { clearFingerprint, isClearingFingerprint } = useDrivers();
 
   return (
     <div className="flex flex-col gap-xl">
@@ -67,10 +70,30 @@ export function DriverHeader({ driver, kpi }: DriverHeaderProps) {
                 <Phone size={14} />
                 {driver.phone}
               </span>
+              {driver.fingerprintId && (
+                <span className="flex items-center gap-md text-primary-light">
+                  <Fingerprint size={14} />
+                  Fingerprint ID: #{driver.fingerprintId}
+                </span>
+              )}
             </div>
           </div>
         </div>
         <div className="flex gap-md">
+          {driver.fingerprintId && (
+            <Button
+              variant="secondary"
+              className="border-danger/30 text-danger hover:bg-danger/10 hover:border-danger/50"
+              isLoading={isClearingFingerprint}
+              onClick={async () => {
+                if (confirm(`Are you sure you want to delete fingerprint registration (Slot #${driver.fingerprintId}) for this driver?`)) {
+                  await clearFingerprint(driver.id);
+                }
+              }}
+            >
+              Clear Fingerprint
+            </Button>
+          )}
           <Button variant="secondary" icon={<Calendar size={18} />}>Schedule</Button>
           <Button variant="primary">Message Driver</Button>
         </div>

@@ -104,4 +104,11 @@ export class DriversController {
       updateStatusDto.status,
     );
   }
+
+  @Delete(':id/fingerprint')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Clear a driver\'s fingerprint registration (Admin only)' })
+  clearFingerprint(@Param('id') id: string) {
+    return this.driversService.clearFingerprint(id);
+  }
 }

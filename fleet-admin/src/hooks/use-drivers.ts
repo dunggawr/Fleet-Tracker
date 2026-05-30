@@ -51,6 +51,18 @@ export function useDrivers() {
     }
   });
 
+  const clearFingerprintMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/drivers/${id}/fingerprint`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['drivers'] });
+      queryClient.invalidateQueries({ queryKey: ['driver'] });
+      toast.success('Driver fingerprint registration cleared successfully');
+    },
+    onError: (err: any) => {
+      toast.error(err.message || 'Failed to clear fingerprint');
+    }
+  });
+
   return {
     drivers: driversQuery.data || [],
     isLoading: driversQuery.isLoading,
@@ -58,9 +70,11 @@ export function useDrivers() {
     registerDriver: registerDriverMutation.mutateAsync,
     updateDriver: updateDriverMutation.mutateAsync,
     deleteDriver: deleteDriverMutation.mutateAsync,
+    clearFingerprint: clearFingerprintMutation.mutateAsync,
     isRegistering: registerDriverMutation.isPending,
     isUpdating: updateDriverMutation.isPending,
     isDeleting: deleteDriverMutation.isPending,
+    isClearingFingerprint: clearFingerprintMutation.isPending,
   };
 }
 

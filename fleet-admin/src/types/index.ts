@@ -29,6 +29,7 @@ export interface Driver {
   licenseExpiry: string;
   status: DriverStatus;
   avatarUrl?: string;
+  fingerprintId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
