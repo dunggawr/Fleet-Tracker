@@ -98,6 +98,44 @@ export const RecentActivityCard: React.FC<RecentActivityCardProps> = ({
 
     // 3. Map recent trips
     trips.forEach(trip => {
+      // 3.1 Trip Dispatched (Pending)
+      if (trip.createdAt && trip.status === 'pending') {
+        items.push({
+          id: `trip-created-${trip.id}`,
+          type: 'trip',
+          title: 'Trip Dispatched',
+          description: `New trip assigned to ${trip.driver?.fullName || 'Driver'} on vehicle ${trip.vehicle?.plateNumber || ''}`,
+          timestamp: new Date(trip.createdAt),
+          status: 'pending',
+          meta: { tripId: trip.id }
+        });
+      }
+
+      // 3.2 Status Transitions
+      if (trip.updatedAt) {
+        if (trip.status === 'accepted') {
+          items.push({
+            id: `trip-accepted-${trip.id}`,
+            type: 'trip',
+            title: 'Trip Accepted',
+            description: `Driver ${trip.driver?.fullName || 'Driver'} accepted the assigned trip.`,
+            timestamp: new Date(trip.updatedAt),
+            status: 'accepted',
+            meta: { tripId: trip.id }
+          });
+        } else if (trip.status === 'cancelled') {
+          items.push({
+            id: `trip-cancelled-${trip.id}`,
+            type: 'trip',
+            title: 'Trip Cancelled',
+            description: `Trip for vehicle ${trip.vehicle?.plateNumber || ''} has been cancelled.`,
+            timestamp: new Date(trip.updatedAt),
+            status: 'cancelled',
+            meta: { tripId: trip.id }
+          });
+        }
+      }
+
       if (trip.startedAt) {
         items.push({
           id: `trip-start-${trip.id}`,
