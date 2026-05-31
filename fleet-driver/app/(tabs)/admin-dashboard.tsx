@@ -415,7 +415,7 @@ export default function AdminDashboardScreen() {
                 onPress={() => setActiveTab(tab)}
                 className={`flex-1 py-2 px-1 rounded-xl items-center border ${
                   activeTab === tab 
-                    ? 'bg-indigo-600 border-indigo-500 shadow-sm' 
+                    ? 'bg-indigo-600 border-indigo-500' 
                     : 'bg-slate-800 border-slate-700'
                 }`}
               >
