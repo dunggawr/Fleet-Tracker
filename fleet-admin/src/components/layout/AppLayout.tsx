@@ -6,6 +6,8 @@ import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
+import { connectSocket } from '@/lib/socket';
+import { toast } from 'sonner';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -22,6 +24,116 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       router.push('/login');
     }
   }, [isLoading, isAuthenticated, isLoginPage, router]);
+
+  // Global Realtime Operational Toasts for Admin
+  useEffect(() => {
+    if (!isAuthenticated || isLoginPage) return;
+
+    let socket: any;
+
+    const setupSocket = async () => {
+      try {
+        socket = await connectSocket();
+
+        // 1. Operational & SOS Alerts
+        socket.on('alert:new', (payload: any) => {
+          const severity = payload.severity?.toUpperCase() || 'HIGH';
+          const isSOS = payload.type === 'SOS' || severity === 'CRITICAL';
+          
+          toast[isSOS ? 'error' : 'warning'](
+            isSOS ? '🚨 SOS EMERGENCY' : '⚠️ OPERATIONAL ALERT',
+            {
+              description: `${payload.message} (${payload.vehicle?.plateNumber || 'Unknown vehicle'})`,
+              duration: isSOS ? 15000 : 7000,
+              action: {
+                label: 'Track Now',
+                onClick: () => {
+                  if (payload.vehicleId) router.push(`/dispatch?vehicleId=${payload.vehicleId}`);
+                  else router.push('/tracking');
+                }
+              }
+            }
+          );
+        });
+
+        // 2. Alert Resolution
+        socket.on('alert:resolved', (payload: any) => {
+          toast.success('✅ Alert Resolved', {
+            description: payload.message || 'Alert has been cleared from dashboard.',
+            duration: 4000
+          });
+        });
+
+        // 3. Trip updates
+        socket.on('trip:status-changed', (payload: any) => {
+          const statusText = payload.status === 'in_progress' ? 'started' : payload.status;
+          toast.info(`🚚 Trip Update`, {
+            description: `Trip is now ${statusText}.`,
+            duration: 5000,
+            action: {
+              label: 'Track',
+              onClick: () => router.push('/tracking')
+            }
+          });
+        });
+
+        // 4. Order Milestone/Verification
+        socket.on('order:verified', (payload: any) => {
+          toast.success('✨ Milestone Verified', {
+            description: `ORD-${payload.orderId.substring(0, 4)} verification success!`,
+            duration: 5000
+          });
+        });
+
+        // 5. Trip Assignment
+        socket.on('trip:assigned', (payload: any) => {
+          toast.success('📋 Trip Dispatched', {
+            description: `New trip assigned to driver ${payload.driverId}.`,
+            duration: 5000
+          });
+        });
+
+        // 6. Biometrics
+        socket.on('enroll:required', (payload: any) => {
+          toast.message('🧬 Biometric Enrollment Required', {
+            description: `Fingerprint registration required on device ${payload.deviceId}`,
+            duration: 6000
+          });
+        });
+
+        socket.on('enroll:result', (payload: any) => {
+          if (payload.success) {
+            toast.success('🧬 Fingerprint Enrolled', {
+              description: `Biometric registered successfully on device ${payload.deviceId}`,
+              duration: 6000
+            });
+          } else {
+            toast.error('❌ Enrollment Failed', {
+              description: `Biometric registration failed on vehicle ${payload.deviceId}`,
+              duration: 7000
+            });
+          }
+        });
+
+      } catch (err) {
+        console.error('Failed to set up global realtime socket toasts:', err);
+      }
+    };
+
+    setupSocket();
+
+    return () => {
+      if (socket) {
+        socket.off('alert:new');
+        socket.off('alert:resolved');
+        socket.off('trip:status-changed');
+        socket.off('order:verified');
+        socket.off('trip:assigned');
+        socket.off('enroll:required');
+        socket.off('enroll:result');
+      }
+    };
+  }, [isAuthenticated, isLoginPage, router]);
 
   useEffect(() => {
     if (isSidebarCollapsed) {
