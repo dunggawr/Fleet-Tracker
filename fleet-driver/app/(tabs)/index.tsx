@@ -47,6 +47,8 @@ export default function TripsScreen() {
       visibilityTime: 4000
     });
 
+    let checkCount = 0;
+
     fingerprintIntervalRef.current = setInterval(async () => {
       try {
         const response = await authFetch('/auth/me');
@@ -62,6 +64,7 @@ export default function TripsScreen() {
               fingerprintIntervalRef.current = null;
             }
             
+            Toast.hide();
             Toast.show({
               type: 'success',
               text1: 'Đăng ký thành công 🎉',
@@ -69,12 +72,17 @@ export default function TripsScreen() {
               visibilityTime: 5000
             });
           } else {
-            Toast.show({
-              type: 'info',
-              text1: 'Nhắc nhở đăng ký vân tay 👤',
-              text2: 'Vui lòng đặt ngón tay lên cảm biến AS608 trên xe (mỗi 5s).',
-              visibilityTime: 3000
-            });
+            checkCount++;
+            // Only show UI Toast warning every 3 cycles (15 seconds) to prevent layout lag & overlaps
+            if (checkCount % 3 === 0) {
+              Toast.hide();
+              Toast.show({
+                type: 'info',
+                text1: 'Nhắc nhở đăng ký vân tay 👤',
+                text2: 'Vui lòng đặt ngón tay lên cảm biến AS608 trên xe.',
+                visibilityTime: 3000
+              });
+            }
           }
         }
       } catch (error) {
