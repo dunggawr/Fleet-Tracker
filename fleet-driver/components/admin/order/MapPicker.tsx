@@ -244,9 +244,9 @@ export const MapPicker: React.FC<MapPickerProps> = ({
           {showSuggestions && suggestions.length > 0 && (
             <View className="absolute top-[148px] left-5 right-5 bg-slate-800 rounded-xl border border-white/15 max-h-[200px] shadow-2xl z-50">
               <ScrollView keyboardShouldPersistTaps="handled" className="rounded-xl">
-                {suggestions.map((item) => (
+                {suggestions.map((item, index) => (
                   <TouchableOpacity
-                    key={item.id}
+                    key={`${item.id || 'suggestion'}-${index}`}
                     className="flex-row p-3 border-b border-white/5 items-center"
                     onPress={() => handleSuggestionSelect(item)}
                   >
