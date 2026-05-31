@@ -130,16 +130,7 @@ export const DriverForm: React.FC<DriverFormProps> = ({ initialData, onSubmit, l
             />
           </View>
 
-          <View className="flex-row items-center bg-slate-800 rounded-2xl border border-white/[0.08] px-4 mb-3 h-14">
-            <Link size={20} color="#64748b" style={{ marginRight: 12 }} />
-            <TextInput
-              className="flex-1 text-slate-50 text-base"
-              placeholder="Avatar Image URL"
-              placeholderTextColor="#64748b"
-              value={formData.avatarUrl}
-              onChangeText={(text) => setFormData({ ...formData, avatarUrl: text })}
-            />
-          </View>
+
         </View>
 
         <View className="mb-6">

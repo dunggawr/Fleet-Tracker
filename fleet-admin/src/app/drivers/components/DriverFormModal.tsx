@@ -111,12 +111,7 @@ export function DriverFormModal({
             {...register('phone')}
             error={errors.phone?.message}
           />
-          <Input 
-            label="Avatar Image URL" 
-            placeholder="https://images.unsplash.com/..." 
-            {...register('avatarUrl')}
-            error={errors.avatarUrl?.message}
-          />
+
           <Select 
             label="License Class" 
             options={[
