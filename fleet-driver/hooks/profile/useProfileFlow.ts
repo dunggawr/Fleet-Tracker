@@ -39,6 +39,7 @@ export const useProfileFlow = () => {
             fullName: userData.fullName,
             email: userData.email,
             role: userData.role,
+            avatarUrl: userData.avatarUrl,
             driver: userData.driver,
           });
         }
@@ -209,8 +210,11 @@ export const useProfileFlow = () => {
   }, [logout, router]);
 
   const handleUpdateAvatar = useCallback(async () => {
+    console.log('[useProfileFlow] handleUpdateAvatar triggered!');
     // 1. Request permissions
+    console.log('[useProfileFlow] Requesting media library permissions...');
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    console.log('[useProfileFlow] Permission status:', status);
     if (status !== 'granted') {
       Toast.show({
         type: 'error',
