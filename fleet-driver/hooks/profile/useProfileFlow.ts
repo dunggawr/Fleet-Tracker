@@ -52,7 +52,7 @@ export const useProfileFlow = () => {
     const fetchKpi = async () => {
       if (!user?.driver?.id) return;
       try {
-        const response = await authFetch(`/drivers/${user.driver.id}/kpi`);
+        const response = await authFetch(`/reports/driver-kpi/${user.driver.id}`);
         if (response.ok) {
           const data = await response.json();
           setKpi(data?.data ?? data);
