@@ -104,6 +104,43 @@ export default function AdminDashboardScreen() {
     // 3. Trips
     if (Array.isArray(trips)) {
       trips.forEach((trip: any) => {
+        // Dispatched / Pending state
+        const createdDate = safeDate(trip.createdAt);
+        if (createdDate && trip.status === 'pending') {
+          items.push({
+            id: `trip-created-${trip.id}`,
+            type: 'trip',
+            title: 'Trip Dispatched',
+            description: `New trip assigned to ${trip.driver?.fullName || 'Driver'} on vehicle ${trip.vehicle?.plateNumber || ''}`,
+            timestamp: createdDate,
+            status: 'pending',
+          });
+        }
+
+        // Status transitions
+        const updatedDate = safeDate(trip.updatedAt);
+        if (updatedDate) {
+          if (trip.status === 'accepted') {
+            items.push({
+              id: `trip-accepted-${trip.id}`,
+              type: 'trip',
+              title: 'Trip Accepted',
+              description: `Driver ${trip.driver?.fullName || 'Driver'} accepted the assigned trip.`,
+              timestamp: updatedDate,
+              status: 'accepted',
+            });
+          } else if (trip.status === 'cancelled') {
+            items.push({
+              id: `trip-cancelled-${trip.id}`,
+              type: 'trip',
+              title: 'Trip Cancelled',
+              description: `Trip for vehicle ${trip.vehicle?.plateNumber || ''} has been cancelled.`,
+              timestamp: updatedDate,
+              status: 'cancelled',
+            });
+          }
+        }
+
         if (trip.startedAt) {
           const startDate = safeDate(trip.startedAt);
           if (startDate) {
