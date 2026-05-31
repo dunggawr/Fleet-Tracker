@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useTripStore } from '../../store/useTripStore';
 import { authFetch } from '../../lib/authFetch';
@@ -19,6 +20,7 @@ export const useProfileFlow = () => {
   const [isChanging, setIsChanging] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   const [kpi, setKpi] = useState<any>(null);
 
@@ -206,6 +208,106 @@ export const useProfileFlow = () => {
     );
   }, [logout, router]);
 
+  const handleUpdateAvatar = useCallback(async () => {
+    // 1. Request permissions
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Toast.show({
+        type: 'error',
+        text1: 'Quyền truy cập bị từ chối',
+        text2: 'Chúng tôi cần quyền truy cập thư viện ảnh để cập nhật ảnh đại diện của bạn',
+      });
+      return;
+    }
+
+    // 2. Launch Image Picker
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return;
+      }
+
+      const selectedUri = result.assets[0].uri;
+      setIsUploadingAvatar(true);
+
+      // 3. Prepare FormData
+      const formData = new FormData();
+      const filename = selectedUri.split('/').pop() || 'avatar.jpg';
+      const match = /\.(\w+)$/.exec(filename);
+      const ext = match ? match[1] : 'jpg';
+      const type = `image/${ext === 'png' ? 'png' : 'jpeg'}`;
+
+      // Create a blob-compatible or standard RN file upload payload
+      formData.append('file', {
+        uri: selectedUri,
+        name: filename,
+        type,
+      } as any);
+
+      // 4. Upload to API
+      console.log('[useProfileFlow] Uploading avatar to API...');
+      const uploadResponse = await authFetch('/upload?folder=avatars', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json().catch(() => ({}));
+        throw new Error(errorData.message || errorData.error?.message || 'Không thể tải ảnh lên máy chủ');
+      }
+
+      const uploadResult = await uploadResponse.json();
+      const uploadedUrl = uploadResult?.url;
+
+      if (!uploadedUrl) {
+        throw new Error('Không nhận được URL ảnh đại diện từ máy chủ');
+      }
+
+      console.log('[useProfileFlow] Avatar uploaded successfully:', uploadedUrl);
+
+      // 5. Update user profile
+      const updateResponse = await authFetch('/users/profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          avatarUrl: uploadedUrl,
+        }),
+      });
+
+      if (!updateResponse.ok) {
+        const errorData = await updateResponse.json().catch(() => ({}));
+        throw new Error(errorData.message || errorData.error?.message || 'Không thể cập nhật ảnh đại diện vào hồ sơ');
+      }
+
+      // 6. Update Local State
+      updateUser({ avatarUrl: uploadedUrl });
+
+      Toast.show({
+        type: 'success',
+        text1: 'Thành công',
+        text2: 'Ảnh đại diện của bạn đã được cập nhật',
+      });
+
+    } catch (error: any) {
+      console.error('[useProfileFlow] Update avatar failed:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Lỗi',
+        text2: formatError(error, 'Cập nhật ảnh đại diện thất bại'),
+      });
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  }, [updateUser]);
+
   const completedTrips = Array.isArray(tripHistory) ? tripHistory.filter(t => t && t.status === 'completed') : [];
   const totalDistance = Array.isArray(tripHistory) 
     ? tripHistory.reduce((acc, trip) => acc + (Number(trip.totalDistanceKm) || 0), 0) 
@@ -243,6 +345,7 @@ export const useProfileFlow = () => {
     isOnline,
     isUpdatingStatus,
     isChanging,
+    isUploadingAvatar,
     showPasswordModal,
     passwords: {
       old: oldPassword,
@@ -262,5 +365,6 @@ export const useProfileFlow = () => {
     toggleStatus,
     handleChangePassword,
     handleLogout,
+    handleUpdateAvatar,
   };
 };

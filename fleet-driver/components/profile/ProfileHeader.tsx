@@ -1,14 +1,20 @@
 import React from 'react';
-import { View, Text, Image } from 'react-native';
-import { User, Check, Award } from 'lucide-react-native';
+import { View, Text, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { User, Check, Award, Camera } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 
 interface ProfileHeaderProps {
   user: any;
+  onUpdateAvatar?: () => Promise<void>;
+  isUploading?: boolean;
 }
 
-export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ user }) => {
+export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ 
+  user, 
+  onUpdateAvatar, 
+  isUploading = false 
+}) => {
   return (
     <View className="pt-16 pb-12 overflow-hidden">
       <View className="items-center px-6">
@@ -18,7 +24,13 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ user }) => {
             className="absolute inset-0 rounded-full opacity-20"
             style={{ transform: [{ scale: 1.2 }] }}
           />
-          <View className="w-full h-full rounded-full p-1 bg-slate-900 border border-white/10 overflow-hidden shadow-2xl">
+          
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={onUpdateAvatar}
+            disabled={isUploading || !onUpdateAvatar}
+            className="w-full h-full rounded-full p-1 bg-slate-900 border border-white/10 overflow-hidden shadow-2xl relative"
+          >
             {user?.avatarUrl ? (
               <Image 
                 source={{ uri: user.avatarUrl }} 
@@ -29,7 +41,22 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ user }) => {
                 <User size={56} color="#6366f1" />
               </View>
             )}
-          </View>
+
+            {/* Camera Glassmorphic Semi-transparent Overlay at the bottom */}
+            {onUpdateAvatar && (
+              <View className="absolute bottom-0 left-0 right-0 h-8 bg-slate-950/60 justify-center items-center border-t border-white/5">
+                <Camera size={14} color="#a855f7" />
+              </View>
+            )}
+
+            {/* Uploading loading overlay */}
+            {isUploading && (
+              <View className="absolute inset-0 bg-slate-950/70 justify-center items-center rounded-full">
+                <ActivityIndicator size="small" color="#6366f1" />
+              </View>
+            )}
+          </TouchableOpacity>
+
           <View className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-emerald-500 border-4 border-slate-950 items-center justify-center">
             <Check size={14} color="white" strokeWidth={3} />
           </View>

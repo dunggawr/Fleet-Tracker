@@ -9,6 +9,7 @@ interface User {
   email: string;
   fullName: string;
   role: string;
+  avatarUrl?: string;
   driver?: {
     id: string;
     status: string;
