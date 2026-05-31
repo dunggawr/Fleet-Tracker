@@ -6,9 +6,10 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from '../entities/user.entity';
+import { Vehicle } from '../entities/vehicle.entity';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
@@ -19,6 +20,7 @@ export class AuthService {
     private userRepository: Repository<User>,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private dataSource: DataSource,
   ) {}
 
   async register(registerDto: RegisterDto): Promise<User> {
@@ -172,10 +174,20 @@ export class AuthService {
   }
 
   async validateUser(payload: any): Promise<User | null> {
-    return await this.userRepository.findOne({
+    const user = await this.userRepository.findOne({
       where: { id: payload.sub, isActive: true },
       relations: ['driver'],
     });
+
+    if (user && user.driver) {
+      // Fetch permanently assigned vehicle for driver
+      const vehicle = await this.dataSource.getRepository(Vehicle).findOne({
+        where: { driverId: user.driver.id },
+      });
+      (user.driver as any).vehicle = vehicle;
+    }
+
+    return user;
   }
 
   async changePassword(

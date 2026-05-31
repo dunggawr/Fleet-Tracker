@@ -40,14 +40,17 @@ export const AccountInfo: React.FC<AccountInfoProps> = ({ user, activeTrip }) =>
             value={user?.driver?.licenseClass ? `${user.driver.licenseClass} • ${user.driver.id.substring(0, 8).toUpperCase()}` : (user?.role === 'admin' ? 'System Administrator' : 'N/A')}
             icon={CreditCard}
             color="#fbbf24"
+            showDivider={user?.role !== 'admin'}
           />
-          <ProfileInfoItem 
-            label="Active Assignment"
-            value={activeTrip ? `Vehicle ${activeTrip.vehicle?.plateNumber || activeTrip.vehicleId.substring(0, 8).toUpperCase()}` : 'No active vehicle'}
-            icon={Truck}
-            color="#6366f1"
-            showDivider={false}
-          />
+          {user?.role !== 'admin' && (
+            <ProfileInfoItem 
+              label="Active Assignment"
+              value={activeTrip ? `Vehicle ${activeTrip.vehicle?.plateNumber || activeTrip.vehicleId.substring(0, 8).toUpperCase()} (On Trip)` : (user?.driver?.vehicle ? `Vehicle ${user.driver.vehicle.plateNumber}` : 'No active vehicle')}
+              icon={Truck}
+              color="#6366f1"
+              showDivider={false}
+            />
+          )}
         </View>
       </BlurView>
     </View>
