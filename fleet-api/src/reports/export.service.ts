@@ -52,29 +52,68 @@ export class ExportService {
 
   async exportPdf(data: any, reportTitle: string): Promise<Buffer> {
     return new Promise((resolve, reject) => {
-      const doc = new PDFDocument();
+      const doc = new PDFDocument({ margin: 50 });
       const chunks: any[] = [];
 
       doc.on('data', (chunk) => chunks.push(chunk));
       doc.on('end', () => resolve(Buffer.concat(chunks)));
       doc.on('error', (err) => reject(err));
 
-      // Header
-      doc.fontSize(25).text(reportTitle, { align: 'center' });
-      doc.moveDown();
+      // Document Title/Header
+      doc.font('Helvetica-Bold').fontSize(22).fillColor('#0f172a').text(reportTitle.toUpperCase().replace(/-/g, ' '), { align: 'center', underline: true });
+      doc.moveDown(1.5);
 
-      // Content
+      // Helper function to format keys
+      const formatKey = (key: string) => key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase()).trim();
+
+      // Content rendering
       if (Array.isArray(data)) {
         data.forEach((item, index) => {
-          doc.fontSize(12).text(`Item ${index + 1}:`);
+          doc.font('Helvetica-Bold').fontSize(12).fillColor('#4f46e5').text(`RECORD ${index + 1}`, { underline: true });
+          doc.moveDown(0.2);
+          doc.font('Helvetica').fillColor('#334155');
+
           Object.entries(item).forEach(([key, value]) => {
-            doc.fontSize(10).text(`${key}: ${value}`);
+            if (typeof value === 'object' && value !== null) {
+              doc.fontSize(9).text(`  ${formatKey(key)}: ${JSON.stringify(value).substring(0, 120)}...`);
+            } else {
+              doc.fontSize(9).text(`  ${formatKey(key)}: ${value}`);
+            }
           });
           doc.moveDown();
         });
       } else {
+        doc.font('Helvetica');
         Object.entries(data).forEach(([key, value]) => {
-          doc.fontSize(12).text(`${key}: ${value}`);
+          if (Array.isArray(value)) {
+            // Render sub-list of entries (e.g. trends or rankings)
+            doc.font('Helvetica-Bold').fontSize(12).fillColor('#4f46e5').text(`${formatKey(key)}:`);
+            doc.moveDown(0.3);
+            doc.font('Helvetica').fillColor('#334155');
+
+            value.slice(0, 15).forEach((item, idx) => {
+              const formattedItem = Object.entries(item)
+                .map(([k, v]) => `${formatKey(k)}: ${typeof v === 'number' && v > 1000 ? v.toLocaleString() : v}`)
+                .join(' | ');
+              doc.fontSize(9).text(`  • ${formattedItem}`);
+            });
+            doc.moveDown();
+          } else if (typeof value === 'object' && value !== null) {
+            // Render sub-object
+            doc.font('Helvetica-Bold').fontSize(12).fillColor('#4f46e5').text(`${formatKey(key)}:`);
+            doc.moveDown(0.3);
+            doc.font('Helvetica').fillColor('#334155');
+
+            Object.entries(value).forEach(([k, v]) => {
+              doc.fontSize(9).text(`  ${formatKey(k)}: ${v}`);
+            });
+            doc.moveDown();
+          } else {
+            // Render standard metric
+            const formattedVal = typeof value === 'number' && value > 1000 ? value.toLocaleString() : value;
+            doc.font('Helvetica').fontSize(11).fillColor('#1e293b').text(`${formatKey(key)}: ${formattedVal}`);
+            doc.moveDown(0.4);
+          }
         });
       }
 
