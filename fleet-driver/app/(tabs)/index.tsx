@@ -14,6 +14,7 @@ import { useTripStore } from '../../store/useTripStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { ConnectionStatus } from '../../components/ui/ConnectionStatus';
 import Toast from 'react-native-toast-message';
+import { authFetch } from '../../lib/authFetch';
 
 import { TripCard } from '../../components/trip/TripCard';
 import { EmptyTrips } from '../../components/trip/EmptyTrips';
@@ -32,13 +33,75 @@ export default function TripsScreen() {
 
   const [refreshing, setRefreshing] = useState(false);
 
+  const fingerprintIntervalRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const startFingerprintCheck = () => {
+    if (fingerprintIntervalRef.current) {
+      clearInterval(fingerprintIntervalRef.current);
+    }
+
+    Toast.show({
+      type: 'info',
+      text1: 'Yêu cầu đăng ký vân tay 👤',
+      text2: 'Vui lòng đặt ngón tay lên cảm biến AS608 trên xe để hoàn tất đăng ký.',
+      visibilityTime: 4000
+    });
+
+    fingerprintIntervalRef.current = setInterval(async () => {
+      try {
+        const response = await authFetch('/auth/me');
+        if (response.ok) {
+          const data = await response.json();
+          const userData = data?.data ?? data;
+          
+          if (userData?.driver?.fingerprintId) {
+            useAuthStore.getState().updateUser({ driver: userData.driver });
+            
+            if (fingerprintIntervalRef.current) {
+              clearInterval(fingerprintIntervalRef.current);
+              fingerprintIntervalRef.current = null;
+            }
+            
+            Toast.show({
+              type: 'success',
+              text1: 'Đăng ký thành công 🎉',
+              text2: 'Vân tay của bạn đã được ghi nhận vào hệ thống.',
+              visibilityTime: 5000
+            });
+          } else {
+            Toast.show({
+              type: 'info',
+              text1: 'Nhắc nhở đăng ký vân tay 👤',
+              text2: 'Vui lòng đặt ngón tay lên cảm biến AS608 trên xe (mỗi 5s).',
+              visibilityTime: 3000
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error checking fingerprint status:', error);
+      }
+    }, 5000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (fingerprintIntervalRef.current) {
+        clearInterval(fingerprintIntervalRef.current);
+      }
+    };
+  }, []);
+
   useEffect(() => {
     if (user?.role?.toUpperCase() === 'ADMIN') {
       router.replace('/(tabs)/admin-dashboard');
       return;
     }
     fetchTrips();
-  }, [user]);
+
+    if (activeTrip && !user?.driver?.fingerprintId && !fingerprintIntervalRef.current) {
+      startFingerprintCheck();
+    }
+  }, [user, activeTrip]);
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
@@ -64,7 +127,13 @@ export default function TripsScreen() {
                   'Đăng ký vân tay lần đầu 👤',
                   'Tài xế mới! Hệ thống phát hiện bạn chưa đăng ký vân tay. Vui lòng đặt ngón tay lên cảm biến AS608 trên xe để hoàn tất đăng ký vân tay trước khi tiến hành lấy hàng.',
                   [
-                    { text: 'Đã hiểu', onPress: () => router.push('/(tabs)/map') }
+                    { 
+                      text: 'Đã hiểu', 
+                      onPress: () => {
+                        startFingerprintCheck();
+                        router.push('/(tabs)/map');
+                      } 
+                    }
                   ]
                 );
               } else {
