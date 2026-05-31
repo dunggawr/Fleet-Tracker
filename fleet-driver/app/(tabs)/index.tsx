@@ -120,11 +120,22 @@ export default function TripsScreen() {
 
   const renderTripCard = React.useCallback(({ item, section }: { item: any, section: any }) => {
     const isActive = section.title === 'Active Trip';
+    const isHistory = section.title === 'Trip History';
+    const isPending = section.title === 'Pending Trips';
+
+    const handlePress = () => {
+      if (isActive) {
+        router.push('/(tabs)/map');
+      } else if (isHistory || isPending) {
+        router.push(`/trip/${item.id}`);
+      }
+    };
+
     return (
       <TripCard 
         item={item} 
         section={section} 
-        onPress={() => isActive && router.push('/(tabs)/map')}
+        onPress={handlePress}
         onAccept={handleAcceptTrip}
         onReject={handleRejectTrip}
         isLoading={isLoading}
