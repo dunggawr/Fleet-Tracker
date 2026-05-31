@@ -23,7 +23,7 @@ export function ExportButton({ reportName, params = {}, color = '#6366f1' }: Exp
     try {
       const queryString = new URLSearchParams({
         report_name: reportName,
-        type,
+        type: type.toLowerCase(),
         ...params,
       }).toString();
 

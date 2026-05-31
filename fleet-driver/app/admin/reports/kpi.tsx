@@ -35,7 +35,7 @@ export default function KPIRankingScreen() {
             <Text className="text-slate-400 text-xs">KPI Performance Score</Text>
           </View>
         </View>
-        <ExportButton reportName="driver-kpis" color="#10b981" />
+        <ExportButton reportName="kpi-leaderboard" color="#10b981" />
       </View>
 
       <ScrollView className="flex-1 px-6 mt-4" showsVerticalScrollIndicator={false}>
