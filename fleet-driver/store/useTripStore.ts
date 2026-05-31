@@ -60,6 +60,7 @@ interface TripState {
   updateOrderStatus: (id: string, status: OrderStatus, options?: { photoUrl?: string, signatureUrl?: string, actionLat?: number, actionLng?: number }) => Promise<void>;
   submitOrderVerification: (orderId: string, data: { step: string; fingerprintStatus: boolean; facePhotoUrl?: string; cargoPhotoUrl?: string; latitude?: number; longitude?: number }) => Promise<void>;
   updateCargoPhoto: (orderId: string, step: string, cargoPhotoUrl: string) => Promise<void>;
+  fetchTripDetails: (id: string) => Promise<{ trip: Trip; verifications: any[] }>;
 }
 
 export const useTripStore = create<TripState>()(
@@ -217,6 +218,41 @@ export const useTripStore = create<TripState>()(
           await get().fetchTrips();
         } catch (error: any) {
           const message = formatError(error, 'Failed to update cargo photo');
+          set({ error: message, isLoading: false });
+          throw new Error(message);
+        }
+      },
+      fetchTripDetails: async (id: string) => {
+        set({ isLoading: true, error: null });
+        try {
+          const tripRes = await authFetch(`/trips/${id}`);
+          if (!tripRes.ok) {
+            const errorMsg = await getFetchErrorMessage(tripRes, 'Failed to fetch trip details');
+            throw new Error(errorMsg);
+          }
+          const tripResult = await tripRes.json();
+          const rawTrip = tripResult?.data ?? tripResult;
+          const transformedTrip = transformTripData(rawTrip);
+
+          if (!transformedTrip) {
+            throw new Error('Trip data could not be parsed');
+          }
+
+          let verifications: any[] = [];
+          try {
+            const verRes = await authFetch(`/trips/${id}/verifications`);
+            if (verRes.ok) {
+              const verResult = await verRes.json();
+              verifications = verResult?.data ?? verResult;
+            }
+          } catch (verErr) {
+            console.warn('Failed to fetch trip verifications:', verErr);
+          }
+
+          set({ isLoading: false });
+          return { trip: transformedTrip, verifications };
+        } catch (error: any) {
+          const message = formatError(error, 'Failed to fetch trip details');
           set({ error: message, isLoading: false });
           throw new Error(message);
         }
