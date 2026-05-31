@@ -20,9 +20,20 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
     maximumFractionDigits: 0,
   });
 
-  const todayRevenue = orders.reduce((sum, order) => {
-    const isToday = new Date(order.createdAt).toDateString() === new Date().toDateString();
-    return isToday && order.status === 'delivered' ? sum + 1250000 : sum;
+  const todayOrders = orders.filter(order => {
+    const orderDate = new Date(order.createdAt).toDateString();
+    const todayDate = new Date().toDateString();
+    return orderDate === todayDate;
+  });
+
+  // Fallback to all orders if no orders created today (supports seeded db)
+  const targetOrders = todayOrders.length > 0 ? todayOrders : orders;
+
+  const todayRevenue = targetOrders.reduce((sum, order) => {
+    if (order.status !== 'delivered') return sum;
+    // Dynamic calculation: 850 VND per kg + 200,000 VND base fare per order
+    const orderRevenue = Math.round(Number(order.weightKg) * 850) + 200000;
+    return sum + orderRevenue;
   }, 0);
 
   const stats = [
@@ -36,7 +47,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
     },
     { 
       label: 'Active Drivers', 
-      value: drivers.filter(d => d.status === 'available').length, 
+      value: drivers.filter(d => d.status !== 'off_duty').length, 
       icon: Users, 
       trend: { value: 5, isUp: true }, 
       color: '#0ea5e9',

@@ -54,7 +54,12 @@ export const RecentOrdersCard: React.FC<RecentOrdersCardProps> = ({ orders }) =>
                 {mounted ? `${formatDistanceToNow(new Date(order.createdAt))} ago` : '...'}
               </span>
             </div>
-            <Badge variant={order.status === 'delivering' ? 'primary' : order.status === 'assigned' ? 'success' : 'warning'}>
+            <Badge variant={
+              order.status === 'delivered' ? 'success' :
+              order.status === 'pending' ? 'warning' :
+              order.status === 'failed' || order.status === 'cancelled' ? 'danger' :
+              'primary'
+            }>
               {order.status}
             </Badge>
           </div>
