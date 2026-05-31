@@ -53,7 +53,7 @@ export default function RootLayout() {
 import { useAuthStore } from '../store/useAuthStore';
 import { useTripStore, TripStatus } from '../store/useTripStore';
 import { useRouter, useSegments } from 'expo-router';
-import { startBackgroundLocation, stopBackgroundLocation } from '../lib/backgroundTasks';
+
 import { NetworkBanner } from '../components/ui/NetworkBanner';
 import { socketService } from '../lib/socket';
 
@@ -179,13 +179,7 @@ function RootLayoutNav() {
     }
   }, [isAuthenticated, segments[0]]); // Only depend on isAuthenticated and the first segment
 
-  useEffect(() => {
-    if (activeTrip && activeTrip.status === TripStatus.IN_PROGRESS) {
-      startBackgroundLocation();
-    } else {
-      stopBackgroundLocation();
-    }
-  }, [activeTrip?.id, activeTrip?.status]);
+
 
   return (
     <SafeAreaProvider style={{ flex: 1 }}>
