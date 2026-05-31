@@ -25,6 +25,7 @@ export default function ProfileScreen() {
     isOnline,
     isUpdatingStatus,
     isChanging,
+    isUploadingAvatar,
     showPasswordModal,
     passwords,
     stats,
@@ -33,6 +34,7 @@ export default function ProfileScreen() {
     toggleStatus,
     handleChangePassword,
     handleLogout,
+    handleUpdateAvatar,
   } = useProfileFlow();
 
   return (
@@ -48,7 +50,11 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
       >
-        <ProfileHeader user={user} />
+        <ProfileHeader 
+          user={user} 
+          onUpdateAvatar={handleUpdateAvatar}
+          isUploading={isUploadingAvatar}
+        />
 
         {user?.role !== 'admin' && (
           <ProfileStats kpi={kpi} />
