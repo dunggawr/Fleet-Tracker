@@ -1,6 +1,7 @@
-import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Linking, Platform } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Linking, Platform, RefreshControl, Image } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
-import { MapPin, Calendar, Clock, ChevronLeft, Package, Truck, CheckCircle2, AlertTriangle, Navigation, Camera, Fuel, Route } from 'lucide-react-native';
+import { MapPin, Calendar, Clock, ChevronLeft, Package, Truck, CheckCircle2, AlertTriangle, Navigation, Camera, Fuel, Route, Fingerprint, FileText, UserCheck, Check } from 'lucide-react-native';
 import { useTripStore, TripStatus } from '../../store/useTripStore';
 import Toast from 'react-native-toast-message';
 import { SosButton } from '../../components/ui/SosButton';
@@ -14,51 +15,69 @@ import { TripSummaryCard } from '../../components/trip/TripSummaryCard';
 export default function TripDetails() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-  const { tripHistory, activeTrip, pendingTrips, updateTripStatus, updateOrderStatus, isLoading } = useTripStore();
+  const { fetchTripDetails, updateTripStatus, updateOrderStatus, activeTrip, pendingTrips, tripHistory, isLoading: isStoreLoading } = useTripStore();
   
-  const trip = activeTrip?.id === id ? activeTrip : 
-               pendingTrips.find(t => t.id === id) || 
-               tripHistory.find(t => t.id === id);
+  const [trip, setTrip] = useState<any>(null);
+  const [verifications, setVerifications] = useState<any[]>([]);
+  const [localLoading, setLocalLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  if (!trip) {
-    return (
-      <View className="flex-1 bg-slate-950 justify-center items-center px-10">
-        <Stack.Screen options={{ title: 'Trip Not Found', headerShown: true }} />
-        <AlertTriangle size={64} color="#ef4444" />
-        <Text className="text-red-500 text-center mt-5 text-lg font-medium">Trip not found or has been removed.</Text>
-        <TouchableOpacity 
-          className="mt-8 bg-indigo-500 px-8 py-3 rounded-xl"
-          onPress={() => router.back()}
-        >
-          <Text className="text-white font-bold">Go Back</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  const loadData = async (showRefresher = false) => {
+    if (showRefresher) {
+      setRefreshing(true);
+    } else {
+      setLocalLoading(true);
+    }
+
+    try {
+      const data = await fetchTripDetails(id as string);
+      setTrip(data.trip);
+      setVerifications(data.verifications);
+    } catch (err: any) {
+      console.error('Failed to load trip details from API:', err);
+      // Fallback to local store
+      const localFound = (activeTrip?.id === id ? activeTrip : null) || 
+                         pendingTrips.find(t => t.id === id) || 
+                         tripHistory.find(t => t.id === id);
+      if (localFound) {
+        setTrip(localFound);
+      }
+    } finally {
+      setLocalLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [id]);
 
   const handleStatusUpdate = (newStatus: TripStatus) => {
     Alert.alert(
-      'Update Status',
-      `Change trip status to ${newStatus.replace('_', ' ')}?`,
+      'Cập nhật trạng thái',
+      `Thay đổi trạng thái chuyến đi thành ${newStatus === TripStatus.IN_PROGRESS ? 'BẮT ĐẦU VẬN CHUYỂN' : 'HOÀN THÀNH'}?`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Hủy', style: 'cancel' },
         { 
-          text: 'Confirm', 
+          text: 'Xác nhận', 
           onPress: async () => {
             try {
               await updateTripStatus(trip.id, newStatus);
               Toast.show({
                 type: 'success',
-                text1: 'Status Updated',
-                text2: `Trip is now ${newStatus.replace('_', ' ')}`
+                text1: 'Đã cập nhật',
+                text2: `Trạng thái chuyến đi hiện tại: ${newStatus.toUpperCase()}`
               });
               if (newStatus === TripStatus.COMPLETED) {
                 router.replace('/(tabs)');
+              } else {
+                // Refresh data to reflect in-progress state
+                loadData();
               }
             } catch (err: any) {
               Toast.show({
                 type: 'error',
-                text1: 'Update Failed',
+                text1: 'Cập nhật thất bại',
                 text2: err.message
               });
             }
@@ -76,16 +95,193 @@ export default function TripDetails() {
 
     if (url) {
       Linking.openURL(url).catch(() => {
-        Alert.alert('Error', 'Could not open map application');
+        Alert.alert('Lỗi', 'Không thể mở ứng dụng bản đồ');
       });
     }
   };
+
+  const getTripDuration = () => {
+    if (!trip || !trip.startedAt || !trip.completedAt) return null;
+    const start = new Date(trip.startedAt).getTime();
+    const end = new Date(trip.completedAt).getTime();
+    const diffMs = end - start;
+    if (diffMs <= 0) return null;
+    
+    const diffMins = Math.floor(diffMs / 60000);
+    const hours = Math.floor(diffMins / 60);
+    const mins = diffMins % 60;
+    
+    if (hours > 0) {
+      return `${hours} giờ ${mins} phút`;
+    }
+    return `${mins} phút`;
+  };
+
+  const renderOrderVerifications = (orderId: string, order: any) => {
+    const orderVers = verifications.filter(v => v.orderId === orderId);
+    
+    if (orderVers.length === 0 && !order.signatureUrl) {
+      return null;
+    }
+
+    return (
+      <BlurView 
+        intensity={10} 
+        tint="dark"
+        className="rounded-[32px] p-5 mb-6 border border-white/5 overflow-hidden mt-[-16px] bg-slate-900/30"
+      >
+        <View className="flex-row items-center gap-2 mb-4">
+          <FileText size={14} color="#818cf8" />
+          <Text className="text-slate-400 text-[10px] font-black uppercase tracking-[2px]">Bằng chứng giao nhận</Text>
+        </View>
+
+        <View className="gap-5">
+          {orderVers.map((ver, idx) => {
+            const isPickup = ver.step === 'pickup';
+            const isDelivery = ver.step === 'delivery';
+            const isAccept = ver.step === 'accept';
+            const isCheckpoint = ver.step === 'checkpoint';
+            
+            let stepTitle = 'Xác thực';
+            if (isAccept) stepTitle = 'Chấp nhận đơn';
+            else if (isPickup) stepTitle = 'Lấy hàng thành công';
+            else if (isDelivery) stepTitle = 'Bàn giao hàng thành công';
+            else if (isCheckpoint) stepTitle = 'Mốc lộ trình (Checkpoint)';
+
+            return (
+              <View key={ver.id || idx} className="flex-row gap-3">
+                {/* Node Line */}
+                <View className="items-center">
+                  <View className="w-5 h-5 rounded-full bg-indigo-500/20 border border-indigo-500/30 items-center justify-center">
+                    <Check size={10} color="#818cf8" />
+                  </View>
+                  {idx !== orderVers.length - 1 && (
+                    <View className="w-px flex-1 bg-white/10 my-1" />
+                  )}
+                </View>
+
+                {/* Node Content */}
+                <View className="flex-1 bg-white/[0.02] border border-white/5 rounded-2xl p-4">
+                  <View className="flex-row justify-between items-center mb-2.5">
+                    <Text className="text-white text-xs font-black tracking-wide">{stepTitle}</Text>
+                    <Text className="text-slate-500 text-[9px] font-black uppercase tracking-wider">
+                      {new Date(ver.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </Text>
+                  </View>
+
+                  {/* Fingerprint proof */}
+                  {ver.fingerprintStatus && (
+                    <View className="flex-row items-center gap-1.5 mb-3 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-lg self-start">
+                      <Fingerprint size={10} color="#10b981" />
+                      <Text className="text-emerald-400 text-[8px] font-black uppercase tracking-wider">Vân tay đã xác minh</Text>
+                    </View>
+                  )}
+
+                  {/* Photos Row */}
+                  {(ver.facePhotoUrl || ver.cargoPhotoUrl) && (
+                    <View className="flex-row gap-3 mt-1.5">
+                      {/* Face Photo */}
+                      {ver.facePhotoUrl && (
+                        <View className="flex-1">
+                          <Text className="text-slate-500 text-[8px] font-black uppercase tracking-wider mb-1">Xác thực gương mặt</Text>
+                          <View className="aspect-square rounded-xl overflow-hidden border border-white/10 bg-slate-950">
+                            <Image 
+                              source={{ uri: ver.facePhotoUrl }} 
+                              className="w-full h-full"
+                              resizeMode="cover"
+                            />
+                          </View>
+                        </View>
+                      )}
+
+                      {/* Cargo Photo */}
+                      {ver.cargoPhotoUrl && (
+                        <View className="flex-1">
+                          <Text className="text-slate-500 text-[8px] font-black uppercase tracking-wider mb-1">Ảnh thực tế hàng hóa</Text>
+                          <View className="aspect-square rounded-xl overflow-hidden border border-white/10 bg-slate-950">
+                            <Image 
+                              source={{ uri: ver.cargoPhotoUrl }} 
+                              className="w-full h-full"
+                              resizeMode="cover"
+                            />
+                          </View>
+                        </View>
+                      )}
+                    </View>
+                  )}
+
+                  {/* GPS Location Details */}
+                  {ver.location && ver.location.coordinates && (
+                    <View className="flex-row items-center gap-1.5 mt-3 bg-white/[0.03] p-2 rounded-lg border border-white/5">
+                      <MapPin size={10} color="#a78bfa" />
+                      <Text className="text-slate-400 text-[9px] font-bold" numberOfLines={1}>
+                        Tọa độ GPS thực tế: {ver.location.coordinates[1].toFixed(5)}, {ver.location.coordinates[0].toFixed(5)}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            );
+          })}
+
+          {/* Customer Signature */}
+          {order.signatureUrl && (
+            <View className="flex-row gap-3">
+              <View className="items-center">
+                <View className="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/30 items-center justify-center">
+                  <UserCheck size={10} color="#10b981" />
+                </View>
+              </View>
+              <View className="flex-1 bg-white/[0.02] border border-white/5 rounded-2xl p-4">
+                <Text className="text-white text-xs font-black tracking-wide mb-2">Chữ ký xác nhận của khách hàng</Text>
+                <View className="h-20 bg-slate-950/80 rounded-xl overflow-hidden items-center justify-center p-1 border border-white/10">
+                  <Image 
+                    source={{ uri: order.signatureUrl }} 
+                    className="w-full h-full"
+                    resizeMode="contain"
+                  />
+                </View>
+              </View>
+            </View>
+          )}
+        </View>
+      </BlurView>
+    );
+  };
+
+  if (localLoading && !trip) {
+    return (
+      <View className="flex-1 bg-slate-950 justify-center items-center">
+        <Stack.Screen options={{ title: 'Loading...', headerShown: true }} />
+        <ActivityIndicator size="large" color="#6366f1" />
+        <Text className="text-slate-400 mt-4 font-bold text-sm tracking-widest uppercase">Đang tải dữ liệu chuyến đi...</Text>
+      </View>
+    );
+  }
+
+  if (!trip) {
+    return (
+      <View className="flex-1 bg-slate-950 justify-center items-center px-10">
+        <Stack.Screen options={{ title: 'Trip Not Found', headerShown: true }} />
+        <AlertTriangle size={64} color="#ef4444" />
+        <Text className="text-red-500 text-center mt-5 text-lg font-medium">Chuyến đi không tìm thấy hoặc đã bị xóa.</Text>
+        <TouchableOpacity 
+          className="mt-8 bg-indigo-500 px-8 py-3 rounded-xl"
+          onPress={() => router.back()}
+        >
+          <Text className="text-white font-bold">Quay lại</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const isCompletedTrip = trip.status === TripStatus.COMPLETED || trip.status === TripStatus.CANCELLED;
 
   return (
     <View className="flex-1 bg-slate-950">
       <Stack.Screen options={{ 
         headerShown: true, 
-        title: 'TRIP DETAILS',
+        title: isCompletedTrip ? 'LỊCH SỬ CHUYẾN ĐI' : 'CHI TIẾT CHUYẾN ĐI',
         headerStyle: { backgroundColor: '#0f172a' },
         headerTitleStyle: { color: '#fff', fontWeight: '900', fontSize: 16 },
         headerTintColor: '#fff',
@@ -103,11 +299,19 @@ export default function TripDetails() {
         <ScrollView 
           contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl 
+              refreshing={refreshing} 
+              onRefresh={() => loadData(true)} 
+              tintColor="#6366f1"
+              colors={["#6366f1"]}
+            />
+          }
         >
           {/* Header Info */}
           <View className="flex-row justify-between items-end mb-8">
             <View className="flex-1 mr-4">
-              <Text className="text-slate-500 text-xs font-black tracking-[2px] uppercase mb-1">TRIP ID</Text>
+              <Text className="text-slate-500 text-xs font-black tracking-[2px] uppercase mb-1">MÃ CHUYẾN ĐI</Text>
               <Text className="text-white text-3xl font-black italic" numberOfLines={1}>#{trip.id.substring(0, 8).toUpperCase()}</Text>
             </View>
             <TripBadge status={trip.status} />
@@ -125,8 +329,8 @@ export default function TripDetails() {
                   <Calendar size={22} color="#818cf8" />
                 </View>
                 <View>
-                  <Text className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-0.5">DATE</Text>
-                  <Text className="text-white text-base font-bold">{new Date(trip.createdAt).toLocaleDateString()}</Text>
+                  <Text className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-0.5">NGÀY TẠO</Text>
+                  <Text className="text-white text-base font-bold">{new Date(trip.createdAt).toLocaleDateString('vi-VN')}</Text>
                 </View>
               </View>
               <View className="w-px h-10 bg-white/10" />
@@ -135,42 +339,128 @@ export default function TripDetails() {
                   <Clock size={22} color="#60a5fa" />
                 </View>
                 <View>
-                  <Text className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-0.5">TIME</Text>
-                  <Text className="text-white text-base font-bold">{new Date(trip.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                  <Text className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-0.5">THỜI GIAN</Text>
+                  <Text className="text-white text-base font-bold">{new Date(trip.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</Text>
                 </View>
               </View>
             </View>
           </BlurView>
 
+          {/* Trip Timeline Node Grid (Premium UI for history) */}
+          {isCompletedTrip && (
+            <BlurView 
+              intensity={10} 
+              tint="light" 
+              className="rounded-[32px] p-6 mb-8 border border-white/5 overflow-hidden"
+            >
+              <Text className="text-white text-base font-black italic mb-5 uppercase tracking-tight">Timeline hành trình</Text>
+              
+              <View className="gap-5">
+                {/* Node 1: Dispatch */}
+                <View className="flex-row gap-4">
+                  <View className="items-center">
+                    <View className="w-8 h-8 rounded-full bg-indigo-500/20 border border-indigo-500/30 items-center justify-center">
+                      <Calendar size={14} color="#818cf8" />
+                    </View>
+                    <View className="w-px flex-1 bg-white/10 my-1" />
+                  </View>
+                  <View className="flex-1 pb-1">
+                    <Text className="text-slate-400 text-[10px] font-black uppercase tracking-wider mb-0.5">Bàn giao</Text>
+                    <Text className="text-white text-sm font-bold">Chuyến đi được tạo & điều phối</Text>
+                    <Text className="text-slate-500 text-[11px] mt-0.5">
+                      {new Date(trip.createdAt).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Node 2: Start */}
+                {trip.startedAt && (
+                  <View className="flex-row gap-4">
+                    <View className="items-center">
+                      <View className="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-500/30 items-center justify-center">
+                        <Truck size={14} color="#60a5fa" />
+                      </View>
+                      {trip.completedAt && <View className="w-px flex-1 bg-white/10 my-1" />}
+                    </View>
+                    <View className="flex-1 pb-1">
+                      <Text className="text-slate-400 text-[10px] font-black uppercase tracking-wider mb-0.5">Bắt đầu di chuyển</Text>
+                      <Text className="text-white text-sm font-bold">Rời trạm & bắt đầu giao hàng</Text>
+                      <Text className="text-slate-500 text-[11px] mt-0.5">
+                        {new Date(trip.startedAt).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
+                {/* Node 3: Complete */}
+                {trip.completedAt && (
+                  <View className="flex-row gap-4">
+                    <View className="items-center">
+                      <View className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-500/30 items-center justify-center">
+                        <CheckCircle2 size={14} color="#10b981" />
+                      </View>
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-slate-400 text-[10px] font-black uppercase tracking-wider mb-0.5">
+                        {trip.status === TripStatus.COMPLETED ? 'Hoàn thành' : 'Hủy chuyến'}
+                      </Text>
+                      <Text className={trip.status === TripStatus.COMPLETED ? 'text-emerald-400 text-sm font-bold' : 'text-rose-400 text-sm font-bold'}>
+                        {trip.status === TripStatus.COMPLETED ? 'Giao tất cả đơn hàng thành công' : 'Chuyến đi đã bị hủy'}
+                      </Text>
+                      <Text className="text-slate-500 text-[11px] mt-0.5">
+                        {new Date(trip.completedAt).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })}
+                      </Text>
+                      
+                      {getTripDuration() && (
+                        <View className="bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-xl self-start mt-2">
+                          <Text className="text-emerald-400 text-[10px] font-black uppercase">
+                            Thời gian vận hành: {getTripDuration()}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                )}
+              </View>
+            </BlurView>
+          )}
+
           {/* Orders Section */}
           <View className="flex-row items-center gap-2 mb-4 ml-1">
             <Package size={16} color="#6366f1" />
-            <Text className="text-slate-400 text-xs font-black uppercase tracking-[2px]">DELIVERIES ({trip.orders.length})</Text>
+            <Text className="text-slate-400 text-xs font-black uppercase tracking-[2px]">ĐƠN HÀNG CẦN GIAO ({trip.orders.length})</Text>
           </View>
 
-          {trip.orders.map((order, index) => (
-            <OrderCard 
-              key={order.id}
-              order={order}
-              index={index}
-              onNavigate={openNavigation}
-              onProof={(orderId) => router.push({ pathname: '/camera', params: { orderId } })}
-              onStatusUpdate={updateOrderStatus}
-              canSubmitProof={trip.status === TripStatus.IN_PROGRESS}
-            />
+          {trip.orders.map((order: any, index: number) => (
+            <View key={order.id}>
+              <OrderCard 
+                order={order}
+                index={index}
+                onNavigate={openNavigation}
+                onProof={(orderId) => router.push({ pathname: '/camera', params: { orderId } })}
+                onStatusUpdate={updateOrderStatus}
+                canSubmitProof={trip.status === TripStatus.IN_PROGRESS}
+              />
+              
+              {/* Verification proofs timeline for this order */}
+              {renderOrderVerifications(order.id, order)}
+            </View>
           ))}
 
           {/* Stats Summary */}
-          <TripSummaryCard totalDistanceKm={trip.totalDistanceKm} />
+          <TripSummaryCard 
+            totalDistanceKm={trip.totalDistanceKm} 
+            estimatedFuelCost={trip.estimatedFuelCost}
+          />
 
-          {/* Action Buttons */}
-          {activeTrip?.id === id && (
+          {/* Action Buttons (Only for non-completed active trip) */}
+          {!isCompletedTrip && activeTrip?.id === id && (
             <View className="mt-10 gap-4">
               {trip.status === TripStatus.ACCEPTED && (
                 <TouchableOpacity 
                   activeOpacity={0.9}
                   onPress={() => handleStatusUpdate(TripStatus.IN_PROGRESS)}
-                  disabled={isLoading}
+                  disabled={isStoreLoading}
                 >
                   <LinearGradient
                     colors={["#6366f1", "#4f46e5"]}
@@ -178,12 +468,12 @@ export default function TripDetails() {
                     end={{ x: 1, y: 0 }}
                     className="h-20 rounded-[32px] flex-row items-center justify-center gap-4 shadow-xl shadow-indigo-500/40"
                   >
-                    {isLoading ? <ActivityIndicator color="#fff" /> : (
+                    {isStoreLoading ? <ActivityIndicator color="#fff" /> : (
                       <>
                         <View className="w-10 h-10 rounded-full bg-white/20 items-center justify-center">
                           <Truck size={20} color="#fff" />
                         </View>
-                        <Text className="text-white text-xl font-black italic tracking-widest">START DELIVERY</Text>
+                        <Text className="text-white text-xl font-black italic tracking-widest">BẮT ĐẦU VẬN CHUYỂN</Text>
                       </>
                     )}
                   </LinearGradient>
@@ -194,7 +484,7 @@ export default function TripDetails() {
                 <TouchableOpacity 
                   activeOpacity={0.9}
                   onPress={() => handleStatusUpdate(TripStatus.COMPLETED)}
-                  disabled={isLoading}
+                  disabled={isStoreLoading}
                 >
                   <LinearGradient
                     colors={["#10b981", "#059669"]}
@@ -202,12 +492,12 @@ export default function TripDetails() {
                     end={{ x: 1, y: 0 }}
                     className="h-20 rounded-[32px] flex-row items-center justify-center gap-4 shadow-xl shadow-emerald-500/40"
                   >
-                    {isLoading ? <ActivityIndicator color="#fff" /> : (
+                    {isStoreLoading ? <ActivityIndicator color="#fff" /> : (
                       <>
                         <View className="w-10 h-10 rounded-full bg-white/20 items-center justify-center">
                           <CheckCircle2 size={20} color="#fff" />
                         </View>
-                        <Text className="text-white text-xl font-black italic tracking-widest">COMPLETE TRIP</Text>
+                        <Text className="text-white text-xl font-black italic tracking-widest">HOÀN THÀNH CHUYẾN ĐI</Text>
                       </>
                     )}
                   </LinearGradient>
