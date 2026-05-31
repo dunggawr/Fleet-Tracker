@@ -28,6 +28,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
+import Toast from 'react-native-toast-message';
 import { useFleetStore, Driver, Vehicle, DriverStatus, VehicleStatus, VehicleType } from '../../store/useFleetStore';
 
 import { DriverCard } from '../../components/admin/fleet/DriverCard';
@@ -81,6 +82,12 @@ export default function AdminFleetScreen() {
           onPress: async () => {
             try {
               await clearAllFingerprints();
+              Toast.show({
+                type: 'success',
+                text1: 'Thành công 🎉',
+                text2: 'Đã xóa toàn bộ vân tay tài xế trên cơ sở dữ liệu.',
+                visibilityTime: 4000
+              });
               Alert.alert(
                 "Đã yêu cầu xóa",
                 "Đã gửi lệnh xóa đến tất cả thiết bị phần cứng. Hệ thống sẽ hiển thị thông báo thời gian thực ngay khi từng xe hoàn tất việc xóa vân tay."
