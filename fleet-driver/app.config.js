@@ -26,6 +26,7 @@ module.exports = {
       }
     },
     android: {
+      package: "com.dungawr.fleetdriver",
       adaptiveIcon: {
         foregroundImage: "./assets/images/adaptive-icon.png",
         backgroundColor: "#ffffff"
@@ -67,6 +68,11 @@ module.exports = {
     ],
     experiments: {
       typedRoutes: true
+    },
+    extra: {
+      eas: {
+        projectId: "27d72e69-5a84-4f4e-bf97-bf72a0c621be"
+      }
     }
   }
 };
