@@ -100,19 +100,29 @@ export async function seedDatabase(dataSource: DataSource, adminEmail?: string, 
       );
       driversData.push(d);
 
-      // KPI score for driver
+      // Diverse realistic KPI leaderboard stats
+      const kpis = [
+        { totalTrips: 52, completedTrips: 50, completionRate: 96, totalViolations: 1, kpiScore: 95 },
+        { totalTrips: 45, completedTrips: 40, completionRate: 88, totalViolations: 4, kpiScore: 82 },
+        { totalTrips: 48, completedTrips: 46, completionRate: 95, totalViolations: 2, kpiScore: 91 },
+        { totalTrips: 32, completedTrips: 28, completionRate: 87, totalViolations: 5, kpiScore: 78 },
+        { totalTrips: 58, completedTrips: 58, completionRate: 100, totalViolations: 0, kpiScore: 99 },
+      ];
+      const currentIdx = driversData.length - 1;
+      const kpiInfo = kpis[currentIdx] || kpis[0];
+
       await kpiRepository.save(
         kpiRepository.create({
           driver: d,
-          totalTrips: 45,
-          completedTrips: 42,
-          completionRate: 93,
-          totalViolations: 1,
-          kpiScore: 92,
+          totalTrips: kpiInfo.totalTrips,
+          completedTrips: kpiInfo.completedTrips,
+          completionRate: kpiInfo.completionRate,
+          totalViolations: kpiInfo.totalViolations,
+          kpiScore: kpiInfo.kpiScore,
         })
       );
     }
-    console.log(`Seeded ${driversData.length} drivers & KPIs.`);
+    console.log(`Seeded ${driversData.length} drivers with custom realistic KPIs.`);
 
     // 5 Vehicles
     console.log('Seeding vehicles...');
@@ -218,48 +228,170 @@ export async function seedDatabase(dataSource: DataSource, adminEmail?: string, 
     vehiclesData[0].status = VehicleStatus.AVAILABLE;
     await vehicleRepository.save(vehiclesData[0]);
 
-    // Trip 2 (Trần Thanh Hải - status: DELIVERED/COMPLETED history)
-    const trip2 = await tripRepository.save(
-      tripRepository.create({
-        vehicle: vehiclesData[1],
-        driver: driversData[1],
-        status: TripStatus.COMPLETED,
-        startedAt: new Date(Date.now() - 24 * 3600000), // 1 day ago
-        completedAt: new Date(Date.now() - 20 * 3600000),
-        totalDistanceKm: 28.2,
-        estimatedFuelCost: 320000,
-      })
-    );
-    await tripOrderRepository.save(tripOrderRepository.create({ tripId: trip2.id, orderId: ordersData[0].id, sequence: 1 }));
-    await tripOrderRepository.save(tripOrderRepository.create({ tripId: trip2.id, orderId: ordersData[1].id, sequence: 2 }));
+    // 4. Generate 30-day historical completed trips for rich reports & analytics
+    console.log('Generating 30-day historical completed trips for reports...');
+    const nowMs = Date.now();
+    const FUEL_RATES = { small: 8, medium: 12, large: 16 };
+    const DEFAULT_FUEL_PRICE = 25000;
 
-    // Seed historical verifications for Trip 2
-    for (const order of [ordersData[0], ordersData[1]]) {
-      await verificationRepository.save(
-        verificationRepository.create({
-          orderId: order.id,
-          step: VerificationStep.ACCEPT,
-          fingerprintStatus: true,
-          facePhotoUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&h=300&fit=crop',
-          cargoPhotoUrl: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=400&h=400&fit=crop',
-          location: { type: 'Point', coordinates: [106.6979, 10.7725] },
-        })
-      );
-      await verificationRepository.save(
-        verificationRepository.create({
-          orderId: order.id,
-          step: VerificationStep.DELIVERY,
-          fingerprintStatus: true,
-          facePhotoUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&h=300&fit=crop',
-          cargoPhotoUrl: 'https://images.unsplash.com/photo-1598257006458-087169a1f08d?w=400&h=400&fit=crop',
-          location: { type: 'Point', coordinates: [106.7900, 10.7600] },
-        })
-      );
+    for (let dayOffset = 30; dayOffset >= 0; dayOffset--) {
+      // 1 or 2 completed trips per day
+      const numTrips = dayOffset % 4 === 0 ? 2 : 1;
+      
+      for (let t = 0; t < numTrips; t++) {
+        // Deterministic but realistic driver & vehicle selection
+        const driverIndex = (dayOffset * 2 + t) % driversData.length;
+        const vehicleIndex = (dayOffset * 3 + t) % vehiclesData.length;
+        
+        const driver = driversData[driverIndex];
+        const vehicle = vehiclesData[vehicleIndex];
+        
+        const date = new Date(nowMs - dayOffset * 24 * 3600000);
+        const startedAt = new Date(date.getTime() - 4 * 3600000);
+        const completedAt = new Date(date.getTime());
+        
+        const distance = Math.round(15 + (dayOffset % 7) * 8 + Math.random() * 5); // realistic distance distribution
+        const fuelRate = FUEL_RATES[vehicle.type] || FUEL_RATES.medium;
+        const estimatedFuelCost = Math.round((distance / 100) * fuelRate * DEFAULT_FUEL_PRICE);
+        
+        const historicalTrip = await tripRepository.save(
+          tripRepository.create({
+            vehicle,
+            driver,
+            status: TripStatus.COMPLETED,
+            createdAt: startedAt,
+            startedAt,
+            completedAt,
+            totalDistanceKm: distance,
+            estimatedFuelCost,
+          })
+        );
+        
+        // Save TripOrders
+        const order1 = await orderRepository.save(
+          orderRepository.create({
+            weightKg: Math.round(400 + (dayOffset % 5) * 300 + Math.random() * 200),
+            description: `Vận chuyển hàng tiêu dùng ngày D-${dayOffset} T-${t}`,
+            pickupAddress: `Kho hàng ${driver.user.fullName} lấy`,
+            pickupLocation: { type: 'Point', coordinates: [106.6600 + (dayOffset % 5) * 0.01, 10.7570 + (t % 3) * 0.01] },
+            deliveryAddress: `Điểm giao hàng ${vehicle.plateNumber}`,
+            deliveryLocation: { type: 'Point', coordinates: [106.7900 + (dayOffset % 3) * 0.01, 10.7600 + (t % 2) * 0.01] },
+            status: OrderStatus.DELIVERED,
+            createdAt: startedAt,
+          })
+        );
+        
+        const order2 = await orderRepository.save(
+          orderRepository.create({
+            weightKg: Math.round(300 + (dayOffset % 3) * 400 + Math.random() * 150),
+            description: `Vận chuyển linh kiện điện tử D-${dayOffset} T-${t}`,
+            pickupAddress: `Nhà máy công nghiệp phụ trợ`,
+            pickupLocation: { type: 'Point', coordinates: [106.7050 + (dayOffset % 4) * 0.01, 10.9300 - (t % 2) * 0.01] },
+            deliveryAddress: `Khu công nghiệp xuất khẩu`,
+            deliveryLocation: { type: 'Point', coordinates: [106.7950 - (dayOffset % 3) * 0.01, 10.7650 + (t % 3) * 0.01] },
+            status: OrderStatus.DELIVERED,
+            createdAt: startedAt,
+          })
+        );
+        
+        await tripOrderRepository.save(tripOrderRepository.create({ tripId: historicalTrip.id, orderId: order1.id, sequence: 1 }));
+        await tripOrderRepository.save(tripOrderRepository.create({ tripId: historicalTrip.id, orderId: order2.id, sequence: 2 }));
+        
+        // Seed historical verifications for this trip's orders
+        for (const order of [order1, order2]) {
+          await verificationRepository.save(
+            verificationRepository.create({
+              orderId: order.id,
+              step: VerificationStep.ACCEPT,
+              fingerprintStatus: true,
+              facePhotoUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&h=300&fit=crop',
+              cargoPhotoUrl: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=400&h=400&fit=crop',
+              location: { type: 'Point', coordinates: [106.6979, 10.7725] },
+            })
+          );
+          await verificationRepository.save(
+            verificationRepository.create({
+              orderId: order.id,
+              step: VerificationStep.DELIVERY,
+              fingerprintStatus: true,
+              facePhotoUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&h=300&fit=crop',
+              cargoPhotoUrl: 'https://images.unsplash.com/photo-1598257006458-087169a1f08d?w=400&h=400&fit=crop',
+              location: { type: 'Point', coordinates: [106.7900, 10.7600] },
+            })
+          );
+        }
+        
+        // Seed a mix of resolved Speed violations & Route deviations for historical alerts stats
+        if (dayOffset % 6 === 0 && t === 0) {
+          await alertRepository.save(
+            alertRepository.create({
+              tripId: historicalTrip.id,
+              vehicle,
+              driver,
+              type: AlertType.SPEED_VIOLATION,
+              severity: AlertSeverity.MEDIUM,
+              message: `Xe ${vehicle.plateNumber} chạy quá tốc độ cho phép (${Math.round(65 + Math.random() * 20)}km/h)`,
+              createdAt: startedAt,
+              isResolved: true,
+              resolvedAt: completedAt,
+            })
+          );
+        }
+        if (dayOffset % 9 === 0 && t === 0) {
+          await alertRepository.save(
+            alertRepository.create({
+              tripId: historicalTrip.id,
+              vehicle,
+              driver,
+              type: AlertType.ROUTE_DEVIATION,
+              severity: AlertSeverity.HIGH,
+              message: `Xe ${vehicle.plateNumber} đi chệch khỏi lộ trình đã hoạch định`,
+              createdAt: startedAt,
+              isResolved: true,
+              resolvedAt: completedAt,
+            })
+          );
+        }
+      }
     }
 
-    console.log('Seeded trips and journey verifications successfully.');
+    console.log('Seeding unresolved active alerts...');
+    await alertRepository.save(
+      alertRepository.create({
+        vehicle: vehiclesData[0],
+        driver: driversData[0],
+        type: AlertType.INCIDENT,
+        severity: AlertSeverity.CRITICAL,
+        message: 'Tài xế Nguyễn Văn Hùng báo cáo sự cố va chạm giao thông khẩn cấp trên Quốc lộ 1A!',
+        createdAt: new Date(Date.now() - 15 * 60000), // 15 mins ago
+        isResolved: false,
+      })
+    );
+    
+    await alertRepository.save(
+      alertRepository.create({
+        vehicle: vehiclesData[3],
+        driver: driversData[3],
+        type: AlertType.SPEED_VIOLATION,
+        severity: AlertSeverity.HIGH,
+        message: 'Xe 29C-543.21 chạy quá tốc độ 85 km/h ở khu vực nội thành!',
+        createdAt: new Date(Date.now() - 45 * 60000), // 45 mins ago
+        isResolved: false,
+      })
+    );
+    
+    await alertRepository.save(
+      alertRepository.create({
+        vehicle: vehiclesData[4],
+        driver: driversData[4],
+        type: AlertType.ROUTE_DEVIATION,
+        severity: AlertSeverity.MEDIUM,
+        message: 'Xe 43C-888.88 đi chệch khỏi tuyến đường cao tốc!',
+        createdAt: new Date(Date.now() - 60 * 60000), // 1 hour ago
+        isResolved: false,
+      })
+    );
 
-    // Seed GPS locations
     console.log('Seeding GPS locations...');
     const gpsPoints = [
       { lng: 106.6600, lat: 10.7570, speed: 0, heading: 0 },
@@ -269,7 +401,19 @@ export async function seedDatabase(dataSource: DataSource, adminEmail?: string, 
       { lng: 106.7020, lat: 10.7820, speed: 30, heading: 45 },
     ];
 
-    console.log('Bypassed GPS locations & alerts seeding since Trip 1 is PENDING.');
+    for (let idx = 0; idx < gpsPoints.length; idx++) {
+      const pt = gpsPoints[idx];
+      await gpsRepository.save(
+        gpsRepository.create({
+          trip: trip1,
+          vehicle: vehiclesData[0],
+          location: { type: 'Point', coordinates: [pt.lng, pt.lat] },
+          speedKmh: pt.speed,
+          heading: pt.heading,
+          recordedAt: new Date(Date.now() - (gpsPoints.length - idx) * 30000),
+        })
+      );
+    }
 
     console.log('Seeding completed successfully! Database is populated with premium, realistic data.');
   } catch (err) {
