@@ -198,13 +198,15 @@ export class TripsService {
           relations: ['order'],
         });
 
-        if (tripOrders) {
+        if (tripOrders && tripOrders.length > 0) {
           for (const tripOrder of tripOrders) {
             if (tripOrder.order) {
               tripOrder.order.status = OrderStatus.PENDING;
               await queryRunner.manager.save(Order, tripOrder.order);
             }
           }
+          // Delete all TripOrder links for this cancelled trip to completely disassociate the orders from the driver/trip
+          await queryRunner.manager.delete(TripOrder, { tripId: trip.id });
         }
 
         // Update Vehicle & Driver back to AVAILABLE
