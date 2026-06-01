@@ -103,8 +103,8 @@ export const RecentActivityCard: React.FC<RecentActivityCardProps> = ({
 
     // 2. Map recent alerts
     alerts.forEach(alert => {
-      // Only include speed violations and abnormal stops
-      if (alert.type !== 'speed_violation' && alert.type !== 'abnormal_stop') return;
+      // Only include abnormal stops (speed_violation removed)
+      if (alert.type !== 'abnormal_stop') return;
 
       const createdDate = safeNewDate(alert.createdAt);
       if (createdDate) {
@@ -211,8 +211,8 @@ export const RecentActivityCard: React.FC<RecentActivityCardProps> = ({
 
         // 1. Listen for new operational alerts
         socket.on('alert:new', (payload: any) => {
-          // Only notify/log speed violations and abnormal stops
-          if (payload.type !== 'speed_violation' && payload.type !== 'abnormal_stop') return;
+          // Only notify/log abnormal stops (speed_violation removed)
+          if (payload.type !== 'abnormal_stop') return;
 
           const newAlertItem: ActivityItem = {
             id: `live-alert-${payload.id || Date.now()}`,

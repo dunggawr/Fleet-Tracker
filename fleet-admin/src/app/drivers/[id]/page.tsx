@@ -61,7 +61,7 @@ export default function DriverKpiDetailPage() {
           <DriverPerformanceChart />
         </div>
         <div className="lg:col-span-1">
-          <DriverViolationsList alerts={alerts || []} />
+          <DriverViolationsList alerts={(alerts || []).filter(a => a.type !== 'speed_violation')} />
         </div>
       </div>
 

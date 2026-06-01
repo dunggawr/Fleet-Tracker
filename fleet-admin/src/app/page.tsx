@@ -45,7 +45,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-lg">
         <RecentOrdersCard orders={orders} />
         <RecentActivityCard orders={orders} alerts={alerts} trips={trips || []} />
-        <LiveAlertsCard alerts={alerts} onResolve={resolveAlert} />
+        <LiveAlertsCard alerts={alerts.filter(a => a.type !== 'speed_violation')} onResolve={resolveAlert} />
       </div>
     </div>
   );
