@@ -90,8 +90,8 @@ export default function AdminDashboardScreen() {
     // 2. Alerts
     if (Array.isArray(alerts)) {
       alerts.forEach((alert: any) => {
-        // Only include speed violations and abnormal stops
-        if (alert.type !== 'speed_violation' && alert.type !== 'abnormal_stop') return;
+        // Only include abnormal stops (speed_violation removed)
+        if (alert.type !== 'abnormal_stop') return;
 
         const createdDate = safeDate(alert.createdAt);
         if (createdDate) {
@@ -189,8 +189,8 @@ export default function AdminDashboardScreen() {
 
     // 1. Operational Alerts
     const handleNewAlert = (payload: any) => {
-      // Only notify/log speed violations and abnormal stops
-      if (payload.type !== 'speed_violation' && payload.type !== 'abnormal_stop') return;
+      // Only notify/log abnormal stops (speed_violation removed)
+      if (payload.type !== 'abnormal_stop') return;
 
       const newAlertItem = {
         id: `live-alert-${payload.id || Date.now()}`,
