@@ -176,18 +176,20 @@ export class TrackingGateway
       client.data.user = payload;
 
       // Join rooms based on role
-      if (payload.role === 'admin' || payload.role === 'dispatcher') {
+      const userRole = payload.role?.toLowerCase();
+      if (userRole === 'admin' || userRole === 'dispatcher') {
         client.join('admin');
-        this.logger.log(`Admin/Dispatcher connected: ${client.id}`);
-      } else if (payload.role === 'driver') {
+        this.logger.log(`Admin/Dispatcher connected: ${client.id} (Role: ${payload.role})`);
+      } else if (userRole === 'driver') {
         const driver = await this.trackingService.getDriverByUserId(
           payload.sub,
         );
         if (driver) {
           client.join(`driver:${driver.id}`);
           client.data.driverId = driver.id; // Store driverId for convenience
+          client.data.driverName = driver.user?.fullName || 'Driver'; // Store driverName for convenience
           this.logger.log(
-            `Driver connected: ${client.id} (Driver ID: ${driver.id})`,
+            `Driver connected: ${client.id} (Driver ID: ${driver.id}, Name: ${client.data.driverName})`,
           );
 
           // Proactively trigger fingerprint enrollment if they are currently on an active trip and don't have a fingerprint
@@ -226,21 +228,23 @@ export class TrackingGateway
       location?: { latitude: number; longitude: number };
     },
   ) {
-    const userId = client.data.user.id;
+    const userId = client.data.user?.sub || client.data.user?.id;
+    const driverId = client.data.driverId;
+    const driverName = client.data.driverName || 'Driver';
     const { tripId, description, location } = data;
 
     this.logger.log(
-      `Emergency SOS received from user ${userId} for trip ${tripId}`,
+      `Emergency SOS received from user ${userId} (Driver: ${driverName}) for trip ${tripId}`,
     );
 
     // Broadcast to all admins (who should be in the 'admin' room)
     this.server.to('admin').emit('alert:new', {
       type: 'SOS',
       severity: 'CRITICAL',
-      message: `EMERGENCY: Driver ${client.data.user.fullName || userId} triggered SOS!`,
+      message: `EMERGENCY: Driver ${driverName} triggered SOS!`,
       details: description || 'No description provided',
       tripId,
-      driverId: userId,
+      driverId: driverId || userId,
       location: location || null,
       timestamp: Date.now(),
     });
