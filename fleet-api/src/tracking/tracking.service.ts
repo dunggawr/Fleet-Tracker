@@ -295,7 +295,10 @@ export class TrackingService implements OnModuleDestroy {
   }
 
   async getDriverByUserId(userId: string): Promise<Driver | null> {
-    return this.driverRepository.findOne({ where: { userId } });
+    return this.driverRepository.findOne({ 
+      where: { userId },
+      relations: ['user'],
+    });
   }
 
   async getTripById(tripId: string): Promise<Trip | null> {
