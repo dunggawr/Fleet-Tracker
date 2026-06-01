@@ -1,3 +1,17 @@
+## [2026-06-01] - Dynamic Verification Timeline, Alert Sync & KPI Cleanup
+### Added
+- **Mobile & Web Admin (Verification Timeline)**:
+  - Re-engineered the Admin Order Details screen (`app/admin/orders/[id].tsx` and `OrderDetailInfo.tsx`) to dynamically fetch and display a rich, comprehensive visual verification timeline of the trip (including biometric status, driver Face ID photo, cargo photo, GPS coordinates, timestamps, and customer signatures) replacing the static placeholder timeline card.
+  - Upgraded the store `Order` interface (`useOrderStore.ts`) to fully support signature and photo attributes (`signatureUrl`, `photoUrl`).
+
+### Fixed
+- **Mobile (Driver App Caching / UI Sync)**:
+  - Fixed a critical caching/stale UI bug in the driver's trip detail view (`[id].tsx`). Replaced direct store method usage with a local handler `handleOrderStatusUpdate` that automatically calls `loadData()` to refresh local React state immediately after a driver marks an order status change (e.g. clicking "Lấy hàng"), rendering the dynamic timeline proofs instantly without manual pull-to-refresh.
+- **Mobile & Web Admin (KPI Dashboard Streamlining)**:
+  - Removed all hardcoded KPI performance trends and placeholder values (+2 from yesterday, -5 since morning, etc.) from the mobile Admin Dashboard (`admin-dashboard.tsx`) StatCards to maintain strict data integrity.
+  - Removed the mock "Performance Trend" line chart from the mobile driver details screen (`fleet-driver/app/admin/fleet/drivers/[id].tsx`).
+  - Aligned and deduplicated the "Active Alerts" count on both Web Admin (`Header.tsx`) and Mobile App store (`useDashboardStore.ts`) to count exclusively unresolved active `abnormal_stop` events, ensuring data consistency across both channels.
+
 ## [2026-05-28] - ESP32 Unified Hardware Migration & Cam Bugfixes
 ### Added
 - **ESP32 Camera & Fingerprint (`esp_cam_main.cpp`)**:
