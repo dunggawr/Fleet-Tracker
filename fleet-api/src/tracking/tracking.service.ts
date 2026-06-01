@@ -533,6 +533,7 @@ export class TrackingService implements OnModuleDestroy {
     const enrollId = this.pendingEnrollments.get(deviceId) || null;
     if (enrollId) {
       this.logger.log(`[Hardware Biometric] Polled: Device ${deviceId} fetched pending enrollment slot #${enrollId}`);
+      this.pendingEnrollments.delete(deviceId); // Consume immediately to prevent infinite loop on device
     }
     return enrollId;
   }
@@ -541,6 +542,7 @@ export class TrackingService implements OnModuleDestroy {
     const deleteId = this.pendingDeletions.get(deviceId) || null;
     if (deleteId) {
       this.logger.log(`[Hardware Biometric] Polled: Device ${deviceId} fetched pending deletion slot #${deleteId}`);
+      this.pendingDeletions.delete(deviceId); // Consume immediately to prevent infinite loop on device
     }
     return deleteId;
   }
@@ -549,6 +551,7 @@ export class TrackingService implements OnModuleDestroy {
     const clearAll = this.pendingClearAll.get(deviceId) || null;
     if (clearAll) {
       this.logger.log(`[Hardware Biometric] Polled: Device ${deviceId} fetched pending clear_all command`);
+      this.pendingClearAll.delete(deviceId); // Consume immediately to prevent infinite loop on device
     }
     return clearAll;
   }
