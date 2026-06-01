@@ -115,6 +115,35 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           }
         });
 
+        // 7. Fingerprint Deletions
+        socket.on('fingerprint:deleted', (payload: any) => {
+          if (payload.success) {
+            toast.success('🛡️ Fingerprint Deleted', {
+              description: payload.message || `Fingerprint slot #${payload.fingerprintId} deleted on device ${payload.deviceId}`,
+              duration: 6000
+            });
+          } else {
+            toast.error('❌ Fingerprint Deletion Failed', {
+              description: payload.message || `Failed to delete fingerprint slot #${payload.fingerprintId} on device ${payload.deviceId}`,
+              duration: 7000
+            });
+          }
+        });
+
+        socket.on('fingerprint:all_cleared', (payload: any) => {
+          if (payload.success) {
+            toast.success('🧹 All Fingerprints Cleared', {
+              description: payload.message || `All fingerprints wiped on device ${payload.deviceId}`,
+              duration: 8000
+            });
+          } else {
+            toast.error('❌ Clear All Failed', {
+              description: payload.message || `Failed to wipe fingerprints on device ${payload.deviceId}`,
+              duration: 8000
+            });
+          }
+        });
+
       } catch (err) {
         console.error('Failed to set up global realtime socket toasts:', err);
       }
@@ -131,6 +160,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         socket.off('trip:assigned');
         socket.off('enroll:required');
         socket.off('enroll:result');
+        socket.off('fingerprint:deleted');
+        socket.off('fingerprint:all_cleared');
       }
     };
   }, [isAuthenticated, isLoginPage, router]);
