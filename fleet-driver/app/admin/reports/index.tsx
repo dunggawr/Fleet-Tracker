@@ -45,14 +45,6 @@ export default function ReportsOverviewScreen() {
             color="#6366f1"
             onPress={() => router.push('/admin/reports/trips' as any)}
           />
-
-          <ReportCard 
-            title="Driver Ranking"
-            subtitle="KPIs and performance scores"
-            icon={Users}
-            color="#10b981"
-            onPress={() => router.push('/admin/reports/kpi' as any)}
-          />
         </View>
 
         <View className="mb-6">
