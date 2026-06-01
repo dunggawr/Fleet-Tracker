@@ -374,7 +374,7 @@ export default function AdminDashboardScreen() {
           </View>
           <View className="flex-1">
             <Text className="text-slate-50 font-bold text-base mb-1">Fleet Insights & KPIs</Text>
-            <Text className="text-slate-400 text-xs">View fuel, trips, utilization, and rankings</Text>
+            <Text className="text-slate-400 text-xs">View fuel, trips, and utilization</Text>
           </View>
           <View className="w-8 h-8 rounded-full bg-slate-950 justify-center items-center">
             <ChevronRight size={18} color="#94a3b8" />
