@@ -110,6 +110,9 @@ function RootLayoutNav() {
       const handleEnrollRequired = (data: any) => {
         // Only show fingerprint enroll prompt to driver users
         if (user?.role !== 'driver') return;
+        
+        // Safety check: ensure the event is targeted for this specific driver
+        if (data.driverId && user?.driver?.id !== data.driverId) return;
 
         Toast.show({
           type: 'info',
@@ -120,6 +123,9 @@ function RootLayoutNav() {
       };
 
       const handleEnrollResult = (data: any) => {
+        // Safety check: ensure the event is targeted for this specific driver if user is driver
+        if (user?.role === 'driver' && data.driverId && user?.driver?.id !== data.driverId) return;
+
         Toast.show({
           type: data.success ? 'success' : 'error',
           text1: data.success ? 'Đăng Ký Thành Công! 🎉' : 'Đăng Ký Thất Bại ❌',
@@ -129,6 +135,9 @@ function RootLayoutNav() {
       };
 
       const handleFingerprintDeleted = (data: any) => {
+        // Safety check: ensure the event is targeted for this specific driver if user is driver
+        if (user?.role === 'driver' && data.driverId && user?.driver?.id !== data.driverId) return;
+
         Toast.show({
           type: data.success ? 'success' : 'error',
           text1: data.success ? 'Xóa Vân Tay Phần Cứng! 🛡️' : 'Xóa Vân Tay Thất Bại ❌',
@@ -138,6 +147,9 @@ function RootLayoutNav() {
       };
 
       const handleFingerprintAllCleared = (data: any) => {
+        // Safety check: only show to admin users who requested the global clear
+        if (user?.role !== 'admin') return;
+
         Toast.show({
           type: data.success ? 'success' : 'error',
           text1: data.success ? 'Xóa Sạch Vân Tay! 🧹' : 'Xóa Sạch Vân Tay Thất Bại ❌',
