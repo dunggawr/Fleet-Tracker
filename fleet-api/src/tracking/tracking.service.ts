@@ -781,7 +781,7 @@ export class TrackingService implements OnModuleDestroy {
         );
 
         // Robust check if driver is currently active on a trip
-        const isCurrentlyOnTrip = !!activeTrip || (vehicle.driver && vehicle.driver.status === DriverStatus.ON_TRIP);
+        const isCurrentlyOnTrip = !!activeTrip;
 
         // Proactive Enroll: If driver is currently active on a trip, auto-trigger a new enrollment immediately!
         if (isCurrentlyOnTrip) {
