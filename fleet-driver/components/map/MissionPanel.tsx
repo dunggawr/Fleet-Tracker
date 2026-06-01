@@ -195,85 +195,47 @@ export const MissionPanel: React.FC<MissionPanelProps> = ({
         );
       }
 
-      // Active delivering screen -> Show Checkpoint and Confirm Delivery!
+      // Active delivering screen -> Show Confirm Delivery!
       if (isWithinDeliveryRange) {
         return (
-          <View style={{ flexDirection: 'row', gap: 12, flex: 1, width: '100%' }}>
-            <TouchableOpacity
-              style={{ flex: 1 }}
-              className="shadow-2xl shadow-amber-500/20"
-              onPress={onCheckpoint}
-              activeOpacity={0.8}
+          <TouchableOpacity
+            style={{ flex: 1, width: '100%' }}
+            className="shadow-2xl shadow-emerald-500/30"
+            onPress={onProofOfDelivery}
+            activeOpacity={0.8}
+          >
+            <LinearGradient
+              colors={['#10b981', '#059669']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{ height: 56, borderRadius: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 }}
             >
-              <LinearGradient
-                colors={['#f59e0b', '#d97706']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={{ height: 56, borderRadius: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 }}
-              >
-                <Eye size={16} color="#fff" strokeWidth={2.5} />
-                <Text className="text-white font-black text-[12px] uppercase tracking-wider" numberOfLines={1}>Báo chặng</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={{ flex: 1.5 }}
-              className="shadow-2xl shadow-emerald-500/30"
-              onPress={onProofOfDelivery}
-              activeOpacity={0.8}
-            >
-              <LinearGradient
-                colors={['#10b981', '#059669']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={{ height: 56, borderRadius: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 }}
-              >
-                <CheckCircle2 size={16} color="#fff" strokeWidth={2.5} />
-                <Text className="text-white font-black text-[12px] uppercase tracking-wider" numberOfLines={1}>Xác nhận giao hàng</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
+              <CheckCircle2 size={20} color="#fff" strokeWidth={2.5} />
+              <Text className="text-white font-black text-[13px] uppercase tracking-wider" numberOfLines={1}>Xác nhận giao hàng</Text>
+            </LinearGradient>
+          </TouchableOpacity>
         );
       } else {
         const distText = deliveryDistance !== null ? `${Math.round(deliveryDistance)}m` : 'chưa xác định';
         return (
-          <View style={{ flexDirection: 'row', gap: 12, flex: 1, width: '100%' }}>
-            <TouchableOpacity
-              style={{ flex: 1 }}
-              className="shadow-2xl shadow-amber-500/20"
-              onPress={onCheckpoint}
-              activeOpacity={0.8}
-            >
-              <LinearGradient
-                colors={['#f59e0b', '#d97706']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={{ height: 56, borderRadius: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 }}
-              >
-                <Eye size={16} color="#fff" strokeWidth={2.5} />
-                <Text className="text-white font-black text-[12px] uppercase tracking-wider" numberOfLines={1}>Báo chặng</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={{ flex: 1.5 }}
-              className="shadow-2xl border border-slate-700 bg-slate-800"
-              onPress={() => {
-                Alert.alert(
-                  'Cảnh báo khoảng cách',
-                  `Bạn còn cách điểm giao hàng ${distText}. Vui lòng đến trong phạm vi 200m để xác nhận.`
-                );
-              }}
-              activeOpacity={0.8}
-            >
-              <View style={{ height: 56, borderRadius: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 }} className="bg-slate-800">
-                <CheckCircle2 size={16} color="#64748b" strokeWidth={2.5} />
-                <Text className="text-slate-400 font-bold text-[11px] uppercase tracking-wider" numberOfLines={1}>
-                  Giao hàng ({distText})
-                </Text>
-              </View>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={{ flex: 1, width: '100%' }}
+            className="shadow-2xl border border-slate-700 bg-slate-800"
+            onPress={() => {
+              Alert.alert(
+                'Cảnh báo khoảng cách',
+                `Bạn còn cách điểm giao hàng ${distText}. Vui lòng đến trong phạm vi 200m để xác nhận.`
+              );
+            }}
+            activeOpacity={0.8}
+          >
+            <View style={{ height: 56, borderRadius: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 }} className="bg-slate-800">
+              <CheckCircle2 size={20} color="#64748b" strokeWidth={2.5} />
+              <Text className="text-slate-400 font-bold text-[13px] uppercase tracking-wider" numberOfLines={1}>
+                Giao hàng ({distText})
+              </Text>
+            </View>
+          </TouchableOpacity>
         );
       }
     }
