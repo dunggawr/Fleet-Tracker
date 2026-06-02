@@ -48,7 +48,7 @@ let deviceId = 'device_001';
 let gpsState = {
   latitude: 10.762622,
   longitude: 106.660172,
-  speed: 40, // km/h
+  speed: 80, // km/h (doubled from 40)
   heading: 90, // East
   isActive: false,
   intervalId: null
@@ -162,9 +162,9 @@ function toggleGpsStreaming() {
     sendGpsTick();
     
     gpsState.intervalId = setInterval(() => {
-      // Simulate movement: vehicle moves slightly North-East
-      gpsState.latitude += 0.00015 * (Math.random() * 0.4 + 0.8);
-      gpsState.longitude += 0.00022 * (Math.random() * 0.4 + 0.8);
+      // Simulate movement: vehicle moves slightly North-East (doubled increments)
+      gpsState.latitude += 0.00030 * (Math.random() * 0.4 + 0.8);
+      gpsState.longitude += 0.00044 * (Math.random() * 0.4 + 0.8);
       gpsState.heading = (gpsState.heading + Math.floor(Math.random() * 20 - 10) + 360) % 360;
       
       sendGpsTick();
@@ -320,67 +320,52 @@ async function handleBackendCommand(command) {
 async function triggerBiometricVerification() {
   log(colors.fgCyan, "\n--- BIOMETRIC VERIFICATION SIMULATOR ---");
   
-  rl.question(`👤 Enter Driver ID to verify (e.g. driver-uuid): `, async (driverId) => {
-    if (!driverId.trim()) {
-      log(colors.fgRed, "Driver ID is required!");
+  rl.question(`🔑 Enter Fingerprint Slot ID matched (1-127, default: 1): `, async (fpId) => {
+    const fingerprintId = parseInt(fpId.trim() || '1', 10);
+    if (isNaN(fingerprintId) || fingerprintId < 1 || fingerprintId > 127) {
+      log(colors.fgRed, "Invalid Fingerprint Slot ID! Must be between 1 and 127.");
       setTimeout(promptMenu, 1500);
       return;
     }
     
-    rl.question(`🔑 Enter Fingerprint Slot ID matched (1-127): `, async (fpId) => {
-      const fingerprintId = parseInt(fpId, 10);
-      if (isNaN(fingerprintId) || fingerprintId < 1 || fingerprintId > 127) {
-        log(colors.fgRed, "Invalid Fingerprint Slot ID! Must be between 1 and 127.");
-        setTimeout(promptMenu, 1500);
-        return;
-      }
+    log(colors.fgYellow, `⏳ Simulating camera capture & fingerprint match on vehicle...`);
+    ensureMockImageExists();
+    
+    try {
+      // Construct multipart/form-data upload using standard Node fetch FormData
+      const formData = new FormData();
+      formData.append('deviceId', deviceId);
+      formData.append('fingerprintId', fingerprintId.toString());
       
-      rl.question(`📋 Enter Step to verify (e.g. pickup, delivery): `, async (step) => {
-        const activeStep = step.trim() || 'pickup';
-        
-        log(colors.fgYellow, `⏳ Simulating camera capture & fingerprint match on vehicle...`);
-        ensureMockImageExists();
-        
-        try {
-          // Construct multipart/form-data upload using standard Node fetch FormData (Node 18+)
-          const formData = new FormData();
-          formData.append('driverId', driverId.trim());
-          formData.append('fingerprintId', fingerprintId.toString());
-          formData.append('step', activeStep);
-          formData.append('latitude', gpsState.latitude.toString());
-          formData.append('longitude', gpsState.longitude.toString());
-          
-          // Load real image file bytes into form-data Blob
-          const fileBuffer = fs.readFileSync(MOCK_IMAGE_PATH);
-          const blob = new Blob([fileBuffer], { type: 'image/jpeg' });
-          formData.append('image', blob, 'face_capture.jpg');
-          
-          log(colors.fgYellow, `📡 Uploading verification payload to server /tracking/verify...`);
-          
-          const response = await fetch(`${BACKEND_URL}/tracking/verify`, {
-            method: 'POST',
-            headers: {
-              'x-device-api-key': API_KEY
-            },
-            body: formData
-          });
-          
-          const result = await response.json();
-          
-          if (response.ok) {
-            log(colors.fgGreen, `\n🎉 VERIFICATION SUCCESSFUL!`);
-            console.log(JSON.stringify(result, null, 2));
-          } else {
-            log(colors.fgRed, `\n❌ VERIFICATION FAILED: [${response.status}]`);
-            console.log(JSON.stringify(result, null, 2));
-          }
-        } catch (e) {
-          log(colors.fgRed, `❌ Connection error during biometric verification: ${e.message}`);
-        }
-        
-        rl.question(`\nPress Enter to return to main menu...`, () => promptMenu());
+      // Load real image file bytes into form-data Blob
+      const fileBuffer = fs.readFileSync(MOCK_IMAGE_PATH);
+      const blob = new Blob([fileBuffer], { type: 'image/jpeg' });
+      formData.append('image', blob, 'face_capture.jpg');
+      
+      log(colors.fgYellow, `📡 Uploading verification payload to server /tracking/verify...`);
+      
+      const response = await fetch(`${BACKEND_URL}/tracking/verify`, {
+        method: 'POST',
+        headers: {
+          'x-device-api-key': API_KEY
+        },
+        body: formData
       });
-    });
+      
+      const result = await response.json();
+      
+      if (response.ok) {
+        log(colors.fgGreen, `\n🎉 VERIFICATION SUCCESSFUL!`);
+        console.log(JSON.stringify(result, null, 2));
+      } else {
+        log(colors.fgRed, `\n❌ VERIFICATION FAILED: [${response.status}]`);
+        console.log(JSON.stringify(result, null, 2));
+      }
+    } catch (e) {
+      log(colors.fgRed, `❌ Connection error during biometric verification: ${e.message}`);
+    }
+    
+    rl.question(`\nPress Enter to return to main menu...`, () => promptMenu());
   });
 }
 
