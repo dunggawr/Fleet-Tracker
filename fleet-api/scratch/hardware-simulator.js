@@ -40,7 +40,7 @@ const colors = {
 };
 
 // Configurations
-const BACKEND_URL = 'http://localhost:3001';
+const BACKEND_URL = 'https://fleet-tracker-nh01.onrender.com/api';
 const API_KEY = 'fleet_tracker_device_api_key_2026';
 let deviceId = 'device_001';
 

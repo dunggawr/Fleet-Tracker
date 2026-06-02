@@ -186,18 +186,21 @@ export class TrackingService implements OnModuleDestroy {
     // Update last known hardware GPS timestamp
     this.lastHardwareGpsMap.set(vehicle.id, Date.now());
 
-    // 2. Check for active trip to link history
+    // 2. Check for active trip to link history (can be ACCEPTED or IN_PROGRESS)
     const activeTrip = await this.tripRepository.findOne({
-      where: { vehicleId: vehicle.id, status: TripStatus.IN_PROGRESS },
+      where: [
+        { vehicleId: vehicle.id, status: TripStatus.IN_PROGRESS },
+        { vehicleId: vehicle.id, status: TripStatus.ACCEPTED },
+      ],
     });
 
     if (activeTrip) {
       this.logger.log(
-        `[Hardware GPS] Vehicle ${vehicle.plateNumber} is currently on active Trip ID: ${activeTrip.id}`,
+        `[Hardware GPS] Vehicle ${vehicle.plateNumber} is currently on active/accepted Trip ID: ${activeTrip.id} (Status: ${activeTrip.status})`,
       );
     } else {
       this.logger.log(
-        `[Hardware GPS] Vehicle ${vehicle.plateNumber} has no active trip in progress`,
+        `[Hardware GPS] Vehicle ${vehicle.plateNumber} has no active/accepted trip`,
       );
     }
 
@@ -218,8 +221,8 @@ export class TrackingService implements OnModuleDestroy {
     });
     this.gpsBuffer.push(gpsLocation);
 
-    // 5. Trigger Violation Detection (Async)
-    if (activeTrip) {
+    // 5. Trigger Violation Detection (Async) - only for IN_PROGRESS trips
+    if (activeTrip && activeTrip.status === TripStatus.IN_PROGRESS) {
       this.violationDetector
         .checkViolations({
           vehicleId: vehicle.id,
