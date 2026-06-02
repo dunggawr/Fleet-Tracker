@@ -157,6 +157,9 @@ export const MapPicker: React.FC<MapPickerProps> = ({
             access_token: MAPBOX_TOKEN,
             autocomplete: true,
             limit: 5,
+            country: 'vn',
+            language: 'vi',
+            proximity: `${selectedLocation.longitude},${selectedLocation.latitude}`,
           },
         }
       );
