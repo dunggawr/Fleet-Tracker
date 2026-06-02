@@ -424,16 +424,11 @@ export class TrackingService implements OnModuleDestroy {
        });
 
        const hasPickup = verifications.some((v) => v.step === VerificationStep.PICKUP);
-       const hasCheckpoint = verifications.some((v) => v.step === VerificationStep.CHECKPOINT);
        const hasDelivery = verifications.some((v) => v.step === VerificationStep.DELIVERY);
 
        if (!hasPickup) {
          activeOrder = order;
          targetStep = VerificationStep.PICKUP;
-         break;
-       } else if (!hasCheckpoint) {
-         activeOrder = order;
-         targetStep = VerificationStep.CHECKPOINT;
          break;
        } else if (!hasDelivery) {
          activeOrder = order;
