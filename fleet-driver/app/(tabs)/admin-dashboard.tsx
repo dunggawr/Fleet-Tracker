@@ -13,6 +13,7 @@ export default function AdminDashboardScreen() {
   const router = useRouter();
   
   const dashboardStartTime = React.useMemo(() => new Date(), []);
+  const clockOffsetRef = React.useRef<number>(0);
   
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<'all' | 'order' | 'trip' | 'alert'>('all');
@@ -41,12 +42,29 @@ export default function AdminDashboardScreen() {
     return `${diffDays}d ago`;
   };
 
-  // Safe date parser (caps future timestamps to stable start time to avoid clock drift issues)
+  // Safe date parser (self-calibrating server clock/timezone offset aligner)
   const safeDate = (dStr: any) => {
     if (!dStr) return null;
     const d = new Date(dStr);
     if (isNaN(d.getTime())) return null;
-    return d > dashboardStartTime ? dashboardStartTime : d;
+
+    const now = new Date();
+    const diff = d.getTime() - now.getTime();
+
+    // If date is > 5 mins in future, calibrate stable timezone/clock offset once
+    if (diff > 5 * 60 * 1000 && clockOffsetRef.current === 0) {
+      const halfHour = 30 * 60 * 1000;
+      clockOffsetRef.current = Math.round(diff / halfHour) * halfHour;
+      console.log(`[Clock Sync] Calibrated server clock offset: ${clockOffsetRef.current / 3600000} hours`);
+    }
+
+    // Apply stable calibrated offset if present
+    if (clockOffsetRef.current > 0) {
+      const adjustedDate = new Date(d.getTime() - clockOffsetRef.current);
+      return adjustedDate > now ? now : adjustedDate;
+    }
+
+    return d > now ? now : d;
   };
 
   const allActivities = React.useMemo(() => {
