@@ -39,11 +39,13 @@ export default function AdminDashboardScreen() {
     return `${diffDays}d ago`;
   };
 
-  // Safe date parser
+  // Safe date parser (caps future timestamps to avoid clock drift issues)
   const safeDate = (dStr: any) => {
     if (!dStr) return null;
     const d = new Date(dStr);
-    return isNaN(d.getTime()) ? null : d;
+    if (isNaN(d.getTime())) return null;
+    const now = new Date();
+    return d > now ? now : d;
   };
 
   const allActivities = React.useMemo(() => {
