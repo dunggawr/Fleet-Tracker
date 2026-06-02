@@ -29,6 +29,7 @@ export const useMapFlow = () => {
   
   const [isVerificationVisible, setIsVerificationVisible] = useState(false);
   const [verificationStep, setVerificationStep] = useState<'accept' | 'pickup' | 'checkpoint' | 'delivery'>('accept');
+  const [verificationOrderId, setVerificationOrderId] = useState<string | null>(null);
   
   const { location: phoneLocation, errorMsg } = useLocationTracking(activeTrip);
   const [hardwareLocation, setHardwareLocation] = useState<{
@@ -194,6 +195,7 @@ export const useMapFlow = () => {
           onPress: async () => {
             if (newStatus === TripStatus.IN_PROGRESS) {
               setVerificationStep('accept');
+              setVerificationOrderId(activeTrip.orders[0]?.id || null);
               setIsVerificationVisible(true);
             } else {
               try {
@@ -275,6 +277,7 @@ export const useMapFlow = () => {
           onPress: async () => {
             if (newStatus === OrderStatus.PICKED_UP) {
               setVerificationStep('pickup');
+              setVerificationOrderId(orderId);
               setIsVerificationVisible(true);
             } else {
               try {
@@ -399,12 +402,14 @@ export const useMapFlow = () => {
 
     // Open Verification Modal for delivery
     setVerificationStep('delivery');
+    setVerificationOrderId(currentOrder.id);
     setIsVerificationVisible(true);
   }, [currentOrder, location]);
 
   const handleCheckpoint = useCallback(() => {
     if (!currentOrder) return;
     setVerificationStep('checkpoint');
+    setVerificationOrderId(currentOrder.id);
     setIsVerificationVisible(true);
   }, [currentOrder]);
 
@@ -417,7 +422,7 @@ export const useMapFlow = () => {
     longitude?: number;
   }) => {
     if (!activeTrip) return;
-    const orderId = currentOrder?.id || activeTrip.orders[0]?.id;
+    const orderId = verificationOrderId || currentOrder?.id || activeTrip.orders[0]?.id;
     if (!orderId) return;
 
     try {
@@ -506,7 +511,7 @@ export const useMapFlow = () => {
       });
       throw err;
     }
-  }, [activeTrip, currentOrder, submitOrderVerification, updateTripStatus, updateOrderStatus]);
+  }, [activeTrip, currentOrder, verificationOrderId, submitOrderVerification, updateTripStatus, updateOrderStatus]);
 
   return {
     activeTrip,
@@ -533,6 +538,8 @@ export const useMapFlow = () => {
     setIsVerificationVisible,
     verificationStep,
     setVerificationStep,
+    verificationOrderId,
+    setVerificationOrderId,
     handleVerificationSubmit,
   };
 };

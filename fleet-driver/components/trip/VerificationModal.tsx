@@ -80,7 +80,7 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
       progressAnim.setValue(0);
       setHasHardwareVerified(false);
 
-      if (step === 'pickup' || step === 'delivery') {
+      if ((step === 'pickup' || step === 'delivery') && hasHardware) {
         setIsWaitingHardware(true);
       } else {
         setIsWaitingHardware(false);

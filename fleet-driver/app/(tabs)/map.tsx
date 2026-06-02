@@ -39,6 +39,8 @@ export default function ActiveTripMap() {
     isVerificationVisible,
     setIsVerificationVisible,
     verificationStep,
+    verificationOrderId,
+    setVerificationOrderId,
     handleVerificationSubmit,
   } = useMapFlow();
 
@@ -172,11 +174,14 @@ export default function ActiveTripMap() {
         onNavigate={openNavigation}
       />
 
-      {currentOrder && (
+      {verificationOrderId && (
         <VerificationModal
           visible={isVerificationVisible}
-          onClose={() => setIsVerificationVisible(false)}
-          orderId={currentOrder.id}
+          onClose={() => {
+            setIsVerificationVisible(false);
+            setVerificationOrderId(null);
+          }}
+          orderId={verificationOrderId}
           step={verificationStep}
           onSubmit={handleVerificationSubmit}
         />
