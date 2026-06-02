@@ -8,6 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { User } from './user.entity';
+import { DriverKpi } from './driver-kpi.entity';
 
 export enum DriverStatus {
   AVAILABLE = 'available',
@@ -26,6 +27,9 @@ export class Driver {
   })
   @JoinColumn({ name: 'user_id' })
   user: User;
+
+  @OneToOne(() => DriverKpi, (kpi) => kpi.driver)
+  kpi: DriverKpi;
 
   @Column({ name: 'user_id' })
   userId: string;

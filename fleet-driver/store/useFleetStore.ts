@@ -37,6 +37,16 @@ export interface Driver {
   fingerprintId?: string | null;
   createdAt: string;
   updatedAt: string;
+  kpi?: {
+    id?: string;
+    totalTrips: number;
+    completedTrips: number;
+    completionRate: number;
+    totalViolations: number;
+    speedViolations?: number;
+    routeViolations?: number;
+    kpiScore: number;
+  } | null;
 }
 
 export interface Vehicle {
