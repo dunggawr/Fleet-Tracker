@@ -183,7 +183,7 @@ export function MapBox({
     setIsSearching(true);
     try {
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&limit=5`
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&limit=5&country=vn&language=vi&proximity=${viewState.longitude},${viewState.latitude}`
       );
       const data = await response.json();
       setSearchResults(data.features || []);
