@@ -68,6 +68,7 @@ export class DriversService {
     const query = this.driversRepository
       .createQueryBuilder('driver')
       .leftJoinAndSelect('driver.user', 'user')
+      .leftJoinAndSelect('driver.kpi', 'kpi')
       .andWhere('user.role = :role', { role: UserRole.DRIVER })
       .skip((page - 1) * limit)
       .take(limit);
@@ -105,7 +106,7 @@ export class DriversService {
   async findOne(id: string): Promise<Driver> {
     const driver = await this.driversRepository.findOne({
       where: { id },
-      relations: ['user'],
+      relations: ['user', 'kpi'],
     });
 
     if (!driver || !driver.user || driver.user.role !== UserRole.DRIVER) {

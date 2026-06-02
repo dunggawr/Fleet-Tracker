@@ -58,7 +58,9 @@ export const DriverCard: React.FC<DriverCardProps> = ({ driver, onPress }) => {
           </View>
           <View className="flex-row items-center gap-1">
             <Activity size={16} color="#94a3b8" />
-            <Text className="text-[13px] text-slate-400 font-medium">92% KPI</Text>
+            <Text className="text-[13px] text-slate-400 font-medium">
+              {driver.kpi?.kpiScore != null ? `${Number(driver.kpi.kpiScore).toFixed(0)}% KPI` : '100% KPI'}
+            </Text>
           </View>
         </View>
         <ChevronRight size={18} color="#475569" />
