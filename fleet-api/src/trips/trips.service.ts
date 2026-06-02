@@ -322,8 +322,14 @@ export class TripsService {
 
     const savedAlert = await this.alertRepository.save(alert);
 
+    // Load vehicle relation so the admin gets the license plate details
+    const populatedAlert = await this.alertRepository.findOne({
+      where: { id: savedAlert.id },
+      relations: ['vehicle'],
+    });
+
     // Emit event so the gateway can push socket messages
-    this.eventEmitter.emit('alert.created', savedAlert);
+    this.eventEmitter.emit('alert.new', populatedAlert || savedAlert);
 
     return savedAlert;
   }
