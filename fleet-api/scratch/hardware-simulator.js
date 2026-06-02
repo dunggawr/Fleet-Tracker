@@ -110,9 +110,10 @@ function promptMenu() {
   console.log(`  ${colors.fgGreen}2.${colors.reset} Trigger Biometric Verification (Scan Fingerprint & Face at vehicle)`);
   console.log(`  ${colors.fgGreen}3.${colors.reset} Change simulated deviceId`);
   console.log(`  ${colors.fgGreen}4.${colors.reset} Reset GPS location to HCM Center`);
-  console.log(`  ${colors.fgGreen}5.${colors.reset} Exit`);
+  console.log(`  ${colors.fgGreen}5.${colors.reset} Force Fingerprint Enrollment (Direct link to Driver DB)`);
+  console.log(`  ${colors.fgGreen}6.${colors.reset} Exit`);
   
-  rl.question(`\n${colors.fgCyan}${colors.bright}Enter option [1-5]: ${colors.reset}`, handleMenuSelection);
+  rl.question(`\n${colors.fgCyan}${colors.bright}Enter option [1-6]: ${colors.reset}`, handleMenuSelection);
 }
 
 // Handle action selection
@@ -131,12 +132,15 @@ async function handleMenuSelection(option) {
       resetGpsLocation();
       break;
     case '5':
+      await forceFingerprintEnrollment();
+      break;
+    case '6':
       log(colors.fgYellow, "\nStopping simulator. Goodbye! 👋");
       if (gpsState.intervalId) clearInterval(gpsState.intervalId);
       rl.close();
       process.exit(0);
     default:
-      log(colors.fgRed, "\nInvalid option, please choose between 1 and 5.");
+      log(colors.fgRed, "\nInvalid option, please choose between 1 and 6.");
       setTimeout(promptMenu, 1500);
       break;
   }
@@ -401,6 +405,51 @@ function resetGpsLocation() {
   gpsState.heading = 90;
   log(colors.fgGreen, "\n📍 Location coordinates reset to HCM Center (Quận 10).");
   setTimeout(promptMenu, 1500);
+}
+
+// 5. Force Fingerprint Enrollment (Direct link to Driver DB)
+async function forceFingerprintEnrollment() {
+  log(colors.fgCyan, "\n--- FORCE FINGERPRINT ENROLLMENT ---");
+  
+  rl.question(`👤 Enter Fingerprint ID to register (1-127, default: 1): `, async (fpId) => {
+    const fingerprintId = parseInt(fpId.trim() || '1', 10);
+    if (isNaN(fingerprintId) || fingerprintId < 1 || fingerprintId > 127) {
+      log(colors.fgRed, "Invalid Fingerprint ID! Must be between 1 and 127.");
+      setTimeout(promptMenu, 1500);
+      return;
+    }
+    
+    log(colors.fgYellow, `⏳ Sending force enrollment result for device ${deviceId}, slot #${fingerprintId}...`);
+    
+    try {
+      const response = await fetch(`${BACKEND_URL}/tracking/device/enroll-result`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-device-api-key': API_KEY
+        },
+        body: JSON.stringify({
+          deviceId,
+          fingerprintId,
+          success: true
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok) {
+        log(colors.fgGreen, `\n🎉 ENROLLMENT SUCCESSFUL!`);
+        console.log(JSON.stringify(result, null, 2));
+      } else {
+        log(colors.fgRed, `\n❌ ENROLLMENT FAILED: [${response.status}]`);
+        console.log(JSON.stringify(result, null, 2));
+      }
+    } catch (e) {
+      log(colors.fgRed, `❌ Connection error during force enrollment: ${e.message}`);
+    }
+    
+    rl.question(`\nPress Enter to return to main menu...`, () => promptMenu());
+  });
 }
 
 // Start Simulator
