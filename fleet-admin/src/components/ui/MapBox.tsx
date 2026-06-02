@@ -182,11 +182,29 @@ export function MapBox({
 
     setIsSearching(true);
     try {
-      const response = await fetch(
+      const mapboxPromise = fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&limit=5&country=vn&language=vi&proximity=${viewState.longitude},${viewState.latitude}`
-      );
-      const data = await response.json();
-      setSearchResults(data.features || []);
+      ).then(res => res.json()).then(data => data.features || []).catch(() => []);
+
+      const osmPromise = fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&countrycodes=vn&accept-language=vi`,
+        {
+          headers: {
+            'User-Agent': 'FleetTrackerWeb/1.0'
+          }
+        }
+      ).then(res => res.json()).then(data => {
+        return (data || []).map((item: any) => ({
+          id: `osm-${item.place_id}`,
+          place_name: item.display_name,
+          text: item.name || item.display_name.split(',')[0],
+          center: [parseFloat(item.lon), parseFloat(item.lat)],
+        }));
+      }).catch(() => []);
+
+      const [mapboxResults, osmResults] = await Promise.all([mapboxPromise, osmPromise]);
+      const combined = [...osmResults, ...mapboxResults].slice(0, 6);
+      setSearchResults(combined);
       setShowResults(true);
     } catch (error) {
       console.error('Geocoding error:', error);

@@ -150,7 +150,7 @@ export const MapPicker: React.FC<MapPickerProps> = ({
 
     setSearchLoading(true);
     try {
-      const response = await axios.get(
+      const mapboxPromise = axios.get(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(text)}.json`,
         {
           params: {
@@ -162,10 +162,31 @@ export const MapPicker: React.FC<MapPickerProps> = ({
             proximity: `${selectedLocation.longitude},${selectedLocation.latitude}`,
           },
         }
-      );
-      setSuggestions(response.data.features || []);
+      ).then(res => res.data?.features || []).catch(() => []);
+
+      const osmPromise = axios.get(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(text)}&format=json&limit=5&countrycodes=vn&accept-language=vi`,
+        {
+          headers: {
+            'User-Agent': 'FleetTrackerApp/1.0'
+          }
+        }
+      ).then(res => {
+        return (res.data || []).map((item: any) => ({
+          id: `osm-${item.place_id}`,
+          place_name: item.display_name,
+          text: item.name || item.display_name.split(',')[0],
+          center: [parseFloat(item.lon), parseFloat(item.lat)],
+        }));
+      }).catch(() => []);
+
+      const [mapboxResults, osmResults] = await Promise.all([mapboxPromise, osmPromise]);
+      
+      // Deduplicate results by exact coordinates or names if needed, but simple combination is great
+      const combined = [...osmResults, ...mapboxResults].slice(0, 6);
+      setSuggestions(combined);
     } catch (error) {
-      console.error('Mapbox search error inside MapPicker:', error);
+      console.error('Hybrid search geocoding error:', error);
     } finally {
       setSearchLoading(false);
     }
