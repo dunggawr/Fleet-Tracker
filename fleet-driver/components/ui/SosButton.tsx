@@ -86,7 +86,7 @@ export const SosButton: React.FC<SosButtonProps> = ({ tripId }) => {
           colors={['#ef4444', '#b91c1c']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          className="h-16 rounded-xl flex-row items-center justify-center gap-2"
+          className="h-14 rounded-xl flex-row items-center justify-center gap-2"
         >
           <View className="bg-white/20 p-1.5 rounded-full">
             <AlertTriangle size={18} color="#fff" strokeWidth={2.5} />

@@ -121,7 +121,7 @@ export const MissionPanel: React.FC<MissionPanelProps> = ({
               style={{ height: 56, borderRadius: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 }}
             >
               <CheckCircle2 size={20} color="#fff" strokeWidth={2.5} />
-              <Text className="text-white font-black text-[13px] uppercase tracking-wider" numberOfLines={1}>Hoàn thành chuyến</Text>
+              <Text className="text-white font-black text-[11px] uppercase tracking-wider" numberOfLines={1}>Hoàn thành chuyến</Text>
             </LinearGradient>
           </TouchableOpacity>
         );
@@ -144,7 +144,7 @@ export const MissionPanel: React.FC<MissionPanelProps> = ({
                 style={{ height: 56, borderRadius: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 }}
               >
                 <Truck size={20} color="#fff" strokeWidth={2.5} />
-                <Text className="text-white font-black text-[13px] uppercase tracking-wider" numberOfLines={1}>Xác nhận lấy hàng</Text>
+                <Text className="text-white font-black text-[11px] uppercase tracking-wider" numberOfLines={1}>Xác nhận lấy hàng</Text>
               </LinearGradient>
             </TouchableOpacity>
           );
@@ -164,7 +164,7 @@ export const MissionPanel: React.FC<MissionPanelProps> = ({
             >
               <View style={{ height: 56, borderRadius: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 }} className="bg-slate-800">
                 <Truck size={20} color="#64748b" strokeWidth={2.5} />
-                <Text className="text-slate-400 font-bold text-[12px] uppercase tracking-wider" numberOfLines={1}>
+                <Text className="text-slate-400 font-bold text-[11px] uppercase tracking-wider" numberOfLines={1}>
                   Lấy hàng ({distText})
                 </Text>
               </View>
@@ -189,7 +189,7 @@ export const MissionPanel: React.FC<MissionPanelProps> = ({
               style={{ height: 56, borderRadius: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 }}
             >
               <Navigation size={20} color="#fff" strokeWidth={2.5} />
-              <Text className="text-white font-black text-[13px] uppercase tracking-wider" numberOfLines={1}>Bắt đầu giao hàng</Text>
+              <Text className="text-white font-black text-[11px] uppercase tracking-wider" numberOfLines={1}>Bắt đầu giao hàng</Text>
             </LinearGradient>
           </TouchableOpacity>
         );
@@ -211,7 +211,7 @@ export const MissionPanel: React.FC<MissionPanelProps> = ({
               style={{ height: 56, borderRadius: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 }}
             >
               <CheckCircle2 size={20} color="#fff" strokeWidth={2.5} />
-              <Text className="text-white font-black text-[13px] uppercase tracking-wider" numberOfLines={1}>Xác nhận giao hàng</Text>
+              <Text className="text-white font-black text-[11px] uppercase tracking-wider" numberOfLines={1}>Xác nhận giao hàng</Text>
             </LinearGradient>
           </TouchableOpacity>
         );
@@ -231,7 +231,7 @@ export const MissionPanel: React.FC<MissionPanelProps> = ({
           >
             <View style={{ height: 56, borderRadius: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 }} className="bg-slate-800">
               <CheckCircle2 size={20} color="#64748b" strokeWidth={2.5} />
-              <Text className="text-slate-400 font-bold text-[13px] uppercase tracking-wider" numberOfLines={1}>
+              <Text className="text-slate-400 font-bold text-[11px] uppercase tracking-wider" numberOfLines={1}>
                 Giao hàng ({distText})
               </Text>
             </View>
@@ -302,10 +302,12 @@ export const MissionPanel: React.FC<MissionPanelProps> = ({
           </View>
 
           {/* Tactical Actions */}
-          <View className="flex-row gap-3">
-            {renderActionButton()}
+          <View className="flex-row gap-3 items-center">
+            <View className="flex-[2] w-full">
+              {renderActionButton()}
+            </View>
 
-            <View className="flex-1">
+            <View className="flex-1 w-full">
               <SosButton tripId={activeTrip.id} />
             </View>
           </View>
