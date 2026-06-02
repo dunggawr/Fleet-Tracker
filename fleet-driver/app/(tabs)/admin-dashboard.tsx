@@ -271,7 +271,7 @@ export default function AdminDashboardScreen() {
           )}
         </View>
         {idx < array.length - 1 && (
-          <View className="w-[1px] h-12 bg-slate-800 absolute bottom-[-32px] left-[15px]" />
+          <View className="w-[2px] h-12 bg-slate-800 absolute bottom-[-32px] left-[15px]" />
         )}
       </View>
 
