@@ -279,7 +279,7 @@ export class TrackingService implements OnModuleDestroy {
   }
 
   async getAllLiveLocations() {
-    return this.vehicleRepository.find({
+    const vehicles = await this.vehicleRepository.find({
       relations: ['driver', 'driver.user'],
       select: {
         id: true,
@@ -294,6 +294,24 @@ export class TrackingService implements OnModuleDestroy {
           },
         },
       },
+    });
+
+    // Query active/accepted trips
+    const activeTrips = await this.tripRepository.find({
+      where: [
+        { status: TripStatus.IN_PROGRESS },
+        { status: TripStatus.ACCEPTED },
+      ],
+      select: ['id', 'vehicleId'],
+    });
+
+    // Map active tripId to each vehicle
+    return vehicles.map((v) => {
+      const trip = activeTrips.find((t) => t.vehicleId === v.id);
+      return {
+        ...v,
+        tripId: trip?.id || null,
+      };
     });
   }
 
