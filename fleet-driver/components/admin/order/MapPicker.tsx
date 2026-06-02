@@ -7,7 +7,8 @@ import {
   TextInput, 
   ActivityIndicator, 
   ScrollView, 
-  Keyboard 
+  Keyboard,
+  Alert 
 } from 'react-native';
 import { MapComponent, MarkerComponent, PROVIDER_GOOGLE } from '../../map/MapComponents';
 import { MapPin, Check, X, Target, Search } from 'lucide-react-native';
@@ -33,14 +34,14 @@ export const MapPicker: React.FC<MapPickerProps> = ({
   title 
 }) => {
   const [region, setRegion] = useState({
-    latitude: initialLocation?.latitude || 10.762622,
-    longitude: initialLocation?.longitude || 106.660172,
+    latitude: initialLocation?.latitude || 21.027764,
+    longitude: initialLocation?.longitude || 105.834159,
     latitudeDelta: 0.01,
     longitudeDelta: 0.01,
   });
 
   const [selectedLocation, setSelectedLocation] = useState(
-    initialLocation || { latitude: 10.762622, longitude: 106.660172 }
+    initialLocation || { latitude: 21.027764, longitude: 105.834159 }
   );
 
   const [selectedAddress, setSelectedAddress] = useState(initialAddress || '');
@@ -53,28 +54,50 @@ export const MapPicker: React.FC<MapPickerProps> = ({
 
   useEffect(() => {
     (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') return;
+      try {
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') return;
 
-      let location = await Location.getCurrentPositionAsync({});
-      if (!initialLocation) {
-        const newLoc = {
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-        };
-        setSelectedLocation(newLoc);
-        setRegion({
-          ...region,
-          ...newLoc,
-        });
-        mapRef.current?.animateToRegion({
-          ...region,
-          ...newLoc,
-        }, 500);
-        await reverseGeocode(newLoc.latitude, newLoc.longitude);
-      } else {
-        if (!initialAddress) {
-          await reverseGeocode(initialLocation.latitude, initialLocation.longitude);
+        let location = await Location.getCurrentPositionAsync({});
+        if (!initialLocation) {
+          const newLoc = {
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+          };
+          setSelectedLocation(newLoc);
+          setRegion({
+            ...region,
+            ...newLoc,
+          });
+          mapRef.current?.animateToRegion({
+            ...region,
+            ...newLoc,
+          }, 500);
+          await reverseGeocode(newLoc.latitude, newLoc.longitude);
+        } else {
+          if (!initialAddress) {
+            await reverseGeocode(initialLocation.latitude, initialLocation.longitude);
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to get current location:", err);
+        // Fallback to Hanoi center if no initialLocation provided
+        if (!initialLocation) {
+          const newLoc = { latitude: 21.027764, longitude: 105.834159 };
+          setSelectedLocation(newLoc);
+          setRegion({
+            ...region,
+            ...newLoc,
+          });
+          mapRef.current?.animateToRegion({
+            ...region,
+            ...newLoc,
+          }, 500);
+          await reverseGeocode(newLoc.latitude, newLoc.longitude);
+        } else {
+          if (!initialAddress) {
+            await reverseGeocode(initialLocation.latitude, initialLocation.longitude);
+          }
         }
       }
     })();
@@ -214,17 +237,25 @@ export const MapPicker: React.FC<MapPickerProps> = ({
   };
 
   const handleCenter = async () => {
-    let location = await Location.getCurrentPositionAsync({});
-    const newLoc = {
-      latitude: location.coords.latitude,
-      longitude: location.coords.longitude,
-    };
-    setSelectedLocation(newLoc);
-    mapRef.current?.animateToRegion({
-      ...region,
-      ...newLoc,
-    }, 500);
-    await reverseGeocode(newLoc.latitude, newLoc.longitude);
+    try {
+      let location = await Location.getCurrentPositionAsync({});
+      const newLoc = {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      };
+      setSelectedLocation(newLoc);
+      mapRef.current?.animateToRegion({
+        ...region,
+        ...newLoc,
+      }, 500);
+      await reverseGeocode(newLoc.latitude, newLoc.longitude);
+    } catch (err) {
+      console.warn("Failed to center to current location:", err);
+      Alert.alert(
+        "Lỗi định vị",
+        "Không thể lấy vị trí hiện tại. Vui lòng kiểm tra lại dịch vụ định vị GPS của thiết bị."
+      );
+    }
   };
 
   return (
