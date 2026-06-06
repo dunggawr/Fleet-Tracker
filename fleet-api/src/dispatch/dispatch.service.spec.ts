@@ -8,6 +8,7 @@ import { Vehicle, VehicleStatus } from '../entities/vehicle.entity';
 import { Trip } from '../entities/trip.entity';
 import { DriverStatus } from '../entities/driver.entity';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { OptimizationService } from '../optimization/optimization.service';
 
 describe('DispatchService', () => {
   let service: DispatchService;
@@ -48,6 +49,7 @@ describe('DispatchService', () => {
     vehicleRepo = {
       createQueryBuilder: jest.fn().mockReturnValue({
         innerJoinAndSelect: jest.fn().mockReturnThis(),
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
         addSelect: jest.fn().mockReturnThis(),
@@ -89,6 +91,12 @@ describe('DispatchService', () => {
         {
           provide: EventEmitter2,
           useValue: { emit: jest.fn() },
+        },
+        {
+          provide: OptimizationService,
+          useValue: {
+            optimizeTripRoute: jest.fn().mockResolvedValue({}),
+          },
         },
       ],
     }).compile();
@@ -166,6 +174,44 @@ describe('DispatchService', () => {
       expect(mockQueryRunner.manager.save).toHaveBeenCalledTimes(4); // Trip, TripOrder, Order, Vehicle
       expect(mockQueryRunner.commitTransaction).toHaveBeenCalled();
       expect(result).toBeDefined();
+    });
+
+    it('should append order to active trip if vehicle status is DELIVERING', async () => {
+      const mockOrder = {
+        id: 'o2',
+        status: OrderStatus.PENDING,
+        weightKg: 50,
+      };
+      const mockVehicle = {
+        id: 'v1',
+        status: VehicleStatus.DELIVERING,
+        driverId: 'd1',
+        driver: { id: 'd1', status: DriverStatus.ON_TRIP },
+        maxCapacityKg: 1000,
+        currentLoadKg: 200,
+      };
+      const mockActiveTrip = {
+        id: 'active-trip-id',
+        status: 'in_progress',
+      };
+      const mockTripOrders = [
+        { id: 'to1', sequence: 1 },
+      ];
+
+      mockQueryRunner.manager.findOne
+        .mockResolvedValueOnce(mockOrder) // First findOne is order
+        .mockResolvedValueOnce(mockVehicle) // Second findOne is vehicle
+        .mockResolvedValueOnce(mockVehicle.driver) // Third findOne is driver
+        .mockResolvedValueOnce(mockActiveTrip); // Fourth findOne is activeTrip (inside delivering logic)
+
+      mockQueryRunner.manager.find.mockResolvedValueOnce(mockTripOrders); // find current trip orders
+
+      const result = await service.assignOrder('o2', 'v1');
+
+      expect(mockQueryRunner.manager.save).toHaveBeenCalledTimes(3); // TripOrder, Order, Vehicle (no new Trip created)
+      expect(mockQueryRunner.commitTransaction).toHaveBeenCalled();
+      expect(result).toBeDefined();
+      expect(result.id).toBe('active-trip-id');
     });
 
     it('should rollback if something fails', async () => {

@@ -11,6 +11,7 @@ import { Trip, TripStatus } from '../entities/trip.entity';
 import { TripOrder } from '../entities/trip-order.entity';
 import { Driver, DriverStatus } from '../entities/driver.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { OptimizationService } from '../optimization/optimization.service';
 
 @Injectable()
 export class DispatchService {
@@ -23,6 +24,7 @@ export class DispatchService {
     private tripRepository: Repository<Trip>,
     private dataSource: DataSource,
     private eventEmitter: EventEmitter2,
+    private optimizationService: OptimizationService,
   ) {}
 
   async suggestVehicles(orderId: string) {
@@ -41,8 +43,12 @@ export class DispatchService {
       .createQueryBuilder('vehicle')
       .innerJoinAndSelect('vehicle.driver', 'driver')
       .leftJoinAndSelect('driver.user', 'driverUser')
-      .where('vehicle.status = :vStatus', { vStatus: VehicleStatus.AVAILABLE })
-      .andWhere('driver.status = :dStatus', { dStatus: DriverStatus.AVAILABLE })
+      .where('vehicle.status IN (:...vStatuses)', {
+        vStatuses: [VehicleStatus.AVAILABLE, VehicleStatus.DELIVERING],
+      })
+      .andWhere('driver.status IN (:...dStatuses)', {
+        dStatuses: [DriverStatus.AVAILABLE, DriverStatus.ON_TRIP],
+      })
       .andWhere('driver.license_expiry > :today', { today: new Date() })
       .andWhere('vehicle.last_known_location IS NOT NULL') // Avoid null location issues
       .andWhere(
@@ -123,37 +129,92 @@ export class DispatchService {
       // Attach driver to vehicle object for compatibility with existing logic
       vehicle.driver = driver;
 
-      if (vehicle.status !== VehicleStatus.AVAILABLE) {
-        throw new BadRequestException('Vehicle is not available');
+      if (
+        vehicle.status !== VehicleStatus.AVAILABLE &&
+        vehicle.status !== VehicleStatus.DELIVERING
+      ) {
+        throw new BadRequestException('Vehicle is not available for assignment');
       }
 
       if (!vehicle.driver) {
         throw new BadRequestException('Vehicle has no driver assigned');
       }
 
-      if (vehicle.driver.status !== DriverStatus.AVAILABLE) {
-        throw new BadRequestException('Driver is already on another trip');
+      if (
+        vehicle.driver.status !== DriverStatus.AVAILABLE &&
+        vehicle.driver.status !== DriverStatus.ON_TRIP
+      ) {
+        throw new BadRequestException('Driver is off duty or not available');
       }
 
-      if (vehicle.maxCapacityKg - vehicle.currentLoadKg < order.weightKg) {
+      if (
+        Number(vehicle.maxCapacityKg) - Number(vehicle.currentLoadKg) <
+        Number(order.weightKg)
+      ) {
         throw new BadRequestException('Vehicle capacity exceeded');
       }
 
-      // Create Trip
-      const trip = queryRunner.manager.create(Trip, {
-        vehicleId: vehicle.id,
-        driverId: vehicle.driverId,
-        status: TripStatus.PENDING,
-      });
-      const savedTrip = await queryRunner.manager.save(Trip, trip);
+      let activeTrip: Trip | null = null;
+      if (vehicle.status === VehicleStatus.DELIVERING) {
+        // Find existing active trip
+        activeTrip = await queryRunner.manager.findOne(Trip, {
+          where: {
+            vehicleId: vehicle.id,
+            driverId: vehicle.driverId,
+            status: In([
+              TripStatus.PENDING,
+              TripStatus.ACCEPTED,
+              TripStatus.IN_PROGRESS,
+            ]),
+          },
+          lock: { mode: 'pessimistic_write' },
+        });
 
-      // Link Order to Trip
-      const tripOrder = queryRunner.manager.create(TripOrder, {
-        tripId: savedTrip.id,
-        orderId: order.id,
-        sequence: 1,
-      });
-      await queryRunner.manager.save(TripOrder, tripOrder);
+        if (!activeTrip) {
+          throw new BadRequestException(
+            'Vehicle is marked as delivering but has no active trip',
+          );
+        }
+      }
+
+      let savedTrip: Trip;
+      if (activeTrip) {
+        // Use existing active trip
+        savedTrip = activeTrip;
+
+        // Find max sequence in current tripOrders
+        const tripOrders = await queryRunner.manager.find(TripOrder, {
+          where: { tripId: activeTrip.id },
+        });
+        const maxSequence = tripOrders.reduce(
+          (max, to) => Math.max(max, to.sequence),
+          0,
+        );
+
+        // Link Order to existing Trip
+        const tripOrder = queryRunner.manager.create(TripOrder, {
+          tripId: activeTrip.id,
+          orderId: order.id,
+          sequence: maxSequence + 1,
+        });
+        await queryRunner.manager.save(TripOrder, tripOrder);
+      } else {
+        // Create Trip
+        const trip = queryRunner.manager.create(Trip, {
+          vehicleId: vehicle.id,
+          driverId: vehicle.driverId,
+          status: TripStatus.PENDING,
+        });
+        savedTrip = await queryRunner.manager.save(Trip, trip);
+
+        // Link Order to Trip
+        const tripOrder = queryRunner.manager.create(TripOrder, {
+          tripId: savedTrip.id,
+          orderId: order.id,
+          sequence: 1,
+        });
+        await queryRunner.manager.save(TripOrder, tripOrder);
+      }
 
       // Update Order Status
       order.status = OrderStatus.ASSIGNED;
@@ -166,6 +227,14 @@ export class DispatchService {
       await queryRunner.manager.save(Vehicle, vehicle);
 
       await queryRunner.commitTransaction();
+
+      // Optimize route using Mapbox API asynchronously (after transaction commit)
+      try {
+        await this.optimizationService.optimizeTripRoute(savedTrip.id);
+      } catch (optErr) {
+        // We log the error but don't fail the assignment since Mapbox might fail or be unconfigured
+        console.error('Failed to optimize trip route after assignment:', optErr);
+      }
 
       // Emit event for real-time notification
       this.eventEmitter.emit('trip.assigned', savedTrip);
@@ -216,16 +285,22 @@ export class DispatchService {
       // Attach driver to vehicle object for compatibility with existing logic
       vehicle.driver = driver;
 
-      if (vehicle.status !== VehicleStatus.AVAILABLE) {
-        throw new BadRequestException('Vehicle is not available');
+      if (
+        vehicle.status !== VehicleStatus.AVAILABLE &&
+        vehicle.status !== VehicleStatus.DELIVERING
+      ) {
+        throw new BadRequestException('Vehicle is not available for assignment');
       }
 
       if (!vehicle.driver) {
         throw new BadRequestException('Vehicle has no driver assigned');
       }
 
-      if (vehicle.driver.status !== DriverStatus.AVAILABLE) {
-        throw new BadRequestException('Driver is already on another trip');
+      if (
+        vehicle.driver.status !== DriverStatus.AVAILABLE &&
+        vehicle.driver.status !== DriverStatus.ON_TRIP
+      ) {
+        throw new BadRequestException('Driver is off duty or not available');
       }
 
       // 2. Batch fetch orders
@@ -259,36 +334,94 @@ export class DispatchService {
         totalWeight += Number(order.weightKg);
       }
 
-      if (vehicle.maxCapacityKg - vehicle.currentLoadKg < totalWeight) {
+      if (
+        Number(vehicle.maxCapacityKg) - Number(vehicle.currentLoadKg) <
+        totalWeight
+      ) {
         throw new BadRequestException(
           'Vehicle capacity exceeded for this cluster',
         );
       }
 
-      // 3. Create Trip
-      const trip = queryRunner.manager.create(Trip, {
-        vehicleId: vehicle.id,
-        driverId: vehicle.driverId,
-        status: TripStatus.PENDING,
-      });
-      const savedTrip = await queryRunner.manager.save(Trip, trip);
-
-      // 4. Batch link Orders to Trip and update statuses
-      const tripOrders: TripOrder[] = [];
-      for (let i = 0; i < orders.length; i++) {
-        const tripOrder = queryRunner.manager.create(TripOrder, {
-          tripId: savedTrip.id,
-          orderId: orders[i].id,
-          sequence: i + 1,
+      let activeTrip: Trip | null = null;
+      if (vehicle.status === VehicleStatus.DELIVERING) {
+        // Find existing active trip
+        activeTrip = await queryRunner.manager.findOne(Trip, {
+          where: {
+            vehicleId: vehicle.id,
+            driverId: vehicle.driverId,
+            status: In([
+              TripStatus.PENDING,
+              TripStatus.ACCEPTED,
+              TripStatus.IN_PROGRESS,
+            ]),
+          },
+          lock: { mode: 'pessimistic_write' },
         });
-        tripOrders.push(tripOrder);
 
-        orders[i].status = OrderStatus.ASSIGNED;
+        if (!activeTrip) {
+          throw new BadRequestException(
+            'Vehicle is marked as delivering but has no active trip',
+          );
+        }
       }
 
-      // Batch save TripOrders and updated Orders
-      await queryRunner.manager.save(TripOrder, tripOrders);
-      await queryRunner.manager.save(Order, orders);
+      let savedTrip: Trip;
+      if (activeTrip) {
+        // Use existing active trip
+        savedTrip = activeTrip;
+
+        // Find max sequence in current tripOrders
+        const tripOrders = await queryRunner.manager.find(TripOrder, {
+          where: { tripId: activeTrip.id },
+        });
+        const maxSequence = tripOrders.reduce(
+          (max, to) => Math.max(max, to.sequence),
+          0,
+        );
+
+        // 4. Batch link Orders to Trip and update statuses
+        const newTripOrders: TripOrder[] = [];
+        for (let i = 0; i < orders.length; i++) {
+          const tripOrder = queryRunner.manager.create(TripOrder, {
+            tripId: activeTrip.id,
+            orderId: orders[i].id,
+            sequence: maxSequence + i + 1,
+          });
+          newTripOrders.push(tripOrder);
+
+          orders[i].status = OrderStatus.ASSIGNED;
+        }
+
+        // Batch save TripOrders and updated Orders
+        await queryRunner.manager.save(TripOrder, newTripOrders);
+        await queryRunner.manager.save(Order, orders);
+      } else {
+        // 3. Create Trip
+        const trip = queryRunner.manager.create(Trip, {
+          vehicleId: vehicle.id,
+          driverId: vehicle.driverId,
+          status: TripStatus.PENDING,
+        });
+        savedTrip = await queryRunner.manager.save(Trip, trip);
+
+        // 4. Batch link Orders to Trip and update statuses
+        const tripOrders: TripOrder[] = [];
+        for (let i = 0; i < orders.length; i++) {
+          const tripOrder = queryRunner.manager.create(TripOrder, {
+            tripId: savedTrip.id,
+            orderId: orders[i].id,
+            sequence: i + 1,
+          });
+          tripOrders.push(tripOrder);
+
+          orders[i].status = OrderStatus.ASSIGNED;
+        }
+
+        // Batch save TripOrders and updated Orders
+        await queryRunner.manager.save(TripOrder, tripOrders);
+        await queryRunner.manager.save(Order, orders);
+      }
 
       // Update Vehicle Status and Load
       vehicle.status = VehicleStatus.DELIVERING;
@@ -296,6 +429,13 @@ export class DispatchService {
       await queryRunner.manager.save(Vehicle, vehicle);
 
       await queryRunner.commitTransaction();
+
+      // Optimize route using Mapbox API asynchronously (after transaction commit)
+      try {
+        await this.optimizationService.optimizeTripRoute(savedTrip.id);
+      } catch (optErr) {
+        console.error('Failed to optimize trip route after assignment:', optErr);
+      }
 
       // Emit event for real-time notification
       this.eventEmitter.emit('trip.assigned', savedTrip);

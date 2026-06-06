@@ -8,12 +8,14 @@ import { Trip } from '../entities/trip.entity';
 import { TripOrder } from '../entities/trip-order.entity';
 import { OrdersModule } from '../orders/orders.module';
 import { VehiclesModule } from '../vehicles/vehicles.module';
+import { OptimizationModule } from '../optimization/optimization.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Order, Vehicle, Trip, TripOrder]),
     OrdersModule,
     VehiclesModule,
+    OptimizationModule,
   ],
   controllers: [DispatchController],
   providers: [DispatchService],

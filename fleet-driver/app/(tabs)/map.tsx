@@ -43,6 +43,8 @@ export default function ActiveTripMap() {
     verificationOrderId,
     setVerificationOrderId,
     handleVerificationSubmit,
+    selectedOrderId,
+    setSelectedOrderId,
   } = useMapFlow();
 
   if (!activeTrip) {
@@ -182,6 +184,8 @@ export default function ActiveTripMap() {
         onProofOfDelivery={handleProofOfDelivery}
         onCheckpoint={handleCheckpoint}
         onNavigate={openNavigation}
+        selectedOrderId={selectedOrderId}
+        onSelectOrder={setSelectedOrderId}
       />
 
       {verificationOrderId && (

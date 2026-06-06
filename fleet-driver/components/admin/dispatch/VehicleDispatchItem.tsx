@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { Truck, User, Gauge, ChevronRight, Sparkles } from 'lucide-react-native';
-import { Vehicle } from '../../../store/useFleetStore';
+import { Vehicle, VehicleStatus } from '../../../store/useFleetStore';
 
 interface VehicleDispatchItemProps {
   vehicle: Vehicle;
@@ -106,9 +106,19 @@ export const VehicleDispatchItem: React.FC<VehicleDispatchItemProps> = ({
           )}
           <View 
             className="px-2 py-0.5 rounded-md"
-            style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}
+            style={{ 
+              backgroundColor: vehicle.status === VehicleStatus.DELIVERING 
+                ? 'rgba(245, 158, 11, 0.1)' 
+                : 'rgba(16, 185, 129, 0.1)' 
+            }}
           >
-            <Text className="text-emerald-500 text-[9px] font-bold uppercase">Available</Text>
+            <Text 
+              className={`text-[9px] font-bold uppercase ${
+                vehicle.status === VehicleStatus.DELIVERING ? 'text-amber-500' : 'text-emerald-500'
+              }`}
+            >
+              {vehicle.status === VehicleStatus.DELIVERING ? 'Delivering' : 'Available'}
+            </Text>
           </View>
         </View>
       </View>
