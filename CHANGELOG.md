@@ -1,3 +1,16 @@
+## [2026-06-06] - Cargo Category, Priority, and Delivery Overdue Alerts
+
+### Added
+- **Order Cargo Category and Priority**:
+  - Implemented cargo classification (`raw_material` | `finished_goods` | `component` | `equipment` | `other`) and priority levels (`low` | `medium` | `high`) inside both backend `Order` entity and mobile `OrderForm`.
+  - Added horizontal priority selection badges and a custom bottom-sheet modal for cargo category on the mobile `OrderForm`.
+- **Delivery Overdue Alert Scanning**:
+  - Implemented a background cron task scanning every 60 seconds for orders whose `deliveryDeadline` has passed but are not yet delivered.
+  - Generates `HIGH` severity alerts automatically for active trips associated with overdue orders.
+  - Created an event-driven listener (`order.status_changed`) that resolves/closes overdue alerts when an order status changes to `DELIVERED`, `FAILED`, or `CANCELLED`.
+- **Database Schema Upgrades**:
+  - Updated Supabase Postgres tables adding `category`, `priority`, `recipient_name`, `recipient_phone`, and `delivery_deadline` columns.
+
 ## [2026-06-06] - Dedicated History Tab, Lightbox Proof Verification, StatusBar Fix & UI/UX Polish
 
 ### Added

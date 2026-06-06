@@ -27,8 +27,19 @@ interface VehicleFormProps {
 }
 
 export const VehicleForm: React.FC<VehicleFormProps> = ({ initialData, onSubmit, loading }) => {
-  const { drivers } = useFleetStore();
+  const { drivers, vehicles } = useFleetStore();
   const [isUploading, setIsUploading] = useState(false);
+
+  const availableDrivers = React.useMemo(() => {
+    // Get all driver IDs assigned to other vehicles
+    const assignedDriverIds = vehicles
+      .filter(v => v.id !== initialData?.id && v.driverId)
+      .map(v => v.driverId);
+      
+    // Filter drivers: keep if not assigned, OR if it's the current vehicle's driver
+    return drivers.filter(d => !assignedDriverIds.includes(d.id));
+  }, [drivers, vehicles, initialData?.id]);
+
   const [formData, setFormData] = useState({
     plateNumber: initialData?.plateNumber || '',
     type: initialData?.type || VehicleType.MEDIUM,
@@ -121,7 +132,7 @@ export const VehicleForm: React.FC<VehicleFormProps> = ({ initialData, onSubmit,
 
         <VehicleStatusSelector status={formData.status} setStatus={(status) => setFormData(prev => ({ ...prev, status }))} />
 
-        <DriverAssigner drivers={drivers} selectedDriverId={formData.driverId} setDriverId={(id) => setFormData(prev => ({ ...prev, driverId: id }))} />
+        <DriverAssigner drivers={availableDrivers} selectedDriverId={formData.driverId} setDriverId={(id) => setFormData(prev => ({ ...prev, driverId: id }))} />
 
         <TouchableOpacity 
           className="bg-indigo-500 h-14 rounded-2xl justify-center items-center mt-3"

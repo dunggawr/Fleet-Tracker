@@ -91,7 +91,7 @@ FleetTracker là hệ thống quản lý đội xe vận tải (5-10 xe) gồm:
 | `users` | Auth & phân quyền | id, email, password_hash, role (admin/driver) |
 | `drivers` | Thông tin tài xế | id, user_id (FK), full_name, phone, license_class, license_expiry, status |
 | `vehicles` | Thông tin xe | id, plate_number, type, max_capacity, driver_id (FK), status, image_url |
-| `orders` | Đơn hàng | id, pickup_location (PostGIS), delivery_location (PostGIS), weight, status |
+| `orders` | Đơn hàng | id, pickup_location (PostGIS), delivery_location (PostGIS), weight, status, recipient_name, recipient_phone, category, priority, delivery_deadline |
 | `trips` | Chuyến đi | id, vehicle_id, driver_id, planned_route (PostGIS), status, started_at, ended_at |
 | `trip_orders` | Liên kết trip-order (N:N) | trip_id, order_id |
 | `gps_locations` | Lịch sử GPS | id, vehicle_id, location (PostGIS point), speed, heading, recorded_at |
@@ -307,6 +307,7 @@ GPS Data (từ Driver App)
 | Admin xóa xe đang chạy | Không cho xóa, hiển thị cảnh báo |
 | 2 đơn cùng khu vực | Gợi ý gom vào 1 trip |
 | Bằng lái hết hạn | Cảnh báo Admin, không cho gán chuyến |
+| Đơn hàng quá hạn | Hệ thống quét nền tự động mỗi 60 giây, phát cảnh báo độ nghiêm trọng HIGH cho Admin, tự động đóng (resolve) cảnh báo khi đơn hàng được giao, hủy hoặc thất bại |
 
 ---
 

@@ -51,7 +51,7 @@ export class AlertsService implements OnModuleInit {
       const existingAlert = await this.alertRepository.findOne({
         where: {
           type: AlertType.DELIVERY_OVERDUE,
-          message: Like(`%Order #${order.id.substring(0, 8)}%`),
+          message: Like(`%#${order.id.substring(0, 8).toUpperCase()}%`),
         },
       });
 
@@ -188,7 +188,7 @@ export class AlertsService implements OnModuleInit {
         where: {
           type: AlertType.DELIVERY_OVERDUE,
           isResolved: false,
-          message: Like(`%Order #${orderShortId}%`),
+          message: Like(`%#${orderShortId}%`),
         },
       });
 

@@ -91,9 +91,6 @@ export const useAdminDashboard = () => {
     // 2. Alerts
     if (Array.isArray(alerts)) {
       alerts.forEach((alert: any) => {
-        const isSOS = alert.type === 'SOS' || alert.type === 'incident' || alert.severity === 'critical';
-        if (alert.type !== 'abnormal_stop' && !isSOS) return;
-
         const createdDate = safeDate(alert.createdAt);
         if (createdDate) {
           items.push({
@@ -176,8 +173,8 @@ export const useAdminDashboard = () => {
     socketService.connect();
 
     const handleNewAlert = (payload: any) => {
+      const isOverdue = payload.type === 'delivery_overdue';
       const isSOS = payload.type === 'SOS' || payload.type === 'incident' || payload.severity === 'CRITICAL' || payload.severity === 'critical';
-      if (payload.type !== 'abnormal_stop' && !isSOS) return;
 
       if (isSOS) {
         Toast.show({
@@ -185,6 +182,20 @@ export const useAdminDashboard = () => {
           text1: '🚨 SOS EMERGENCY',
           text2: `${payload.message || 'Driver triggered SOS!'} (${payload.vehicle?.plateNumber || 'Unknown Vehicle'})`,
           visibilityTime: 15000,
+        });
+      } else if (isOverdue) {
+        Toast.show({
+          type: 'error',
+          text1: '⏰ ĐƠN HÀNG QUÁ HẠN',
+          text2: payload.message || 'Có đơn hàng quá hạn giao hàng!',
+          visibilityTime: 8000,
+        });
+      } else {
+        Toast.show({
+          type: 'info',
+          text1: `⚠️ ${payload.type?.replace('_', ' ')?.toUpperCase() || 'ALERT'}`,
+          text2: payload.message || 'Cảnh báo mới từ hệ thống!',
+          visibilityTime: 6000,
         });
       }
 

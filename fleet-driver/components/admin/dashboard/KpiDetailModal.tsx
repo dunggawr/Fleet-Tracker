@@ -194,7 +194,7 @@ export const KpiDetailModal: React.FC<KpiDetailModalProps> = ({
             }
 
             if (activeKpiDetail === 'alerts') {
-              const unresolvedAlerts = (alerts || []).filter((a: any) => !a.isResolved && a.type === 'abnormal_stop');
+              const unresolvedAlerts = (alerts || []).filter((a: any) => !a.isResolved);
               const filteredAlerts = unresolvedAlerts.filter((alert: any) => 
                 alert.message?.toLowerCase().includes(query) ||
                 alert.vehicle?.plateNumber?.toLowerCase().includes(query)
