@@ -17,6 +17,8 @@ interface MissionPanelProps {
   onUpdateOrderStatus: (orderId: string, status: OrderStatus) => void;
   onProofOfDelivery?: () => void;
   onCheckpoint?: () => void;
+  selectedOrderId?: string | null;
+  onSelectOrder?: (orderId: string) => void;
 }
 
 export const MissionPanel: React.FC<MissionPanelProps> = ({
@@ -28,9 +30,30 @@ export const MissionPanel: React.FC<MissionPanelProps> = ({
   onUpdateTripStatus,
   onUpdateOrderStatus,
   onProofOfDelivery,
-  onCheckpoint
+  onCheckpoint,
+  selectedOrderId,
+  onSelectOrder
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  const handleSelectOrderPrompt = () => {
+    const undeliveredOrders = activeTrip.orders.filter(o => o.status !== OrderStatus.DELIVERED);
+    if (undeliveredOrders.length <= 1) return;
+
+    Alert.alert(
+      'Chọn nhiệm vụ mục tiêu',
+      'Chọn đơn hàng bạn muốn thực hiện tiếp theo:',
+      [
+        ...undeliveredOrders.map(o => ({
+          text: `Đơn #${o.id.slice(-6).toUpperCase()} (${
+            o.status === OrderStatus.PICKED_UP || o.status === OrderStatus.DELIVERING ? 'Giao hàng' : 'Lấy hàng'
+          })`,
+          onPress: () => onSelectOrder?.(o.id)
+        })),
+        { text: 'Hủy', style: 'cancel' }
+      ]
+    );
+  };
 
   const pickupDistance = React.useMemo(() => {
     if (!location || !currentOrder?.pickupLocation) return null;
@@ -284,9 +307,21 @@ export const MissionPanel: React.FC<MissionPanelProps> = ({
                     <View className="w-5 h-5 rounded-lg bg-white/5 items-center justify-center">
                       <User size={10} color="#94a3b8" />
                     </View>
-                    <Text className="text-slate-400 text-xs font-bold tracking-tight" numberOfLines={1} ellipsizeMode="tail">
-                      Đơn #{currentOrder.id.slice(-6).toUpperCase()}
-                    </Text>
+                    {activeTrip.orders.filter(o => o.status !== OrderStatus.DELIVERED).length > 1 ? (
+                      <TouchableOpacity 
+                        onPress={handleSelectOrderPrompt}
+                        className="flex-row items-center bg-indigo-500/10 px-2 py-0.5 rounded-lg border border-indigo-500/20"
+                        activeOpacity={0.7}
+                      >
+                        <Text className="text-indigo-400 text-xs font-black tracking-tight mr-1">
+                          Đơn #{currentOrder.id.slice(-6).toUpperCase()} 🔄
+                        </Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <Text className="text-slate-400 text-xs font-bold tracking-tight" numberOfLines={1} ellipsizeMode="tail">
+                        Đơn #{currentOrder.id.slice(-6).toUpperCase()}
+                      </Text>
+                    )}
                     <View className="w-1 h-1 rounded-full bg-slate-700 mx-0.5" />
                     <ShieldCheck size={12} color="#10b981" />
                     <Text className="text-emerald-500 text-[9px] font-black uppercase">Xác thực</Text>

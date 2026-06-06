@@ -55,7 +55,7 @@ export default function DispatchCenterScreen() {
 
   const pendingOrders = orders.filter(o => o.status === OrderStatus.PENDING);
   const availableVehicles = vehicles.filter(v => 
-    v.status === VehicleStatus.AVAILABLE && v.driverId !== null
+    (v.status === VehicleStatus.AVAILABLE || v.status === VehicleStatus.DELIVERING) && v.driverId !== null
   );
 
   // Partition vehicles into suggested and others, computing warning flags

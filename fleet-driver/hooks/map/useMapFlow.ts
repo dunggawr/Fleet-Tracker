@@ -30,6 +30,7 @@ export const useMapFlow = () => {
   const [isVerificationVisible, setIsVerificationVisible] = useState(false);
   const [verificationStep, setVerificationStep] = useState<'accept' | 'pickup' | 'checkpoint' | 'delivery'>('accept');
   const [verificationOrderId, setVerificationOrderId] = useState<string | null>(null);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   
   const { location: phoneLocation, errorMsg } = useLocationTracking(activeTrip);
   const [hardwareLocation, setHardwareLocation] = useState<{
@@ -95,7 +96,16 @@ export const useMapFlow = () => {
   const mapRef = useRef<any>(null);
   const fitTimeoutRef = useRef<any>(null);
 
-  const currentOrder = useMemo(() => activeTrip?.orders.find(o => o.status !== OrderStatus.DELIVERED), [activeTrip]);
+  const currentOrder = useMemo(() => {
+    if (!activeTrip) return null;
+    if (selectedOrderId) {
+      const found = activeTrip.orders.find(o => o.id === selectedOrderId);
+      if (found && found.status !== OrderStatus.DELIVERED) {
+        return found;
+      }
+    }
+    return activeTrip.orders.find(o => o.status !== OrderStatus.DELIVERED);
+  }, [activeTrip, selectedOrderId]);
 
   const destination = useMemo(() => {
     if (!currentOrder) return null;
@@ -541,5 +551,7 @@ export const useMapFlow = () => {
     verificationOrderId,
     setVerificationOrderId,
     handleVerificationSubmit,
+    selectedOrderId,
+    setSelectedOrderId,
   };
 };
