@@ -1,7 +1,61 @@
-# API Documentation - Dispatch Module
+# API Documentation
 
-Ngày cập nhật: 2026-05-11
+Ngày cập nhật: 2026-06-06
 Base URL: `http://localhost:3000/api`
+
+---
+
+## 📦 Orders Management
+
+### POST `/orders`
+Tạo đơn hàng mới (Admin only).
+
+**Request Body:**
+```json
+{
+  "pickupAddress": "Học viện Công nghệ Bưu chính Viễn thông, Hà Đông, Hà Nội",
+  "pickupLat": 20.980689,
+  "pickupLng": 105.787689,
+  "deliveryAddress": "Hồ Hoàn Kiếm, Hoàn Kiếm, Hà Nội",
+  "deliveryLat": 21.028511,
+  "deliveryLng": 105.852444,
+  "weightKg": 150.5,
+  "description": "Linh kiện điện tử dễ vỡ",
+  "recipientName": "Nguyễn Văn A",
+  "recipientPhone": "0987654321",
+  "category": "component",
+  "priority": "high",
+  "deliveryDeadline": "2026-06-06T18:00:00.000Z"
+}
+```
+
+**Fields:**
+- `recipientName`: Họ tên người nhận (bắt buộc)
+- `recipientPhone`: Số điện thoại người nhận (bắt buộc, định dạng Việt Nam)
+- `category`: Phân loại hàng hoá (`raw_material` | `finished_goods` | `component` | `equipment` | `other`, mặc định `other`)
+- `priority`: Mức độ ưu tiên (`low` | `medium` | `high`, mặc định `medium`)
+- `deliveryDeadline`: Thời gian giới hạn nhận hàng (nếu quá thời gian này mà chưa giao, hệ thống sẽ kích hoạt cảnh báo quá hạn `Delivery Overdue` mức độ HIGH đến admin)
+
+**Response (201):**
+```json
+{
+  "id": "a1b2c3d4-e5f6-7a8b-9c0d-e1f2a3b4c5d6",
+  "pickupAddress": "...",
+  "pickupLocation": { "type": "Point", "coordinates": [105.787689, 20.980689] },
+  "deliveryAddress": "...",
+  "deliveryLocation": { "type": "Point", "coordinates": [105.852444, 21.028511] },
+  "weightKg": "150.50",
+  "description": "Linh kiện điện tử dễ vỡ",
+  "status": "pending",
+  "recipientName": "Nguyễn Văn A",
+  "recipientPhone": "0987654321",
+  "category": "component",
+  "priority": "high",
+  "deliveryDeadline": "2026-06-06T18:00:00.000Z",
+  "createdAt": "2026-06-06T14:33:04.000Z",
+  "updatedAt": "2026-06-06T14:33:04.000Z"
+}
+```
 
 ---
 

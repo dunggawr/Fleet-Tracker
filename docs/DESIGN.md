@@ -66,7 +66,12 @@ erDiagram
         geography delivery_location
         decimal weight_kg
         text description
-        enum status "pending | assigned | picked_up | delivering | delivered | failed"
+        enum status "pending | assigned | picked_up | delivering | delivered | failed | cancelled"
+        varchar recipient_name
+        varchar recipient_phone
+        varchar category "raw_material | finished_goods | component | equipment | other"
+        varchar priority "low | medium | high"
+        timestamptz delivery_deadline
         timestamp created_at
         timestamp updated_at
     }
@@ -218,6 +223,11 @@ CREATE TABLE orders (
     weight_kg DECIMAL(10,2) NOT NULL CHECK (weight_kg > 0),
     description TEXT,
     status order_status DEFAULT 'pending',
+    recipient_name VARCHAR(255),
+    recipient_phone VARCHAR(50),
+    category VARCHAR(50) DEFAULT 'other',
+    priority VARCHAR(20) DEFAULT 'medium',
+    delivery_deadline TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );

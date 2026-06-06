@@ -164,16 +164,16 @@ export async function seedDatabase(dataSource: DataSource, adminEmail?: string, 
     console.log('Seeding realistic orders...');
     const ordersData: Order[] = [];
     const ordersInfo = [
-      { weight: 1200, desc: 'Lô hàng may mặc xuất khẩu - Hoàn Kiếm', pickup: 'Chợ Đồng Xuân, Hoàn Kiếm, Hà Nội', pLng: 105.8492, pLat: 21.0382, deliv: 'Ga Hà Nội, Đống Đa, Hà Nội', dLng: 105.8405, dLat: 21.0253, status: OrderStatus.PENDING, category: OrderCategory.FINISHED_GOODS, priority: OrderPriority.HIGH, name: 'Nguyễn Thị Hoa', phone: '0987654321', deadline: new Date(Date.now() + 2 * 3600000) },
-      { weight: 800, desc: 'Thiết bị điện tử gia dụng - Cầu Giấy', pickup: 'Trần Duy Hưng, Cầu Giấy, Hà Nội', pLng: 105.7960, pLat: 21.0090, deliv: 'Khu công nghiệp Bắc Thăng Long, Đông Anh, Hà Nội', dLng: 105.7830, dLat: 21.1150, status: OrderStatus.PENDING, category: OrderCategory.EQUIPMENT, priority: OrderPriority.MEDIUM, name: 'Phạm Minh Đức', phone: '0912345678', deadline: new Date(Date.now() + 4 * 3600000) },
-      { weight: 2400, desc: 'Thực phẩm đông lạnh nhập khẩu - Nội Bài', pickup: 'Cảng Hàng Không Nội Bài, Sóc Sơn, Hà Nội', pLng: 105.8056, pLat: 21.2187, deliv: 'Siêu thị Big C Thăng Long, Cầu Giấy, Hà Nội', dLng: 105.7942, dLat: 21.0068, status: OrderStatus.PENDING, category: OrderCategory.OTHER, priority: OrderPriority.HIGH, name: 'Trần Văn Cường', phone: '0901234567', deadline: new Date(Date.now() + 1 * 3600000) },
-      { weight: 1500, desc: 'Vật liệu xây dựng & phụ gia - Hà Đông', pickup: 'Khu đô thị Văn Quán, Hà Đông, Hà Nội', pLng: 105.7830, pLat: 20.9780, deliv: 'Khu đô thị Times City, Hai Bà Trưng, Hà Nội', dLng: 105.8690, dLat: 21.0060, status: OrderStatus.DELIVERED, category: OrderCategory.RAW_MATERIAL, priority: OrderPriority.MEDIUM, name: 'Lê Hoàng Anh', phone: '0934567890', deadline: new Date(Date.now() - 2 * 3600000) },
-      { weight: 950, desc: 'Nông sản & Trái cây miền Bắc - Long Biên', pickup: 'Chợ đầu mối Long Biên, Ba Đình, Hà Nội', pLng: 105.8499, pLat: 21.0450, deliv: 'Chợ Hôm, Hai Bà Trưng, Hà Nội', dLng: 105.8495, dLat: 21.0182, status: OrderStatus.DELIVERED, category: OrderCategory.OTHER, priority: OrderPriority.LOW, name: 'Vũ Thị Lan', phone: '0977889900', deadline: new Date(Date.now() - 1 * 3600000) },
-      { weight: 3100, desc: 'Hóa mỹ phẩm & Chai lọ thủy tinh - Bắc Ninh', pickup: 'KCN Tiên Sơn, Tiên Du, Bắc Ninh', pLng: 106.0150, pLat: 21.0900, deliv: 'Kho tổng Đức Giang, Long Biên, Hà Nội', dLng: 105.8950, dLat: 21.0550, status: OrderStatus.DELIVERED, category: OrderCategory.RAW_MATERIAL, priority: OrderPriority.HIGH, name: 'Nguyễn Tiến Dũng', phone: '0966778899', deadline: new Date(Date.now() - 3 * 3600000) },
-      { weight: 1900, desc: 'Dược phẩm & Vật tư y tế - Đống Đa', pickup: 'Bệnh viện Bạch Mai, Đống Đa, Hà Nội', pLng: 105.8418, pLat: 21.0015, deliv: 'Trung tâm Y tế Sóc Sơn, Hà Nội', dLng: 105.8300, dLat: 21.2580, status: OrderStatus.DELIVERING, category: OrderCategory.OTHER, priority: OrderPriority.HIGH, name: 'Hoàng Văn Nam', phone: '0988990011', deadline: new Date(Date.now() + 5 * 3600000) },
-      { weight: 700, desc: 'Phụ tùng ô tô & Xe máy chuyên dụng - Gia Lâm', pickup: 'KCN Sài Đồng B, Long Biên, Hà Nội', pLng: 105.9050, pLat: 21.0250, deliv: 'Đường Nguyễn Trãi, Thanh Xuân, Hà Nội', dLng: 105.8100, dLat: 20.9980, status: OrderStatus.ASSIGNED, category: OrderCategory.COMPONENT, priority: OrderPriority.MEDIUM, name: 'Đặng Quốc Huy', phone: '0955667788', deadline: new Date(Date.now() + 3 * 3600000) },
-      { weight: 1350, desc: 'Bao bì giấy & Hộp carton - Thanh Trì', pickup: 'KCN Ngọc Hồi, Thanh Trì, Hà Nội', pLng: 105.8400, pLat: 20.9320, deliv: 'Đường Giải Phóng, Hai Bà Trưng, Hà Nội', dLng: 105.8420, dLat: 20.9850, status: OrderStatus.ASSIGNED, category: OrderCategory.OTHER, priority: OrderPriority.LOW, name: 'Lê Minh Tâm', phone: '0944556677', deadline: new Date(Date.now() + 6 * 3600000) },
-      { weight: 2800, desc: 'Thức ăn chăn nuôi dạng hạt - Hưng Yên', pickup: 'KCN Phố Nối A, Yên Mỹ, Hưng Yên', pLng: 106.0300, pLat: 20.9600, deliv: 'Trang trại chăn nuôi Đông Anh, Hà Nội', dLng: 105.8400, dLat: 21.1500, status: OrderStatus.ASSIGNED, category: OrderCategory.RAW_MATERIAL, priority: OrderPriority.MEDIUM, name: 'Phạm Minh Tuấn', phone: '0933445566', deadline: new Date(Date.now() + 8 * 3600000) },
+      { weight: 1200, desc: 'Lô hàng may mặc xuất khẩu - Hoàn Kiếm', pickup: 'Chợ Đồng Xuân, Hoàn Kiếm, Hà Nội', pLng: 105.8492, pLat: 21.0382, deliv: 'Ga Hà Nội, Đống Đa, Hà Nội', dLng: 105.8405, dLat: 21.0253, status: OrderStatus.PENDING, category: OrderCategory.FINISHED_GOODS, priority: OrderPriority.HIGH, name: 'Nguyễn Thị Hoa', phone: '0987654321', deadline: new Date(Date.now() + 2 * 3600000), createdAt: new Date(Date.now() - 2 * 60 * 1000) },
+      { weight: 800, desc: 'Thiết bị điện tử gia dụng - Cầu Giấy', pickup: 'Trần Duy Hưng, Cầu Giấy, Hà Nội', pLng: 105.7960, pLat: 21.0090, deliv: 'Khu công nghiệp Bắc Thăng Long, Đông Anh, Hà Nội', dLng: 105.7830, dLat: 21.1150, status: OrderStatus.PENDING, category: OrderCategory.EQUIPMENT, priority: OrderPriority.MEDIUM, name: 'Phạm Minh Đức', phone: '0912345678', deadline: new Date(Date.now() + 4 * 3600000), createdAt: new Date(Date.now() - 10 * 60 * 1000) },
+      { weight: 2400, desc: 'Thực phẩm đông lạnh nhập khẩu - Nội Bài', pickup: 'Cảng Hàng Không Nội Bài, Sóc Sơn, Hà Nội', pLng: 105.8056, pLat: 21.2187, deliv: 'Siêu thị Big C Thăng Long, Cầu Giấy, Hà Nội', dLng: 105.7942, dLat: 21.0068, status: OrderStatus.PENDING, category: OrderCategory.OTHER, priority: OrderPriority.HIGH, name: 'Trần Văn Cường', phone: '0901234567', deadline: new Date(Date.now() + 30 * 60 * 1000), createdAt: new Date(Date.now() - 25 * 60 * 1000) },
+      { weight: 1500, desc: 'Vật liệu xây dựng & phụ gia - Hà Đông', pickup: 'Khu đô thị Văn Quán, Hà Đông, Hà Nội', pLng: 105.7830, pLat: 20.9780, deliv: 'Khu đô thị Times City, Hai Bà Trưng, Hà Nội', dLng: 105.8690, dLat: 21.0060, status: OrderStatus.DELIVERED, category: OrderCategory.RAW_MATERIAL, priority: OrderPriority.MEDIUM, name: 'Lê Hoàng Anh', phone: '0934567890', deadline: new Date(Date.now() - 2 * 3600000), createdAt: new Date(Date.now() - 3 * 3600000) },
+      { weight: 950, desc: 'Nông sản & Trái cây miền Bắc - Long Biên', pickup: 'Chợ đầu mối Long Biên, Ba Đình, Hà Nội', pLng: 105.8499, pLat: 21.0450, deliv: 'Chợ Hôm, Hai Bà Trưng, Hà Nội', dLng: 105.8495, dLat: 21.0182, status: OrderStatus.DELIVERED, category: OrderCategory.OTHER, priority: OrderPriority.LOW, name: 'Vũ Thị Lan', phone: '0977889900', deadline: new Date(Date.now() - 1 * 3600000), createdAt: new Date(Date.now() - 4 * 3600000) },
+      { weight: 3100, desc: 'Hóa mỹ phẩm & Chai lọ thủy tinh - Bắc Ninh', pickup: 'KCN Tiên Sơn, Tiên Du, Bắc Ninh', pLng: 106.0150, pLat: 21.0900, deliv: 'Kho tổng Đức Giang, Long Biên, Hà Nội', dLng: 105.8950, dLat: 21.0550, status: OrderStatus.DELIVERED, category: OrderCategory.RAW_MATERIAL, priority: OrderPriority.HIGH, name: 'Nguyễn Tiến Dũng', phone: '0966778899', deadline: new Date(Date.now() - 3 * 3600000), createdAt: new Date(Date.now() - 5 * 3600000) },
+      { weight: 1900, desc: 'Dược phẩm & Vật tư y tế - Đống Đa', pickup: 'Bệnh viện Bạch Mai, Đống Đa, Hà Nội', pLng: 105.8418, pLat: 21.0015, deliv: 'Trung tâm Y tế Sóc Sơn, Hà Nội', dLng: 105.8300, dLat: 21.2580, status: OrderStatus.DELIVERING, category: OrderCategory.OTHER, priority: OrderPriority.HIGH, name: 'Hoàng Văn Nam', phone: '0988990011', deadline: new Date(Date.now() + 5 * 3600000), createdAt: new Date(Date.now() - 40 * 60 * 1000) },
+      { weight: 700, desc: 'Phụ tùng ô tô & Xe máy chuyên dụng - Gia Lâm', pickup: 'KCN Sài Đồng B, Long Biên, Hà Nội', pLng: 105.9050, pLat: 21.0250, deliv: 'Đường Nguyễn Trãi, Thanh Xuân, Hà Nội', dLng: 105.8100, dLat: 20.9980, status: OrderStatus.ASSIGNED, category: OrderCategory.COMPONENT, priority: OrderPriority.MEDIUM, name: 'Đặng Quốc Huy', phone: '0955667788', deadline: new Date(Date.now() - 90 * 60 * 1000), createdAt: new Date(Date.now() - 50 * 60 * 1000) },
+      { weight: 1350, desc: 'Bao bì giấy & Hộp carton - Thanh Trì', pickup: 'KCN Ngọc Hồi, Thanh Trì, Hà Nội', pLng: 105.8400, pLat: 20.9320, deliv: 'Đường Giải Phóng, Hai Bà Trưng, Hà Nội', dLng: 105.8420, dLat: 20.9850, status: OrderStatus.ASSIGNED, category: OrderCategory.OTHER, priority: OrderPriority.LOW, name: 'Lê Minh Tâm', phone: '0944556677', deadline: new Date(Date.now() + 75 * 60 * 1000), createdAt: new Date(Date.now() - 60 * 60 * 1000) },
+      { weight: 2800, desc: 'Thức ăn chăn nuôi dạng hạt - Hưng Yên', pickup: 'KCN Phố Nối A, Yên Mỹ, Hưng Yên', pLng: 106.0300, pLat: 20.9600, deliv: 'Trang trại chăn nuôi Đông Anh, Hà Nội', dLng: 105.8400, dLat: 21.1500, status: OrderStatus.ASSIGNED, category: OrderCategory.RAW_MATERIAL, priority: OrderPriority.MEDIUM, name: 'Phạm Minh Tuấn', phone: '0933445566', deadline: new Date(Date.now() + 5 * 3600000), createdAt: new Date(Date.now() - 70 * 60 * 1000) },
     ];
 
     for (const info of ordersInfo) {
@@ -191,6 +191,7 @@ export async function seedDatabase(dataSource: DataSource, adminEmail?: string, 
           recipientName: info.name,
           recipientPhone: info.phone,
           deliveryDeadline: info.deadline,
+          createdAt: info.createdAt,
           photoUrl: `https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&h=400&fit=crop`,
           signatureUrl: `https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=600&h=400&fit=crop`,
         })
@@ -317,6 +318,40 @@ export async function seedDatabase(dataSource: DataSource, adminEmail?: string, 
         );
         
         // Save TripOrders
+        const categories = [
+          OrderCategory.RAW_MATERIAL,
+          OrderCategory.FINISHED_GOODS,
+          OrderCategory.COMPONENT,
+          OrderCategory.EQUIPMENT,
+          OrderCategory.OTHER,
+        ];
+        const priorities = [OrderPriority.LOW, OrderPriority.MEDIUM, OrderPriority.HIGH];
+        const recipientNames = [
+          'Nguyễn Thị Thu Hà',
+          'Trần Minh Hoàng',
+          'Lê Hoài Nam',
+          'Phạm Thanh Sơn',
+          'Vũ Thu Trang',
+          'Nguyễn Đức Anh',
+          'Lâm Minh Tuấn',
+          'Đỗ Thùy Linh',
+        ];
+        const recipientPhones = [
+          '0912345678',
+          '0987654321',
+          '0901234567',
+          '0934567890',
+          '0977889900',
+          '0966778899',
+          '0988990011',
+          '0955667788',
+        ];
+
+        const orderCategory = categories[(dayOffset + t) % categories.length];
+        const orderPriority = priorities[(dayOffset * 2 + t) % priorities.length];
+        const recipientName = recipientNames[(dayOffset + t) % recipientNames.length];
+        const recipientPhone = recipientPhones[(dayOffset + t) % recipientPhones.length];
+
         const order1 = await orderRepository.save(
           orderRepository.create({
             weightKg: Math.round(400 + (dayOffset % 5) * 300 + Math.random() * 200),
@@ -326,10 +361,10 @@ export async function seedDatabase(dataSource: DataSource, adminEmail?: string, 
             deliveryAddress: `Điểm giao hàng ${vehicle.plateNumber}`,
             deliveryLocation: { type: 'Point', coordinates: [105.8525 + (dayOffset % 3) * 0.01, 21.0285 + (t % 2) * 0.01] },
             status: OrderStatus.DELIVERED,
-            category: OrderCategory.FINISHED_GOODS,
-            priority: OrderPriority.MEDIUM,
-            recipientName: 'Khách hàng nhận',
-            recipientPhone: '0912345678',
+            category: orderCategory,
+            priority: orderPriority,
+            recipientName,
+            recipientPhone,
             deliveryDeadline: completedAt || startedAt,
             createdAt: startedAt,
           })
