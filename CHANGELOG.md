@@ -1,3 +1,19 @@
+## [2026-06-07] - Active Trip Assignment, Route Re-Optimization & Driver Task Selection
+
+### Added
+- **Active Trip Order Assignment**:
+  - Implemented backend support to allow dispatchers (Admin) to assign new orders to vehicles/drivers that are already on a trip (`DELIVERING` status) if they have sufficient remaining capacity.
+  - Automatically merges new orders into the driver's active trip (`PENDING`, `ACCEPTED`, or `IN_PROGRESS`) and appends them with incremental sequences.
+  - Automatically invokes Mapbox Directions API route re-optimization on the backend to update the trip's planned path (`plannedRoute` and `totalDistanceKm`) dynamically upon assignment.
+- **Driver App Task Selector**:
+  - Implemented a touchable order selector widget (`Đơn #XXXXXX 🔄`) inside the `MissionPanel` on the driver's map view.
+  - When tapped, displays a native system prompt letting the driver choose any of the remaining undelivered orders in the trip as their active navigation target.
+  - Dynamically recalculates the current destination and proximity triggers based on the driver's manual target choice.
+
+### Fixed
+- **TypeScript Compiler Errors**:
+  - Resolved type declaration issues and unassigned variable warnings for `activeTrip` inside `DispatchService` by explicitly configuring its type as `Trip | null` and initializing it as `null`.
+
 ## [2026-06-06] - Cargo Category, Priority, and Delivery Overdue Alerts
 
 ### Added
