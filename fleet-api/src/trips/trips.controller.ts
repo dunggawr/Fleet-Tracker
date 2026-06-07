@@ -31,8 +31,12 @@ export class TripsController {
   @Roles(UserRole.DRIVER, UserRole.ADMIN)
   @ApiOperation({ summary: 'List trips for current driver' })
   @Get('my')
-  findMyTrips(@Request() req) {
-    return this.tripsService.findMyTrips(req.user.id, req.user.role);
+  findMyTrips(
+    @Request() req,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.tripsService.findMyTrips(req.user.id, req.user.role, startDate, endDate);
   }
 
   @Roles(UserRole.ADMIN, UserRole.DISPATCHER)

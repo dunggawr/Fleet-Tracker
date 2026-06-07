@@ -53,7 +53,7 @@ interface TripState {
   
   setActiveTrip: (trip: Trip | null) => void;
   setSocketConnected: (connected: boolean) => void;
-  fetchTrips: () => Promise<void>;
+  fetchTrips: (filters?: { startDate?: string; endDate?: string }) => Promise<void>;
   acceptTrip: (id: string) => Promise<void>;
   rejectTrip: (id: string) => Promise<void>;
   updateTripStatus: (id: string, status: TripStatus) => Promise<void>;
@@ -76,10 +76,22 @@ export const useTripStore = create<TripState>()(
       setActiveTrip: (trip) => set({ activeTrip: trip }),
       setSocketConnected: (connected) => set({ isSocketConnected: connected }),
 
-      fetchTrips: async () => {
+      fetchTrips: async (filters) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await authFetch('/trips/my');
+          let url = '/trips/my';
+          const queryParts: string[] = [];
+          if (filters?.startDate) {
+            queryParts.push(`startDate=${encodeURIComponent(filters.startDate)}`);
+          }
+          if (filters?.endDate) {
+            queryParts.push(`endDate=${encodeURIComponent(filters.endDate)}`);
+          }
+          if (queryParts.length > 0) {
+            url += `?${queryParts.join('&')}`;
+          }
+
+          const response = await authFetch(url);
           if (!response.ok) {
             const errorMsg = await getFetchErrorMessage(response, 'Failed to fetch trips');
             throw new Error(errorMsg);
@@ -97,10 +109,14 @@ export const useTripStore = create<TripState>()(
           );
           
           const pending = transformedTrips.filter((t) => t.status === TripStatus.PENDING);
-          const history = transformedTrips
+          
+          let history = transformedTrips
             .filter((t) => t.status === TripStatus.COMPLETED || t.status === TripStatus.CANCELLED)
-            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-            .slice(0, 20);
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+          if (!filters?.startDate && !filters?.endDate) {
+            history = history.slice(0, 20);
+          }
 
           set({ 
             activeTrip: active || null, 

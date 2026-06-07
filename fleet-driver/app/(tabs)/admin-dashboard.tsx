@@ -166,7 +166,7 @@ export default function AdminDashboardScreen() {
               icon={TrendingUp} 
               color="#10b981" 
               onPress={() => {
-                router.push('/(tabs)/admin-orders' as any);
+                router.push('/admin/trips' as any);
               }}
             />
             <StatCard 

@@ -221,13 +221,12 @@ export async function seedDatabase(dataSource: DataSource, adminEmail?: string, 
         }
       })
     );
-    // Link Orders 8, 9, 10 to trip1
-    await tripOrderRepository.save(tripOrderRepository.create({ tripId: trip1.id, orderId: ordersData[7].id, sequence: 1 }));
-    await tripOrderRepository.save(tripOrderRepository.create({ tripId: trip1.id, orderId: ordersData[8].id, sequence: 2 }));
-    await tripOrderRepository.save(tripOrderRepository.create({ tripId: trip1.id, orderId: ordersData[9].id, sequence: 3 }));
+    // Link Orders 9, 10 to trip1
+    await tripOrderRepository.save(tripOrderRepository.create({ tripId: trip1.id, orderId: ordersData[8].id, sequence: 1 }));
+    await tripOrderRepository.save(tripOrderRepository.create({ tripId: trip1.id, orderId: ordersData[9].id, sequence: 2 }));
     
     // Update Hyundai Mighty (vehicle 4) currentLoadKg
-    vehiclesData[3].currentLoadKg = Number(ordersData[7].weightKg) + Number(ordersData[8].weightKg) + Number(ordersData[9].weightKg);
+    vehiclesData[3].currentLoadKg = Number(ordersData[8].weightKg) + Number(ordersData[9].weightKg);
     await vehicleRepository.save(vehiclesData[3]);
 
     // 2. trip2 (IN_PROGRESS) - Driver 1 (Nguyễn Văn Hùng), Vehicle 1 (Isuzu plate '29C-432.10')
@@ -250,12 +249,47 @@ export async function seedDatabase(dataSource: DataSource, adminEmail?: string, 
         }
       })
     );
-    // Link Order 7 to trip2
+    // Link Order 7 and Order 8 to trip2
     await tripOrderRepository.save(tripOrderRepository.create({ tripId: trip2.id, orderId: ordersData[6].id, sequence: 1 }));
+    await tripOrderRepository.save(tripOrderRepository.create({ tripId: trip2.id, orderId: ordersData[7].id, sequence: 2 }));
 
     // Update Isuzu (vehicle 1) currentLoadKg
-    vehiclesData[0].currentLoadKg = Number(ordersData[6].weightKg);
+    vehiclesData[0].currentLoadKg = Number(ordersData[6].weightKg) + Number(ordersData[7].weightKg);
     await vehicleRepository.save(vehiclesData[0]);
+
+    // Seed some live verifications for Nguyễn Văn Hùng's active trip orders
+    // Order 7: completed accept and pickup
+    await verificationRepository.save(
+      verificationRepository.create({
+        orderId: ordersData[6].id,
+        step: VerificationStep.ACCEPT,
+        fingerprintStatus: true,
+        facePhotoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=300&fit=crop',
+        cargoPhotoUrl: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=400&h=400&fit=crop',
+        location: { type: 'Point', coordinates: [105.8418, 21.0015] },
+      })
+    );
+    await verificationRepository.save(
+      verificationRepository.create({
+        orderId: ordersData[6].id,
+        step: VerificationStep.PICKUP,
+        fingerprintStatus: true,
+        facePhotoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=300&fit=crop',
+        cargoPhotoUrl: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=400&h=400&fit=crop',
+        location: { type: 'Point', coordinates: [105.8418, 21.0015] },
+      })
+    );
+
+    // Order 8: completed accept only
+    await verificationRepository.save(
+      verificationRepository.create({
+        orderId: ordersData[7].id,
+        step: VerificationStep.ACCEPT,
+        fingerprintStatus: true,
+        facePhotoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop',
+        location: { type: 'Point', coordinates: [105.9050, 21.0250] },
+      })
+    );
 
     // Update Nguyễn Văn Hùng status to ON_TRIP
     driversData[0].status = DriverStatus.ON_TRIP;
