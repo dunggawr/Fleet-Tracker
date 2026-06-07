@@ -258,17 +258,7 @@ export async function seedDatabase(dataSource: DataSource, adminEmail?: string, 
     await vehicleRepository.save(vehiclesData[0]);
 
     // Seed some live verifications for Nguyễn Văn Hùng's active trip orders
-    // Order 7: completed accept and pickup
-    await verificationRepository.save(
-      verificationRepository.create({
-        orderId: ordersData[6].id,
-        step: VerificationStep.ACCEPT,
-        fingerprintStatus: true,
-        facePhotoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=300&fit=crop',
-        cargoPhotoUrl: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=400&h=400&fit=crop',
-        location: { type: 'Point', coordinates: [105.8418, 21.0015] },
-      })
-    );
+    // Order 7: completed pickup (status: DELIVERING)
     await verificationRepository.save(
       verificationRepository.create({
         orderId: ordersData[6].id,
@@ -280,16 +270,7 @@ export async function seedDatabase(dataSource: DataSource, adminEmail?: string, 
       })
     );
 
-    // Order 8: completed accept only
-    await verificationRepository.save(
-      verificationRepository.create({
-        orderId: ordersData[7].id,
-        step: VerificationStep.ACCEPT,
-        fingerprintStatus: true,
-        facePhotoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop',
-        location: { type: 'Point', coordinates: [105.9050, 21.0250] },
-      })
-    );
+    // Order 8 (status: ASSIGNED) has no verifications seeded
 
     // Update Nguyễn Văn Hùng status to ON_TRIP
     driversData[0].status = DriverStatus.ON_TRIP;
@@ -323,16 +304,6 @@ export async function seedDatabase(dataSource: DataSource, adminEmail?: string, 
     // Seed verifications for completed trip3 orders (ordersData[3], [4], [5])
     const trip3Orders = [ordersData[3], ordersData[4], ordersData[5]];
     for (const order of trip3Orders) {
-      // ACCEPT
-      await verificationRepository.save(
-        verificationRepository.create({
-          orderId: order.id,
-          step: VerificationStep.ACCEPT,
-          fingerprintStatus: true,
-          facePhotoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=300&fit=crop',
-          location: order.pickupLocation,
-        })
-      );
       // PICKUP
       await verificationRepository.save(
         verificationRepository.create({
@@ -453,15 +424,6 @@ export async function seedDatabase(dataSource: DataSource, adminEmail?: string, 
         
         // Seed historical verifications for this trip's orders
         for (const order of [order1]) {
-          await verificationRepository.save(
-            verificationRepository.create({
-              orderId: order.id,
-              step: VerificationStep.ACCEPT,
-              fingerprintStatus: true,
-              facePhotoUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&h=300&fit=crop',
-              location: order.pickupLocation,
-            })
-          );
           await verificationRepository.save(
             verificationRepository.create({
               orderId: order.id,

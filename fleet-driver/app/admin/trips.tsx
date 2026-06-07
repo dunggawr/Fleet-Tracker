@@ -8,10 +8,11 @@ import {
   ActivityIndicator, 
   StatusBar,
   ScrollView,
-  Platform
+  Platform,
+  TextInput
 } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
-import { ArrowLeft, Calendar, ChevronRight, History, Truck, Users } from 'lucide-react-native';
+import { ArrowLeft, Calendar, ChevronRight, History, Truck, Users, Search, X } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { authFetch } from '../../lib/authFetch';
@@ -32,6 +33,26 @@ export default function AdminTripsScreen() {
   const [startDate, setStartDate] = useState<Date>(new Date(Date.now() - 7 * 24 * 3600000));
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [showPicker, setShowPicker] = useState<'start' | 'end' | null>(null);
+  const [searchText, setSearchText] = useState('');
+
+  const filteredTrips = trips.filter((trip) => {
+    if (!searchText) return true;
+    const searchLower = searchText.toLowerCase().trim();
+    
+    // Match Trip ID (excluding leading # if any)
+    const tripId = trip.id.toLowerCase();
+    const tripIdMatch = tripId.includes(searchLower.replace(/^#/, ''));
+    
+    // Match Driver Name
+    const driverName = trip.driver?.user?.fullName || '';
+    const driverMatch = driverName.toLowerCase().includes(searchLower);
+    
+    // Match License Plate
+    const plateNumber = trip.vehicle?.plateNumber || '';
+    const vehicleMatch = plateNumber.toLowerCase().includes(searchLower);
+    
+    return tripIdMatch || driverMatch || vehicleMatch;
+  });
 
   useEffect(() => {
     setMounted(true);
@@ -205,6 +226,31 @@ export default function AdminTripsScreen() {
         </View>
       </View>
 
+      {/* Search Bar */}
+      <View className="px-6 mb-4">
+        <View className="flex-row items-center bg-slate-900/60 border border-white/5 px-3 rounded-2xl h-12">
+          <Search size={18} color="#94a3b8" />
+          <TextInput
+            className="flex-1 text-white text-sm ml-2.5 h-full"
+            placeholder="Tìm kiếm trip ID, tài xế, biển số xe..."
+            placeholderTextColor="#64748b"
+            value={searchText}
+            onChangeText={setSearchText}
+            autoCorrect={false}
+            autoCapitalize="none"
+          />
+          {searchText.length > 0 && (
+            <TouchableOpacity 
+              onPress={() => setSearchText('')}
+              activeOpacity={0.7}
+              className="p-1"
+            >
+              <X size={16} color="#94a3b8" />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
       {/* Quick Date Filters Pills */}
       <View className="px-6 mb-4 mt-2">
         <ScrollView 
@@ -299,7 +345,7 @@ export default function AdminTripsScreen() {
         </View>
       ) : (
         <FlatList
-          data={trips}
+          data={filteredTrips}
           renderItem={renderTripItem}
           keyExtractor={item => item.id}
           contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
@@ -319,9 +365,11 @@ export default function AdminTripsScreen() {
               </View>
               <Text className="text-white text-2xl font-black text-center tracking-tight mb-2">Trống</Text>
               <Text className="text-slate-500 text-[12px] text-center leading-5 font-medium">
-                {activeFilter === 'all' 
-                  ? "Không tìm thấy chuyến đi nào trong hệ thống."
-                  : "Không tìm thấy chuyến đi nào trong khoảng thời gian đã chọn."
+                {searchText
+                  ? `Không tìm thấy chuyến đi nào khớp với "${searchText}".`
+                  : activeFilter === 'all' 
+                    ? "Không tìm thấy chuyến đi nào trong hệ thống."
+                    : "Không tìm thấy chuyến đi nào trong khoảng thời gian đã chọn."
                 }
               </Text>
             </View>

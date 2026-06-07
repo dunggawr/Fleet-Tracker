@@ -13,6 +13,7 @@ import { Driver, DriverStatus } from '../entities/driver.entity';
 import { Vehicle, VehicleStatus } from '../entities/vehicle.entity';
 import { Order, OrderStatus } from '../entities/order.entity';
 import { Alert } from '../entities/alert.entity';
+import { OptimizationService } from '../optimization/optimization.service';
 
 describe('TripsService', () => {
   let service: TripsService;
@@ -37,7 +38,9 @@ describe('TripsService', () => {
     release: jest.fn(),
     manager: {
       findOne: jest.fn(),
+      find: jest.fn().mockResolvedValue([]),
       save: jest.fn(),
+      delete: jest.fn().mockResolvedValue(null),
     },
   };
 
@@ -49,6 +52,9 @@ describe('TripsService', () => {
     find: jest.fn(),
     findOne: jest.fn(),
     save: jest.fn(),
+    manager: {
+      findOne: jest.fn().mockResolvedValue(null),
+    },
   };
 
   const mockEventEmitter = {
@@ -76,6 +82,12 @@ describe('TripsService', () => {
           useValue: {
             create: jest.fn(),
             save: jest.fn(),
+          },
+        },
+        {
+          provide: OptimizationService,
+          useValue: {
+            optimizeTripRoute: jest.fn().mockResolvedValue(null),
           },
         },
       ],
@@ -249,6 +261,7 @@ describe('TripsService', () => {
         if (entity === Vehicle) return Promise.resolve(vehicle);
         return Promise.resolve(null);
       });
+      mockQueryRunner.manager.find.mockResolvedValue(tripPending.tripOrders);
 
       await service.updateStatus(
         'trip-1',

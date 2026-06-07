@@ -60,7 +60,7 @@ export class TripsService {
 
     return this.tripRepository.find({
       where: whereClause,
-      relations: ['vehicle', 'driver', 'tripOrders', 'tripOrders.order'],
+      relations: ['vehicle', 'driver', 'driver.user', 'tripOrders', 'tripOrders.order'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -73,7 +73,7 @@ export class TripsService {
         vehicleId,
         status,
       },
-      relations: ['vehicle', 'driver', 'tripOrders', 'tripOrders.order'],
+      relations: ['vehicle', 'driver', 'driver.user', 'tripOrders', 'tripOrders.order'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -81,7 +81,7 @@ export class TripsService {
   async findOne(id: string) {
     const trip = await this.tripRepository.findOne({
       where: { id },
-      relations: ['vehicle', 'driver', 'tripOrders', 'tripOrders.order'],
+      relations: ['vehicle', 'driver', 'driver.user', 'tripOrders', 'tripOrders.order'],
     });
     if (!trip) {
       throw new NotFoundException(`Trip with ID ${id} not found`);
@@ -114,7 +114,7 @@ export class TripsService {
       // but we do need the data.
       const fullTrip = await queryRunner.manager.findOne(Trip, {
         where: { id },
-        relations: ['driver', 'vehicle', 'tripOrders', 'tripOrders.order'],
+        relations: ['driver', 'driver.user', 'vehicle', 'tripOrders', 'tripOrders.order'],
       });
 
       if (!fullTrip) {
