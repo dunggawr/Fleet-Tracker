@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, In } from 'typeorm';
+import { Repository, DataSource, In, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
 import { Trip, TripStatus } from '../entities/trip.entity';
 import { TripOrder } from '../entities/trip-order.entity';
 import { Order, OrderStatus } from '../entities/order.entity';
@@ -28,17 +28,38 @@ export class TripsService {
     private optimizationService: OptimizationService,
   ) {}
 
-  async findMyTrips(userId: string, role?: string) {
-    // If admin, they can see all active trips to test the app
-    if (role === 'admin') {
-      return this.tripRepository.find({
-        relations: ['vehicle', 'driver', 'tripOrders', 'tripOrders.order'],
-        order: { createdAt: 'DESC' },
-      });
+  async findMyTrips(
+    userId: string,
+    role?: string,
+    startDate?: string,
+    endDate?: string,
+  ) {
+    const whereClause: any = {};
+
+    if (role !== 'admin') {
+      whereClause.driver = { userId };
+    }
+
+    if (startDate || endDate) {
+      if (startDate && endDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        whereClause.createdAt = Between(start, end);
+      } else if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        whereClause.createdAt = MoreThanOrEqual(start);
+      } else if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        whereClause.createdAt = LessThanOrEqual(end);
+      }
     }
 
     return this.tripRepository.find({
-      where: [{ driver: { userId } }],
+      where: whereClause,
       relations: ['vehicle', 'driver', 'tripOrders', 'tripOrders.order'],
       order: { createdAt: 'DESC' },
     });
