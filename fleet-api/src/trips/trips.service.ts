@@ -183,10 +183,10 @@ export class TripsService {
               console.error('Failed to optimize trip route after merge:', optErr);
             }
 
-            // Emit event for deleted pending trip
+            // Emit event for deleted pending trip (merged into active trip)
             this.eventEmitter.emit('trip.status_changed', {
               id: trip.id,
-              status: TripStatus.CANCELLED,
+              status: 'merged' as any,
               vehicleId: trip.vehicleId,
               driverId: trip.driverId,
             });
