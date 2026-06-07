@@ -16,13 +16,13 @@ import {
   Calendar,
   Package
 } from 'lucide-react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useOrderStore, OrderStatus, Order } from '../../store/useOrderStore';
 import { OrderCardItem, STATUS_CONFIG, FILTER_STATUSES } from '../../components/admin/order/OrderCardItem';
-import { OrderDateFilter } from '../../components/admin/order/OrderDateFilter';
 
 export default function AdminOrdersScreen() {
   const router = useRouter();
@@ -33,7 +33,37 @@ export default function AdminOrdersScreen() {
 
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
-  const [showDateFilter, setShowDateFilter] = useState(false);
+  type FilterDateType = 'all' | 'today' | '7days' | '30days' | 'custom';
+  const [activeDateFilter, setActiveDateFilter] = useState<FilterDateType>('all');
+  const [showPicker, setShowPicker] = useState<'start' | 'end' | null>(null);
+
+  useEffect(() => {
+    if (activeDateFilter === 'all') {
+      setStartDate(null);
+      setEndDate(null);
+    } else if (activeDateFilter === 'today') {
+      const start = new Date();
+      start.setHours(0, 0, 0, 0);
+      const end = new Date();
+      end.setHours(23, 59, 59, 999);
+      setStartDate(start);
+      setEndDate(end);
+    } else if (activeDateFilter === '7days') {
+      const start = new Date(Date.now() - 7 * 24 * 3600000);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date();
+      end.setHours(23, 59, 59, 999);
+      setStartDate(start);
+      setEndDate(end);
+    } else if (activeDateFilter === '30days') {
+      const start = new Date(Date.now() - 30 * 24 * 3600000);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date();
+      end.setHours(23, 59, 59, 999);
+      setStartDate(start);
+      setEndDate(end);
+    }
+  }, [activeDateFilter]);
 
   useEffect(() => {
     fetchOrders();
@@ -144,8 +174,8 @@ export default function AdminOrdersScreen() {
           </TouchableOpacity>
         </View>
 
-        <View className="flex-row px-5 mb-4 gap-3">
-          <BlurView intensity={40} tint="light" className="flex-1 flex-row items-center rounded-2xl px-4 h-[52px] border border-white/10 overflow-hidden">
+        <View className="px-5 mb-4">
+          <BlurView intensity={40} tint="light" className="w-full flex-row items-center rounded-2xl px-4 h-[52px] border border-white/10 overflow-hidden">
             <Search size={20} color="#64748b" className="mr-3" />
             <TextInput
               placeholder="Search orders, addresses..."
@@ -155,26 +185,102 @@ export default function AdminOrdersScreen() {
               onChangeText={setSearchQuery}
             />
           </BlurView>
-          <TouchableOpacity
-            onPress={() => setShowDateFilter(!showDateFilter)}
-            className={`w-[52px] h-[52px] rounded-2xl justify-center items-center border border-white/10 bg-slate-800 ${
-              (startDate || endDate || showDateFilter) ? 'bg-indigo-500 border-indigo-500' : ''
-            }`}
-            activeOpacity={0.7}
-          >
-            <Calendar size={20} color={(startDate || endDate || showDateFilter) ? '#fff' : '#94a3b8'} />
-          </TouchableOpacity>
         </View>
 
-        <OrderDateFilter
-          startDate={startDate}
-          endDate={endDate}
-          onDateChange={(start, end) => {
-            setStartDate(start);
-            setEndDate(end);
-          }}
-          showDateFilter={showDateFilter}
-        />
+        {/* Quick Date Filters Pills */}
+        <View className="px-5 mb-4 mt-1">
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 8, paddingRight: 20 }}
+          >
+            {[
+              { id: 'all', label: 'Tất cả' },
+              { id: 'today', label: 'Hôm nay' },
+              { id: '7days', label: '7 ngày qua' },
+              { id: '30days', label: '30 ngày qua' },
+              { id: 'custom', label: 'Tùy chỉnh' },
+            ].map((f) => {
+              const isActive = activeDateFilter === f.id;
+              return (
+                <TouchableOpacity
+                  key={f.id}
+                  onPress={() => setActiveDateFilter(f.id as FilterDateType)}
+                  className={isActive 
+                    ? "px-4 py-2.5 rounded-full border bg-indigo-600 border-indigo-500" 
+                    : "px-4 py-2.5 rounded-full border bg-slate-900/60 border-white/5"
+                  }
+                  activeOpacity={0.7}
+                >
+                  <Text className={isActive ? "text-xs font-bold text-white" : "text-xs font-bold text-slate-400"}>
+                    {f.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+
+        {/* Custom Range picker buttons */}
+        {activeDateFilter === 'custom' && (
+          <View className="px-5 mb-4 flex-row gap-3">
+            <TouchableOpacity
+              onPress={() => setShowPicker('start')}
+              className="flex-1 bg-slate-900/40 border border-white/5 p-3 rounded-2xl flex-row items-center justify-between"
+              activeOpacity={0.7}
+            >
+              <View>
+                <Text className="text-[8px] font-black uppercase text-slate-500 tracking-wider">Từ ngày</Text>
+                <Text className="text-white text-xs font-bold mt-0.5">
+                  {startDate ? startDate.toLocaleDateString('vi-VN') : '--/--/----'}
+                </Text>
+              </View>
+              <Calendar size={14} color="#10b981" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => setShowPicker('end')}
+              className="flex-1 bg-slate-900/40 border border-white/5 p-3 rounded-2xl flex-row items-center justify-between"
+              activeOpacity={0.7}
+            >
+              <View>
+                <Text className="text-[8px] font-black uppercase text-slate-500 tracking-wider">Đến ngày</Text>
+                <Text className="text-white text-xs font-bold mt-0.5">
+                  {endDate ? endDate.toLocaleDateString('vi-VN') : '--/--/----'}
+                </Text>
+              </View>
+              <Calendar size={14} color="#10b981" />
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Date Picker Component */}
+        {showPicker && (
+          <DateTimePicker
+            value={showPicker === 'start' ? (startDate || new Date()) : (endDate || new Date())}
+            mode="date"
+            display="default"
+            maximumDate={new Date()}
+            minimumDate={showPicker === 'end' ? (startDate || undefined) : undefined}
+            onChange={(event, date) => {
+              setShowPicker(null);
+              if (date) {
+                if (showPicker === 'start') {
+                  const start = new Date(date);
+                  start.setHours(0, 0, 0, 0);
+                  if (endDate && start > endDate) {
+                    setEndDate(start);
+                  }
+                  setStartDate(start);
+                } else {
+                  const end = new Date(date);
+                  end.setHours(23, 59, 59, 999);
+                  setEndDate(end);
+                }
+              }
+            }}
+          />
+        )}
 
         <View className="mb-4">
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 8 }}>

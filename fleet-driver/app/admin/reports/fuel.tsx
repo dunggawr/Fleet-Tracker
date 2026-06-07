@@ -10,6 +10,16 @@ import { ExportButton } from '../../../components/admin/dashboard/ExportButton';
 
 const screenWidth = Dimensions.get('window').width;
 
+const formatDateLabel = (dateStr: string) => {
+  if (!dateStr) return '';
+  const cleanDate = dateStr.split('T')[0];
+  const parts = cleanDate.split('-');
+  if (parts.length === 3) {
+    return `${parts[2]}/${parts[1]}`;
+  }
+  return dateStr;
+};
+
 export default function FuelReportScreen() {
   const router = useRouter();
   const { fuelCostData, loading, fetchFuelCost } = useReportStore();
@@ -48,7 +58,7 @@ export default function FuelReportScreen() {
   };
 
   const lineData = {
-    labels: fuelCostData?.costTrend.slice(-6).map(t => t.date.slice(5)) || [],
+    labels: fuelCostData?.costTrend.slice(-6).map(t => formatDateLabel(t.date)) || [],
     datasets: [
       {
         data: fuelCostData?.costTrend.slice(-6).map(t => t.cost) || [],

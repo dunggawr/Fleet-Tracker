@@ -9,6 +9,16 @@ import { ExportButton } from '../../../components/admin/dashboard/ExportButton';
 
 const screenWidth = Dimensions.get('window').width;
 
+const formatDateLabel = (dateStr: string) => {
+  if (!dateStr) return '';
+  const cleanDate = dateStr.split('T')[0];
+  const parts = cleanDate.split('-');
+  if (parts.length === 3) {
+    return `${parts[2]}/${parts[1]}`;
+  }
+  return dateStr;
+};
+
 export default function TripReportsScreen() {
   const router = useRouter();
   const { performanceData, loading, fetchFleetPerformance } = useReportStore();
@@ -40,7 +50,7 @@ export default function TripReportsScreen() {
   };
 
   const lineChartData = {
-    labels: (performanceData?.performanceTrend || []).map(t => t.date.slice(5)),
+    labels: (performanceData?.performanceTrend || []).map(t => formatDateLabel(t.date)),
     datasets: [
       {
         data: (performanceData?.performanceTrend || []).map(t => t.trips),
@@ -52,7 +62,7 @@ export default function TripReportsScreen() {
   };
 
   const barChartData = {
-    labels: (performanceData?.tripsByVehicle || []).slice(0, 5).map(v => v.vehiclePlate.slice(-4)),
+    labels: (performanceData?.tripsByVehicle || []).slice(0, 5).map(v => v.vehiclePlate || 'N/A'),
     datasets: [
       {
         data: (performanceData?.tripsByVehicle || []).slice(0, 5).map(v => v.count)

@@ -48,7 +48,7 @@ export default function UtilizationReportScreen() {
   };
 
   const barData = {
-    labels: utilizationData?.vehicleStats.map(v => v.plateNumber.slice(-4)) || [],
+    labels: utilizationData?.vehicleStats.map(v => v.plateNumber || 'N/A') || [],
     datasets: [
       {
         data: utilizationData?.vehicleStats.map(v => v.utilization) || [],

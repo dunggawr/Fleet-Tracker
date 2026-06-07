@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity, StyleSheet } from 'react-native';
-import { LayoutDashboard, Truck, Package, AlertTriangle, TrendingUp, Clock } from 'lucide-react-native';
+import { LayoutDashboard, Truck, Package, AlertTriangle, TrendingUp, Clock, BarChart2, ChevronRight } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatCard } from '../../components/admin/dashboard/StatCard';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -181,6 +181,28 @@ export default function AdminDashboardScreen() {
               }}
             />
           </View>
+
+          {/* Reports & Analytics Banner */}
+          <TouchableOpacity
+            onPress={() => router.push('/admin/reports/drivers' as any)}
+            className="bg-slate-900/60 border border-indigo-500/20 rounded-3xl p-5 mb-6 flex-row items-center justify-between"
+            activeOpacity={0.7}
+          >
+            <View className="flex-row items-center flex-1 mr-3">
+              <View className="w-12 h-12 rounded-2xl bg-indigo-500/10 justify-center items-center mr-4">
+                <BarChart2 size={24} color="#6366f1" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-slate-50 font-bold text-base">Báo cáo & Phân tích</Text>
+                <Text className="text-slate-500 text-xs mt-0.5" numberOfLines={1}>
+                  Xem xếp hạng và hiệu suất KPI tài xế
+                </Text>
+              </View>
+            </View>
+            <View className="bg-white/5 w-8 h-8 rounded-full items-center justify-center border border-white/10">
+              <ChevronRight size={16} color="#94a3b8" />
+            </View>
+          </TouchableOpacity>
 
           <View className="mb-4 flex-row justify-between items-center">
             <Text className="text-lg font-bold text-slate-50 tracking-wider">Recent Activity</Text>
