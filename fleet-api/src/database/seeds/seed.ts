@@ -103,11 +103,11 @@ export async function seedDatabase(dataSource: DataSource, adminEmail?: string, 
 
       // Diverse realistic KPI leaderboard stats
       const kpis = [
-        { totalTrips: 52, completedTrips: 50, completionRate: 96, totalViolations: 1, kpiScore: 95 },
-        { totalTrips: 45, completedTrips: 40, completionRate: 88, totalViolations: 4, kpiScore: 82 },
-        { totalTrips: 48, completedTrips: 46, completionRate: 95, totalViolations: 2, kpiScore: 91 },
-        { totalTrips: 32, completedTrips: 28, completionRate: 87, totalViolations: 5, kpiScore: 78 },
-        { totalTrips: 58, completedTrips: 58, completionRate: 100, totalViolations: 0, kpiScore: 99 },
+        { totalTrips: 52, completedTrips: 50, completionRate: 96, speedViolations: 1, routeViolations: 0, abnormalStops: 0, incidents: 0, totalViolations: 1, kpiScore: 95 },
+        { totalTrips: 45, completedTrips: 40, completionRate: 88, speedViolations: 2, routeViolations: 1, abnormalStops: 1, incidents: 0, totalViolations: 4, kpiScore: 79 },
+        { totalTrips: 48, completedTrips: 46, completionRate: 95, speedViolations: 0, routeViolations: 1, abnormalStops: 1, incidents: 0, totalViolations: 2, kpiScore: 89 },
+        { totalTrips: 32, completedTrips: 28, completionRate: 87, speedViolations: 2, routeViolations: 2, abnormalStops: 1, incidents: 0, totalViolations: 5, kpiScore: 71 },
+        { totalTrips: 58, completedTrips: 58, completionRate: 100, speedViolations: 0, routeViolations: 0, abnormalStops: 0, incidents: 0, totalViolations: 0, kpiScore: 99 },
       ];
       const currentIdx = driversData.length - 1;
       const kpiInfo = kpis[currentIdx] || kpis[0];
@@ -118,6 +118,10 @@ export async function seedDatabase(dataSource: DataSource, adminEmail?: string, 
           totalTrips: kpiInfo.totalTrips,
           completedTrips: kpiInfo.completedTrips,
           completionRate: kpiInfo.completionRate,
+          speedViolations: kpiInfo.speedViolations,
+          routeViolations: kpiInfo.routeViolations,
+          abnormalStops: kpiInfo.abnormalStops,
+          incidents: kpiInfo.incidents,
           totalViolations: kpiInfo.totalViolations,
           kpiScore: kpiInfo.kpiScore,
         })
