@@ -6,7 +6,7 @@ import {
   Image
 } from 'react-native';
 import { MapPin, Calendar, Clock, ChevronLeft, Package, Truck, CheckCircle2, AlertTriangle, Navigation, Camera, Fuel, Route } from 'lucide-react-native';
-import { useTripStore, TripStatus } from '../../store/useTripStore';
+import { useTripStore, TripStatus, OrderStatus } from '../../store/useTripStore';
 import { MapComponent, MarkerComponent, PolylineComponent, PROVIDER_GOOGLE } from '../../components/map/MapComponents';
 
 import { NoActiveTrip } from '../../components/trip/NoActiveTrip';
@@ -130,34 +130,38 @@ export default function ActiveTripMap() {
         {/* Order Markers */}
         {activeTrip.orders.map((order: any) => (
           <React.Fragment key={order.id}>
-            {order.pickupLocation && (
-              <MarkerComponent
-                coordinate={order.pickupLocation}
-                title={`Pickup: ${order.id.substring(0, 8)}`}
-                anchor={{ x: 0.5, y: 0.5 }}
-              >
-                <View 
-                  className="w-8 h-8 rounded-full border-2 items-center justify-center shadow shadow-black/25"
-                  style={{ backgroundColor: '#ffffff', borderColor: '#10b981' }}
+            {order.pickupLocation &&
+              order.status !== OrderStatus.PICKED_UP &&
+              order.status !== OrderStatus.DELIVERING &&
+              order.status !== OrderStatus.DELIVERED && (
+                <MarkerComponent
+                  coordinate={order.pickupLocation}
+                  title={`Pickup: ${order.id.substring(0, 8)}`}
+                  anchor={{ x: 0.5, y: 0.5 }}
                 >
-                  <MapPin size={16} color="#10b981" strokeWidth={3} />
-                </View>
-              </MarkerComponent>
-            )}
-            {order.deliveryLocation && (
-              <MarkerComponent
-                coordinate={order.deliveryLocation}
-                title={`Delivery: ${order.id.substring(0, 8)}`}
-                anchor={{ x: 0.5, y: 0.5 }}
-              >
-                <View 
-                  className="w-8 h-8 rounded-full border-2 border-white items-center justify-center shadow shadow-black/25"
-                  style={{ backgroundColor: '#10b981' }}
+                  <View
+                    className="w-8 h-8 rounded-full border-2 items-center justify-center shadow shadow-black/25"
+                    style={{ backgroundColor: '#ffffff', borderColor: '#10b981' }}
+                  >
+                    <MapPin size={16} color="#10b981" strokeWidth={3} />
+                  </View>
+                </MarkerComponent>
+              )}
+            {order.deliveryLocation &&
+              order.status !== OrderStatus.DELIVERED && (
+                <MarkerComponent
+                  coordinate={order.deliveryLocation}
+                  title={`Delivery: ${order.id.substring(0, 8)}`}
+                  anchor={{ x: 0.5, y: 0.5 }}
                 >
-                  <MapPin size={16} color="#fff" strokeWidth={3} />
-                </View>
-              </MarkerComponent>
-            )}
+                  <View
+                    className="w-8 h-8 rounded-full border-2 border-white items-center justify-center shadow shadow-black/25"
+                    style={{ backgroundColor: '#10b981' }}
+                  >
+                    <MapPin size={16} color="#fff" strokeWidth={3} />
+                  </View>
+                </MarkerComponent>
+              )}
           </React.Fragment>
         ))}
       </MapComponent>
