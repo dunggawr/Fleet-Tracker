@@ -128,42 +128,45 @@ export default function ActiveTripMap() {
         )}
 
         {/* Order Markers */}
-        {activeTrip.orders.map((order: any) => (
-          <React.Fragment key={order.id}>
-            {order.pickupLocation &&
-              order.status !== OrderStatus.PICKED_UP &&
-              order.status !== OrderStatus.DELIVERING &&
-              order.status !== OrderStatus.DELIVERED && (
-                <MarkerComponent
-                  coordinate={order.pickupLocation}
-                  title={`Pickup: ${order.id.substring(0, 8)}`}
-                  anchor={{ x: 0.5, y: 0.5 }}
-                >
-                  <View
-                    className="w-8 h-8 rounded-full border-2 items-center justify-center shadow shadow-black/25"
-                    style={{ backgroundColor: '#ffffff', borderColor: '#10b981' }}
+        {activeTrip.orders.map((order: any) => {
+          const isCurrent = currentOrder && order.id === currentOrder.id;
+          return (
+            <React.Fragment key={order.id}>
+              {order.pickupLocation &&
+                order.status !== OrderStatus.PICKED_UP &&
+                order.status !== OrderStatus.DELIVERING &&
+                order.status !== OrderStatus.DELIVERED && (
+                  <MarkerComponent
+                    coordinate={order.pickupLocation}
+                    title={`Pickup: ${order.id.substring(0, 8)}`}
+                    anchor={{ x: 0.5, y: 0.5 }}
                   >
-                    <MapPin size={16} color="#10b981" strokeWidth={3} />
-                  </View>
-                </MarkerComponent>
-              )}
-            {order.deliveryLocation &&
-              order.status !== OrderStatus.DELIVERED && (
-                <MarkerComponent
-                  coordinate={order.deliveryLocation}
-                  title={`Delivery: ${order.id.substring(0, 8)}`}
-                  anchor={{ x: 0.5, y: 0.5 }}
-                >
-                  <View
-                    className="w-8 h-8 rounded-full border-2 border-white items-center justify-center shadow shadow-black/25"
-                    style={{ backgroundColor: '#10b981' }}
+                    <View
+                      className={isCurrent ? "w-10 h-10 rounded-full border-[3px] items-center justify-center shadow shadow-black/25" : "w-8 h-8 rounded-full border-2 items-center justify-center shadow shadow-black/25"}
+                      style={{ backgroundColor: '#ffffff', borderColor: isCurrent ? '#6366f1' : '#10b981' }}
+                    >
+                      <MapPin size={isCurrent ? 20 : 16} color={isCurrent ? '#6366f1' : '#10b981'} strokeWidth={3} />
+                    </View>
+                  </MarkerComponent>
+                )}
+              {order.deliveryLocation &&
+                order.status !== OrderStatus.DELIVERED && (
+                  <MarkerComponent
+                    coordinate={order.deliveryLocation}
+                    title={`Delivery: ${order.id.substring(0, 8)}`}
+                    anchor={{ x: 0.5, y: 0.5 }}
                   >
-                    <MapPin size={16} color="#fff" strokeWidth={3} />
-                  </View>
-                </MarkerComponent>
-              )}
-          </React.Fragment>
-        ))}
+                    <View
+                      className={isCurrent ? "w-10 h-10 rounded-full border-[3px] border-white items-center justify-center shadow shadow-black/25" : "w-8 h-8 rounded-full border-2 border-white items-center justify-center shadow shadow-black/25"}
+                      style={{ backgroundColor: isCurrent ? '#6366f1' : '#10b981' }}
+                    >
+                      <MapPin size={isCurrent ? 20 : 16} color="#fff" strokeWidth={3} />
+                    </View>
+                  </MarkerComponent>
+                )}
+            </React.Fragment>
+          );
+        })}
       </MapComponent>
 
       <MissionDashboard 
