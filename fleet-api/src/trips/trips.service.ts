@@ -215,21 +215,33 @@ export class TripsService {
               0,
             );
 
-            // Re-assign the TripOrder records to target the runningTrip
+            // 1. Prepare new TripOrder entities in memory
+            const newTripOrders: TripOrder[] = [];
+            const ordersToUpdate: Order[] = [];
+
             for (let i = 0; i < pendingTripOrders.length; i++) {
               const pendingTO = pendingTripOrders[i];
-              pendingTO.tripId = runningTrip.id;
-              pendingTO.sequence = maxSequence + i + 1;
-              await queryRunner.manager.save(TripOrder, pendingTO);
+              const newTO = queryRunner.manager.create(TripOrder, {
+                tripId: runningTrip.id,
+                orderId: pendingTO.orderId,
+                sequence: maxSequence + i + 1,
+              });
+              newTripOrders.push(newTO);
 
               if (pendingTO.order) {
                 pendingTO.order.status = OrderStatus.ASSIGNED;
-                await queryRunner.manager.save(Order, pendingTO.order);
+                ordersToUpdate.push(pendingTO.order);
               }
             }
 
-            // Remove the pending trip
+            // 2. Delete the pending trip (this will cascade delete the old trip_orders rows)
             await queryRunner.manager.delete(Trip, { id: trip.id });
+
+            // 3. Save new TripOrders and updated Orders
+            await queryRunner.manager.save(TripOrder, newTripOrders);
+            if (ordersToUpdate.length > 0) {
+              await queryRunner.manager.save(Order, ordersToUpdate);
+            }
 
             // Commit transaction
             await queryRunner.commitTransaction();
@@ -356,14 +368,34 @@ export class TripsService {
           await queryRunner.manager.delete(TripOrder, { tripId: trip.id });
         }
 
-        // Update Vehicle & Driver back to AVAILABLE
+        // Update Vehicle & Driver back to AVAILABLE or deduct load if active trip exists
         if (vehicleId) {
           const vehicle = await queryRunner.manager.findOne(Vehicle, {
             where: { id: vehicleId },
           });
           if (vehicle) {
-            vehicle.status = VehicleStatus.AVAILABLE;
-            vehicle.currentLoadKg = 0;
+            // Check if there is another active running trip
+            const activeRunningTrip = await queryRunner.manager.findOne(Trip, {
+              where: {
+                vehicleId: vehicle.id,
+                status: In([TripStatus.ACCEPTED, TripStatus.IN_PROGRESS]),
+              },
+            });
+
+            if (activeRunningTrip) {
+              // Deduct weight of cancelled orders
+              const cancelledWeight = tripOrders.reduce(
+                (sum, to) => sum + Number(to.order?.weightKg || 0),
+                0,
+              );
+              vehicle.currentLoadKg = Math.max(
+                0,
+                Number(vehicle.currentLoadKg) - cancelledWeight,
+              );
+            } else {
+              vehicle.status = VehicleStatus.AVAILABLE;
+              vehicle.currentLoadKg = 0;
+            }
             await queryRunner.manager.save(Vehicle, vehicle);
           }
         }
@@ -373,8 +405,18 @@ export class TripsService {
             where: { id: driverId },
           });
           if (driver) {
-            driver.status = DriverStatus.AVAILABLE;
-            await queryRunner.manager.save(Driver, driver);
+            // Check if there is another active running trip
+            const activeRunningTrip = await queryRunner.manager.findOne(Trip, {
+              where: {
+                driverId: driver.id,
+                status: In([TripStatus.ACCEPTED, TripStatus.IN_PROGRESS]),
+              },
+            });
+
+            if (!activeRunningTrip) {
+              driver.status = DriverStatus.AVAILABLE;
+              await queryRunner.manager.save(Driver, driver);
+            }
           }
         }
       }

@@ -156,57 +156,21 @@ export class DispatchService {
         throw new BadRequestException('Vehicle capacity exceeded');
       }
 
-      let activeTrip: Trip | null = null;
-      if (vehicle.status === VehicleStatus.DELIVERING) {
-        // Find existing active pending trip
-        activeTrip = await queryRunner.manager.findOne(Trip, {
-          where: {
-            vehicleId: vehicle.id,
-            driverId: vehicle.driverId,
-            status: TripStatus.PENDING,
-          },
-          lock: { mode: 'pessimistic_write' },
-        });
-      }
+      // Always create a new PENDING Trip for each assigned order
+      const trip = queryRunner.manager.create(Trip, {
+        vehicleId: vehicle.id,
+        driverId: vehicle.driverId,
+        status: TripStatus.PENDING,
+      });
+      const savedTrip = await queryRunner.manager.save(Trip, trip);
 
-      let savedTrip: Trip;
-      if (activeTrip) {
-        // Use existing active trip
-        savedTrip = activeTrip;
-
-        // Find max sequence in current tripOrders
-        const tripOrders = await queryRunner.manager.find(TripOrder, {
-          where: { tripId: activeTrip.id },
-        });
-        const maxSequence = tripOrders.reduce(
-          (max, to) => Math.max(max, to.sequence),
-          0,
-        );
-
-        // Link Order to existing Trip
-        const tripOrder = queryRunner.manager.create(TripOrder, {
-          tripId: activeTrip.id,
-          orderId: order.id,
-          sequence: maxSequence + 1,
-        });
-        await queryRunner.manager.save(TripOrder, tripOrder);
-      } else {
-        // Create Trip
-        const trip = queryRunner.manager.create(Trip, {
-          vehicleId: vehicle.id,
-          driverId: vehicle.driverId,
-          status: TripStatus.PENDING,
-        });
-        savedTrip = await queryRunner.manager.save(Trip, trip);
-
-        // Link Order to Trip
-        const tripOrder = queryRunner.manager.create(TripOrder, {
-          tripId: savedTrip.id,
-          orderId: order.id,
-          sequence: 1,
-        });
-        await queryRunner.manager.save(TripOrder, tripOrder);
-      }
+      // Link Order to Trip
+      const tripOrder = queryRunner.manager.create(TripOrder, {
+        tripId: savedTrip.id,
+        orderId: order.id,
+        sequence: 1,
+      });
+      await queryRunner.manager.save(TripOrder, tripOrder);
 
       // Update Order Status
       order.status = OrderStatus.ASSIGNED;
@@ -340,75 +304,35 @@ export class DispatchService {
         );
       }
 
-      let activeTrip: Trip | null = null;
-      if (vehicle.status === VehicleStatus.DELIVERING) {
-        // Find existing active pending trip
-        activeTrip = await queryRunner.manager.findOne(Trip, {
-          where: {
-            vehicleId: vehicle.id,
-            driverId: vehicle.driverId,
-            status: TripStatus.PENDING,
-          },
-          lock: { mode: 'pessimistic_write' },
-        });
-      }
+      const savedTrips: Trip[] = [];
+      const createdTripOrders: TripOrder[] = [];
 
-      let savedTrip: Trip;
-      if (activeTrip) {
-        // Use existing active trip
-        savedTrip = activeTrip;
+      for (let i = 0; i < orders.length; i++) {
+        const order = orders[i];
 
-        // Find max sequence in current tripOrders
-        const tripOrders = await queryRunner.manager.find(TripOrder, {
-          where: { tripId: activeTrip.id },
-        });
-        const maxSequence = tripOrders.reduce(
-          (max, to) => Math.max(max, to.sequence),
-          0,
-        );
-
-        // 4. Batch link Orders to Trip and update statuses
-        const newTripOrders: TripOrder[] = [];
-        for (let i = 0; i < orders.length; i++) {
-          const tripOrder = queryRunner.manager.create(TripOrder, {
-            tripId: activeTrip.id,
-            orderId: orders[i].id,
-            sequence: maxSequence + i + 1,
-          });
-          newTripOrders.push(tripOrder);
-
-          orders[i].status = OrderStatus.ASSIGNED;
-        }
-
-        // Batch save TripOrders and updated Orders
-        await queryRunner.manager.save(TripOrder, newTripOrders);
-        await queryRunner.manager.save(Order, orders);
-      } else {
-        // 3. Create Trip
+        // Create a separate PENDING Trip for each order
         const trip = queryRunner.manager.create(Trip, {
           vehicleId: vehicle.id,
           driverId: vehicle.driverId,
           status: TripStatus.PENDING,
         });
-        savedTrip = await queryRunner.manager.save(Trip, trip);
+        const savedTrip = await queryRunner.manager.save(Trip, trip);
+        savedTrips.push(savedTrip);
 
-        // 4. Batch link Orders to Trip and update statuses
-        const tripOrders: TripOrder[] = [];
-        for (let i = 0; i < orders.length; i++) {
-          const tripOrder = queryRunner.manager.create(TripOrder, {
-            tripId: savedTrip.id,
-            orderId: orders[i].id,
-            sequence: i + 1,
-          });
-          tripOrders.push(tripOrder);
+        // Link Order to Trip
+        const tripOrder = queryRunner.manager.create(TripOrder, {
+          tripId: savedTrip.id,
+          orderId: order.id,
+          sequence: 1,
+        });
+        createdTripOrders.push(tripOrder);
 
-          orders[i].status = OrderStatus.ASSIGNED;
-        }
-
-        // Batch save TripOrders and updated Orders
-        await queryRunner.manager.save(TripOrder, tripOrders);
-        await queryRunner.manager.save(Order, orders);
+        order.status = OrderStatus.ASSIGNED;
       }
+
+      // Batch save TripOrders and updated Orders
+      await queryRunner.manager.save(TripOrder, createdTripOrders);
+      await queryRunner.manager.save(Order, orders);
 
       // Update Vehicle Status and Load
       vehicle.status = VehicleStatus.DELIVERING;
@@ -417,20 +341,21 @@ export class DispatchService {
 
       await queryRunner.commitTransaction();
 
-      // Optimize route using Mapbox API asynchronously (after transaction commit)
-      try {
-        await this.optimizationService.optimizeTripRoute(savedTrip.id);
-      } catch (optErr) {
-        console.error(
-          'Failed to optimize trip route after assignment:',
-          optErr,
-        );
+      // Optimize routes using Mapbox API asynchronously (after transaction commit)
+      for (const savedTrip of savedTrips) {
+        try {
+          await this.optimizationService.optimizeTripRoute(savedTrip.id);
+        } catch (optErr) {
+          console.error(
+            `Failed to optimize trip route for trip ${savedTrip.id} after assignment:`,
+            optErr,
+          );
+        }
+        // Emit event for real-time notification
+        this.eventEmitter.emit('trip.assigned', savedTrip);
       }
 
-      // Emit event for real-time notification
-      this.eventEmitter.emit('trip.assigned', savedTrip);
-
-      return savedTrip;
+      return savedTrips;
     } catch (err) {
       await queryRunner.rollbackTransaction();
       throw err;
