@@ -176,7 +176,7 @@ describe('DispatchService', () => {
       expect(result).toBeDefined();
     });
 
-    it('should append order to active trip if vehicle status is DELIVERING', async () => {
+    it('should create a new pending trip even if vehicle status is DELIVERING', async () => {
       const mockOrder = {
         id: 'o2',
         status: OrderStatus.PENDING,
@@ -190,26 +190,18 @@ describe('DispatchService', () => {
         maxCapacityKg: 1000,
         currentLoadKg: 200,
       };
-      const mockActiveTrip = {
-        id: 'active-trip-id',
-        status: TripStatus.PENDING,
-      };
-      const mockTripOrders = [{ id: 'to1', sequence: 1 }];
 
       mockQueryRunner.manager.findOne
         .mockResolvedValueOnce(mockOrder) // First findOne is order
         .mockResolvedValueOnce(mockVehicle) // Second findOne is vehicle
-        .mockResolvedValueOnce(mockVehicle.driver) // Third findOne is driver
-        .mockResolvedValueOnce(mockActiveTrip); // Fourth findOne is activeTrip (inside delivering logic)
-
-      mockQueryRunner.manager.find.mockResolvedValueOnce(mockTripOrders); // find current trip orders
+        .mockResolvedValueOnce(mockVehicle.driver); // Third findOne is driver
 
       const result = await service.assignOrder('o2', 'v1');
 
-      expect(mockQueryRunner.manager.save).toHaveBeenCalledTimes(3); // TripOrder, Order, Vehicle (no new Trip created)
+      expect(mockQueryRunner.manager.save).toHaveBeenCalledTimes(4); // Trip, TripOrder, Order, Vehicle
       expect(mockQueryRunner.commitTransaction).toHaveBeenCalled();
       expect(result).toBeDefined();
-      expect(result.id).toBe('active-trip-id');
+      expect(result.id).toBe('new-id');
     });
 
     it('should rollback if something fails', async () => {
@@ -220,7 +212,7 @@ describe('DispatchService', () => {
   });
 
   describe('assignBulkOrders', () => {
-    it('should successfully assign multiple orders to a vehicle and deduplicate IDs', async () => {
+    it('should successfully assign multiple orders to a vehicle and deduplicate IDs, creating separate trips', async () => {
       const orderIds = ['o1', 'o2', 'o1']; // Duplicate o1
       const vehicleId = 'v1';
 
@@ -251,9 +243,10 @@ describe('DispatchService', () => {
           where: { id: In(['o1', 'o2']) },
         }),
       );
-      expect(mockQueryRunner.manager.save).toHaveBeenCalledTimes(4);
+      expect(mockQueryRunner.manager.save).toHaveBeenCalledTimes(5); // 2 Trips, 1 TripOrders, 1 Order, 1 Vehicle
       expect(mockQueryRunner.commitTransaction).toHaveBeenCalled();
       expect(result).toBeDefined();
+      expect(result.length).toBe(2);
     });
   });
 
