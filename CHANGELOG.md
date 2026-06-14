@@ -1,4 +1,23 @@
+## [2026-06-14] - Interactive Map Picking, Web Order Details & Fuel Card Removal
+
+### Added
+- **Web Admin Order Creation Enhancements**:
+  - Added order classification (`category`), priority selection (`priority`), recipient name (`recipientName`), recipient phone (`recipientPhone`), and delivery deadline (`deliveryDeadline`) with a datetime picker defaulting to +2 hours.
+  - Implemented Vietnamese phone number validation using regex.
+- **Interactive Map Location Pickers (Web & Mobile)**:
+  - Replaced manual text coordinate inputs with interactive MapBox map click coordinates selection on the Web Admin vehicle form.
+  - Integrated Expo MapPicker screen into the Mobile Driver/Admin vehicle creation form, displaying coordinates and enabling a "Chọn trên bản đồ" map selection flow.
+  - Enforced readonly coordinate inputs after interactive map selection to ensure coordinate integrity.
+  - Default coordinates set to central Ho Chi Minh City (`10.7838`, `106.6353`).
+- **Backend Initial Vehicle Location**:
+  - Updated `CreateVehicleDto` and `VehiclesService.create` to ingest `initialLat` and `initialLng` values and update `lastKnownLocation` geometry upon creation.
+
+### Changed
+- **Removed Fuel Consumption Statistics**:
+  - Stripped "Est. Fuel" and "Fuel Cost" detail cards from the mobile driver's active trip summary card (`TripSummaryCard.tsx`) and trip details page (`[id].tsx`) to streamline operations.
+
 ## [2026-06-07] - Active Trip Assignment, Merge Upon Acceptance, Route Re-Optimization & Driver Task Selection
+
 
 ### Added
 - **Merge-Upon-Acceptance for Active Drivers**:
