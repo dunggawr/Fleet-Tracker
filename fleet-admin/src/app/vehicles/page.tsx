@@ -88,6 +88,8 @@ export default function VehiclesPage() {
           type: data.type,
           maxCapacityKg: data.maxCapacityKg,
           deviceId: data.deviceId || null,
+          initialLat: data.initialLat,
+          initialLng: data.initialLng,
         });
       }
       setIsFormModalOpen(false);

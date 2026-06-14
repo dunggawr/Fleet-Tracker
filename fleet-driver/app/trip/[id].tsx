@@ -337,7 +337,6 @@ export default function TripDetails() {
 
           <TripSummaryCard 
             totalDistanceKm={trip.totalDistanceKm} 
-            estimatedFuelCost={trip.estimatedFuelCost}
           />
 
           <TripActions

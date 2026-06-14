@@ -49,6 +49,8 @@ export interface Vehicle {
   status: VehicleStatus;
   imageUrl?: string;
   lastKnownLocation?: GeoPoint;
+  initialLat?: number | null;
+  initialLng?: number | null;
   createdAt: string;
   updatedAt: string;
 }
