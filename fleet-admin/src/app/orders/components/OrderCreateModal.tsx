@@ -1,12 +1,19 @@
 import React from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { MapIcon, LocateFixed } from 'lucide-react';
+import { MapIcon, LocateFixed, Box, ShieldAlert, AlertTriangle, HelpCircle } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 import { MapBox, MapMarker } from '@/components/ui/MapBox';
 import { orderSchema, OrderFormValues } from '../types';
+
+const getDefaultDeadline = () => {
+  const date = new Date(Date.now() + 2 * 3600000); // 2 hours from now
+  const tzOffset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
+};
 
 interface OrderCreateModalProps {
   isOpen: boolean;
@@ -25,12 +32,17 @@ export const OrderCreateModal: React.FC<OrderCreateModalProps> = ({
   const [pickupCoord, setPickupCoord] = React.useState<{lat: number, lng: number} | null>(null);
   const [deliveryCoord, setDeliveryCoord] = React.useState<{lat: number, lng: number} | null>(null);
 
-  const { register, handleSubmit, reset, formState: { errors }, setValue } = useForm<OrderFormValues>({
+  const { register, handleSubmit, reset, control, formState: { errors }, setValue } = useForm<OrderFormValues>({
     resolver: zodResolver(orderSchema),
     defaultValues: {
       weightKg: 1,
       pickupAddress: '',
-      deliveryAddress: ''
+      deliveryAddress: '',
+      recipientName: '',
+      recipientPhone: '',
+      category: 'other',
+      priority: 'medium',
+      deliveryDeadline: getDefaultDeadline(),
     }
   });
 
@@ -56,6 +68,7 @@ export const OrderCreateModal: React.FC<OrderCreateModalProps> = ({
       pickupLng: pickupCoord.lng,
       deliveryLat: deliveryCoord.lat,
       deliveryLng: deliveryCoord.lng,
+      deliveryDeadline: new Date(data.deliveryDeadline).toISOString(),
     });
   };
 
@@ -123,7 +136,7 @@ export const OrderCreateModal: React.FC<OrderCreateModalProps> = ({
       )}
     >
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-xl min-h-[450px]">
-        <form className="flex flex-col gap-xl" onSubmit={handleSubmit(handleFormSubmit)}>
+        <form className="flex flex-col gap-xl max-h-[60vh] overflow-y-auto pr-sm custom-scrollbar" onSubmit={handleSubmit(handleFormSubmit)}>
           <div className="flex flex-col gap-md">
             <h3 className="text-xs font-bold text-dim uppercase tracking-wider border-b border-border pb-1">General Info</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-md">
@@ -139,6 +152,80 @@ export const OrderCreateModal: React.FC<OrderCreateModalProps> = ({
                 placeholder="E.g. Fragile items" 
                 {...register('description')}
                 error={errors.description?.message}
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-md">
+            <h3 className="text-xs font-bold text-dim uppercase tracking-wider border-b border-border pb-1">Cargo & Scheduling</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-md">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-text-dim uppercase tracking-wider ml-1">Category</label>
+                <Controller
+                  name="category"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      options={[
+                        { label: 'Dạng thô (Bulk)', value: 'bulk', icon: <Box size={14} /> },
+                        { label: 'Dễ vỡ (Fragile)', value: 'fragile', icon: <ShieldAlert size={14} className="text-warning" /> },
+                        { label: 'Cồng kềnh (Bulky)', value: 'bulky', icon: <Box size={14} /> },
+                        { label: 'Nguy hiểm (Dangerous)', value: 'dangerous', icon: <AlertTriangle size={14} className="text-danger" /> },
+                        { label: 'Khác (Other)', value: 'other', icon: <HelpCircle size={14} /> },
+                      ]}
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
+                  )}
+                />
+                {errors.category && <p className="text-danger text-xs mt-1">{errors.category.message}</p>}
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-text-dim uppercase tracking-wider ml-1">Priority</label>
+                <Controller
+                  name="priority"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      options={[
+                        { label: 'Low', value: 'low' },
+                        { label: 'Medium', value: 'medium' },
+                        { label: 'High', value: 'high' },
+                      ]}
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
+                  )}
+                />
+                {errors.priority && <p className="text-danger text-xs mt-1">{errors.priority.message}</p>}
+              </div>
+
+              <div className="sm:col-span-2">
+                <Input 
+                  label="Delivery Deadline" 
+                  type="datetime-local"
+                  {...register('deliveryDeadline')}
+                  error={errors.deliveryDeadline?.message}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-md">
+            <h3 className="text-xs font-bold text-dim uppercase tracking-wider border-b border-border pb-1">Recipient Info</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-md">
+              <Input 
+                label="Recipient Name" 
+                placeholder="E.g. John Doe"
+                {...register('recipientName')}
+                error={errors.recipientName?.message}
+              />
+              <Input 
+                label="Recipient Phone" 
+                placeholder="E.g. 0987654321"
+                {...register('recipientPhone')}
+                error={errors.recipientPhone?.message}
               />
             </div>
           </div>

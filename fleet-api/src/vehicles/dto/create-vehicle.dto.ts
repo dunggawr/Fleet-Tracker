@@ -58,4 +58,14 @@ export class CreateVehicleDto {
   @IsUUID()
   @IsOptional()
   driverId?: string | null;
+
+  @ApiPropertyOptional({ example: 10.7838 })
+  @IsNumber()
+  @IsOptional()
+  initialLat?: number;
+
+  @ApiPropertyOptional({ example: 106.6353 })
+  @IsNumber()
+  @IsOptional()
+  initialLng?: number;
 }

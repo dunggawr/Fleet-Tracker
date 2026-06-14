@@ -17,6 +17,7 @@ import { VehicleBasicInfo } from './vehicle-form/VehicleBasicInfo';
 import { VehicleTypeSelector } from './vehicle-form/VehicleTypeSelector';
 import { VehicleStatusSelector } from './vehicle-form/VehicleStatusSelector';
 import { DriverAssigner } from './vehicle-form/DriverAssigner';
+import { MapPicker } from '../order/MapPicker';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
 
@@ -29,6 +30,7 @@ interface VehicleFormProps {
 export const VehicleForm: React.FC<VehicleFormProps> = ({ initialData, onSubmit, loading }) => {
   const { drivers, vehicles } = useFleetStore();
   const [isUploading, setIsUploading] = useState(false);
+  const [pickingLocation, setPickingLocation] = useState(false);
 
   const availableDrivers = React.useMemo(() => {
     // Get all driver IDs assigned to other vehicles
@@ -48,7 +50,31 @@ export const VehicleForm: React.FC<VehicleFormProps> = ({ initialData, onSubmit,
     driverId: initialData?.driverId || '',
     deviceId: initialData?.deviceId || '',
     imageUrl: initialData?.imageUrl || '',
+    initialLat: '10.7838',
+    initialLng: '106.6353',
   });
+
+  if (pickingLocation) {
+    return (
+      <MapPicker
+        title="Chọn Vị Trí Ban Đầu"
+        initialLocation={
+          formData.initialLat && formData.initialLng
+            ? { latitude: parseFloat(formData.initialLat), longitude: parseFloat(formData.initialLng) }
+            : { latitude: 10.7838, longitude: 106.6353 }
+        }
+        onSelect={(coords) => {
+          setFormData(prev => ({
+            ...prev,
+            initialLat: coords.latitude.toString(),
+            initialLng: coords.longitude.toString(),
+          }));
+          setPickingLocation(false);
+        }}
+        onCancel={() => setPickingLocation(false)}
+      />
+    );
+  }
 
   const uploadImage = async (uri: string): Promise<string> => {
     try {
@@ -110,6 +136,8 @@ export const VehicleForm: React.FC<VehicleFormProps> = ({ initialData, onSubmit,
       driverId: formData.driverId || null,
       deviceId: formData.deviceId.trim() || null,
       imageUrl: finalImageUrl || null,
+      initialLat: !initialData ? parseFloat(formData.initialLat) : undefined,
+      initialLng: !initialData ? parseFloat(formData.initialLng) : undefined,
     });
   };
 
@@ -126,7 +154,12 @@ export const VehicleForm: React.FC<VehicleFormProps> = ({ initialData, onSubmit,
           onImageRemoved={() => setFormData(prev => ({ ...prev, imageUrl: '' }))} 
         />
 
-        <VehicleBasicInfo formData={formData} setFormData={setFormData} />
+        <VehicleBasicInfo 
+          formData={formData} 
+          setFormData={setFormData} 
+          isCreate={!initialData} 
+          onPickLocation={() => setPickingLocation(true)} 
+        />
 
         <VehicleTypeSelector type={formData.type} setType={(type) => setFormData(prev => ({ ...prev, type }))} />
 

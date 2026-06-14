@@ -35,7 +35,7 @@ export class VehiclesService {
       );
     }
 
-    const { driverId, ...vehicleData } = createVehicleDto;
+    const { driverId, initialLat, initialLng, ...vehicleData } = createVehicleDto;
 
     if (driverId) {
       const driver = await this.driverRepository.findOne({
@@ -55,7 +55,10 @@ export class VehiclesService {
       driverId: driverId || null,
       lastKnownLocation: {
         type: 'Point',
-        coordinates: [106.6353, 10.7838], // [lng, lat] — Warehouse location
+        coordinates: [
+          initialLng ?? 106.6353,
+          initialLat ?? 10.7838,
+        ],
       },
     });
     return await this.vehicleRepository.save(vehicle);
